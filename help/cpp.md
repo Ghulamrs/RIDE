@@ -37,9 +37,11 @@ examples here spell both the older way, which every compiler reads. A file
 that needs more than cxx1 has is a file for the host's compiler, and Ctrl-K
 is how it gets there.
 
-cxx1 announces itself on every compile unless told `-nologo`. The editor
-tells it, the way it tells cl `/nologo`, so the console holds what the
-compiler said about the file and no more — the same as for cc1 and shc.
+cxx1 announces itself on every compile — one line on standard error before
+the work starts — and the Console tab shows it above whatever else the
+compiler said, in both front ends. That is cxx1's own behaviour and the
+editor does not edit it: cc1 and shc say nothing on a compile, and cxx1 says
+who it is, and the console reports each as it is.
 
 ## The host's compiler, by name
 

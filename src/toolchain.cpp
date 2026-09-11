@@ -40,13 +40,6 @@ std::string languageFlag(ToolchainKind kind, Language lang) {
     return (lang == LangCpp) ? " -x c++" : " -x c";
 }
 
-// cxx1 says who it is on stderr before every compile, and cc1 and shc say
-// nothing - so the console showed a banner above the first error for one
-// language in three. Its -nologo is cl's /nologo, and is passed the same way:
-// in the command that runs, and not in the one the console shows.
-std::string quietFlag(ToolchainKind kind) {
-    return kind == ToolCxx1 ? std::string(" -nologo") : std::string();
-}
 
 std::string quoteDirectory(const std::string& s) {
     std::string path = s;
@@ -377,7 +370,7 @@ Recipe targetRecipe(const Toolchain& tool, ToolchainKind kind,
         return recipe;
     }
 
-    recipe.command = quote(programOf(tool, kind)) + quietFlag(kind) + languageFlag(kind, lang) +
+    recipe.command = quote(programOf(tool, kind)) + languageFlag(kind, lang) +
                      named + " -o " + quote(program) + configFlags(kind, config, arch);
     return recipe;
 }
@@ -452,7 +445,7 @@ Recipe objectRecipe(const Toolchain& tool, ToolchainKind kind,
     }
 
     recipe.command = "cd " + quote(objectDir) + " && " +
-                     quote(programOf(tool, kind)) + quietFlag(kind) + " -c" +
+                     quote(programOf(tool, kind)) + " -c" +
                      languageFlag(kind, lang) + named +
                      configFlags(kind, config, arch);
 
@@ -520,7 +513,7 @@ Recipe programRecipe(const Toolchain& tool, ToolchainKind kind,
         return recipe;
     }
 
-    recipe.command = quote(program) + quietFlag(kind) + " " + quote(source) + " -o " +
+    recipe.command = quote(program) + " " + quote(source) + " -o " +
                      quote(recipe.assemblyPath) + configFlags(kind, config, arch);
     return recipe;
 }
@@ -565,7 +558,7 @@ Recipe assemblyRecipe(const Toolchain& tool, ToolchainKind kind,
     }
 
     recipe.assemblyPath = stem + ".s";
-    recipe.command = quote(program) + quietFlag(kind) + " -S" + languageFlag(kind, lang) + " " +
+    recipe.command = quote(program) + " -S" + languageFlag(kind, lang) + " " +
                      quote(source) + " -o " + quote(recipe.assemblyPath) +
                      (usesArch(kind) ? " -arch " + arch : std::string()) +
                      configFlags(kind, config, arch);

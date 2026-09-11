@@ -3537,18 +3537,17 @@ void theFourthCompiler() {
                                        editor::ConfigDebug);
     check(made.ok, "cxx1 compiles the file to assembly");
     check(!made.asmLines.empty(), "and the Assembly tab has something to show");
-    // cxx1 says who it is on every compile unless told -nologo, and cc1 and
-    // shc say nothing - so the editor tells it, the way it tells cl /nologo,
-    // and the console holds what the compiler said about the file and no more.
-    check(!made.diag.present, "with nothing read as a diagnostic");
-    check(made.output.find("ISO C++") == std::string::npos,
-          "and no banner above it - the console says what cc1 and shc's would");
+    // cxx1 says who it is on stderr before every compile, and the editor
+    // shows what the compiler said, banner included: that is cxx1's own
+    // behaviour and the editor does not edit it - decided 2026-09-11, after
+    // -nologo had been passed for a day. What matters is that the banner is
+    // not read as a diagnostic, since it sits exactly where an error would.
+    check(!made.diag.present, "with nothing read as a diagnostic - its banner is not one");
+    check(made.output.find("ISO C++") != std::string::npos,
+          "and the banner is in the console, as cxx1 wrote it");
     check(editor::assemblyRecipe(tool, editor::ToolCxx1, source, editor::LangCpp, host,
-                                 editor::ConfigDebug).command.find(" -nologo ") != std::string::npos,
-          "because the command it ran said -nologo");
-    check(editor::shownCommand(tool, editor::ToolCxx1, "owned.cpp", editor::LangCpp, host,
-                               editor::ConfigDebug).find("nologo") == std::string::npos,
-          "while the one the console shows does not, as cl's does not show /nologo");
+                                 editor::ConfigDebug).command.find("nologo") == std::string::npos,
+          "because the editor passes no -nologo");
 
     // F5: built, and run, with what it printed and what it returned.
     editor::Ran ran = editor::runProgram(tool, editor::ToolCxx1, source, editor::LangCpp, host,
