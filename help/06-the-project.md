@@ -97,9 +97,12 @@ by hand is a file people leave notes in.
 
 A group is the project's own arrangement and has nothing to do with
 directories: moving a file between groups changes two lists and nothing on
-disk. The Project menu makes files, renames them, moves them between groups and
-deletes them — the last asks you to type `yes`, because it is the only thing
-here that cannot be undone.
+disk. The Project menu makes a file and puts it in a group (New File), takes
+a file already on disk into one (Add File — the file in front of you, once it
+has a name), and takes it back out again, leaving it on disk (Remove File).
+Renaming, moving between groups and deleting came off the menu on 2026-08-24
+and are done outside the editor now; the editor follows a rename when the
+project is next opened.
 
 **A group is a list of files, or an object that also names a compiler.** The
 plain list is not deprecated: a group with nothing to say is written back as a

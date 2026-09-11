@@ -3488,6 +3488,69 @@ void aCompilerPerGroup() {
 // built and run, the two-compiler project cc1 and cxx1 make together, and a
 // stop inside the C++ half under the machine's debugger, which is the reading
 // of cxx1's DWARF this editor's Debug tab depends on.
+// The window's one rule about statics, checked where every machine can check
+// it. In the mixed native/managed image a function-local static with a
+// destructor corrupts the heap when it is first reached - the atexit
+// registration does it, not the object - and the only cure is the shape
+// scratch() in bridge.cpp has: made once with new, never destroyed. That was
+// found on the day the window was built and found again on 2026-09-11, when
+// rstudio_group_for_file arrived with a plain `static std::string` and New
+// File took a name and died. The window builds on one machine in three and
+// has no suite of its own, so the rule is held here, over exactly the files
+// RStudioGui.vcxproj compiles, read out of that file rather than listed twice.
+void theWindowsRuleAboutStatics() {
+    std::printf("no static with a destructor in what the window compiles\n");
+
+    if (!editor::path::isDirectory("winforms")) {
+        std::printf("  (no winforms/ from here, so the window's sources are not scanned)\n");
+        return;
+    }
+    std::string project = readWholeFile("winforms/RStudioGui.vcxproj");
+    check(!project.empty(), "the window's project can be read");
+
+    std::vector<std::string> sources;
+    const std::string mark = "<ClCompile Include=\"";
+    for (size_t at = project.find(mark); at != std::string::npos; at = project.find(mark, at + 1)) {
+        size_t from = at + mark.size();
+        size_t to = project.find('"', from);
+        if (to == std::string::npos) break;
+        std::string named = project.substr(from, to - from);
+        for (size_t i = 0; i < named.size(); ++i)
+            if (named[i] == '\\') named[i] = '/';
+        sources.push_back(named);
+    }
+    check(sources.size() >= 20, "and names the core it compiles");
+
+    int offenders = 0;
+    for (size_t i = 0; i < sources.size(); ++i) {
+        std::string text = readWholeFile("winforms/" + sources[i]);
+        check(!text.empty(), "each file it names can be read: " + sources[i]);
+        size_t line = 1;
+        size_t start = 0;
+        while (start < text.size()) {
+            size_t end = text.find('\n', start);
+            if (end == std::string::npos) end = text.size();
+            std::string one = text.substr(start, end - start);
+            size_t word = one.find_first_not_of(" \t");
+            if (word != std::string::npos && word > 0 && one.compare(word, 7, "static ") == 0) {
+                std::string rest = one.substr(word + 7);
+                if (rest.compare(0, 6, "const ") == 0) rest = rest.substr(6);
+                bool classType = rest.compare(0, 5, "std::") == 0 ||
+                                 rest.compare(0, 8, "editor::") == 0 ||
+                                 rest.compare(0, 10, "shalimar::") == 0;
+                if (classType && rest.find('*') == std::string::npos &&
+                    rest.find('&') == std::string::npos) {
+                    ++offenders;
+                    std::printf("  %s:%zu: %s\n", sources[i].c_str(), line, one.c_str());
+                }
+            }
+            line += 1;
+            start = end + 1;
+        }
+    }
+    check(offenders == 0, "and none of them holds a function-local static of class type");
+}
+
 void theFourthCompiler() {
     std::printf("cxx1, driven for real\n");
 
@@ -4563,6 +4626,7 @@ int main(int argc, char** argv) {
     whatALinkFailureSays();
     aCompilerPerGroup();
     theFourthCompiler();
+    theWindowsRuleAboutStatics();
     theManualsContents();
     aDirectoryInAQuotedArgument();
     whatTheProjectBuilds();

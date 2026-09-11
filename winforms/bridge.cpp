@@ -89,6 +89,13 @@ editor::IndentStyle styleOf(int width, int tabs, int caseIndent, int dialect) {
     return style;
 }
 
+// **Made once and never destroyed, and every string this file hands back
+// goes through it.** A function-local static with a destructor registers an
+// atexit handler when it is first reached, and in this mixed native/managed
+// image that registration corrupts the heap - Json::get did it before the
+// window first opened, and rstudio_group_for_file did it again with a plain
+// `static std::string answer` on 2026-09-11, so that New File took a name and
+// died in _onexit. tests/test.cpp scans the window's sources for the shape.
 std::string& scratch() {
     static std::string* kept = new std::string();
     return *kept;
@@ -488,9 +495,8 @@ int rstudio_project_save_as(RStudioProject* project, const char* file,
 }
 
 const char* rstudio_group_for_file(const char* name) {
-    static std::string answer;
-    answer = editor::groupForFile(name ? name : "");
-    return answer.c_str();
+    scratch() = editor::groupForFile(name ? name : "");
+    return scratch().c_str();
 }
 
 const char* rstudio_project_relative(RStudioProject* project, const char* path) {
