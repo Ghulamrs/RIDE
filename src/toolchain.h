@@ -14,6 +14,7 @@ enum ToolchainKind {
     ToolMsvc,
     ToolShc,
     ToolCxx,
+    ToolCxx1,
     ToolCount
 };
 
@@ -44,10 +45,11 @@ struct Toolchain {
     std::string cl;
     std::string shc;
     std::string cxx;
+    std::string cxx1;
 
     Toolchain()
         : kind(ToolAuto), cc1("cc1.exe"), cl("cl"), shc("shc.exe"),
-          cxx(hostCxxName()) {}
+          cxx(hostCxxName()), cxx1("cxx1.exe") {}
 };
 
 ToolchainKind resolve(const Toolchain& tool, Language lang);

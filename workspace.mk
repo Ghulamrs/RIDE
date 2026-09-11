@@ -21,6 +21,9 @@
 CC1_DIR ?= ../Compiler-C
 SHC_DIR ?= ../Compiler-S
 C2S_DIR ?= ../Converter-C2S
+# The C++ compiler's checkout is C++ beside this one, Compiler-Cpp on GitHub
+# and ~/cxx1 on the Linux box - so this one is the likeliest to need naming.
+CXX1_DIR ?= ../C++
 
 # ---- one directory, named once and given to all four ------------------------
 #
@@ -45,7 +48,7 @@ C2S_DIR ?= ../Converter-C2S
 BINDIR ?= $(CURDIR)
 OUT := $(abspath $(BINDIR))
 
-.PHONY: all cc1 shc c2s editor confirm bin check clean
+.PHONY: all cc1 cxx1 shc c2s editor confirm bin check clean
 
 # `confirm` and not `editor`, so that the last thing a workspace build does is
 # check that what the editor drives is actually beside it.
@@ -69,9 +72,16 @@ shc:
 c2s:
 	$(MAKE) -C $(C2S_DIR) BINDIR=$(OUT) OBJDIR=$(OUT)/obj/c2s
 
-# The dependency, said the same way it is said in the other two: the editor is
-# built after the things it drives. Nothing of them ends up inside it.
-editor: cc1 shc c2s
+# The C++ compiler, since 3.0, built the way cc1 is: its Makefile takes the
+# same two variables. Its headers stay in its own tree - the driver finds
+# them beside itself or through the paths compiled into it - so, unlike shc's
+# runtime archives, nothing of it has to travel to $(OUT) but the binary.
+cxx1:
+	$(MAKE) -C $(CXX1_DIR) BINDIR=$(OUT) OBJDIR=$(OUT)/obj/cxx1
+
+# The dependency, said the same way it is said in the other three: the editor
+# is built after the things it drives. Nothing of them ends up inside it.
+editor: cc1 cxx1 shc c2s
 	$(MAKE) BINDIR=$(OUT) OBJDIR=$(OUT)/obj/editor
 
 # Asked of RStudio rather than answered here. The editor is the thing that
@@ -111,6 +121,10 @@ endif
 # is below: those are the ones this build produced, and they are the ones
 # whose behaviour the converter's output is being judged against.
 	$(MAKE) -C $(C2S_DIR) BINDIR=$(OUT) OBJDIR=$(OUT)/obj/c2s test CC1=$(OUT)/cc1.exe SHC=$(OUT)/shc.exe
+# cxx1's own suites, against the binary just built into $(OUT) - its Makefile
+# runs them on $(TARGET), which BINDIR names. The differential suites ask the
+# host's g++ or clang++ for the answers, so they run wherever the editor does.
+	$(MAKE) -C $(CXX1_DIR) BINDIR=$(OUT) OBJDIR=$(OUT)/obj/cxx1 test
 # The three just built into $(OUT), and not the copies in those repositories'
 # own trees. Those are usually the same file and occasionally are not, and the
 # occasion is exactly the one worth catching: this build wrote its compilers
@@ -121,7 +135,7 @@ endif
 # need a compiler and says so quietly - so the count fell from 792 and 232 to
 # 686 and 115 and everything still read as green. A suite that skips is not a
 # suite that passes.
-	$(MAKE) BINDIR=$(OUT) OBJDIR=$(OUT)/obj/editor check CC1=$(OUT)/cc1.exe SHC=$(OUT)/shc.exe C2S=$(OUT)/c2s.exe
+	$(MAKE) BINDIR=$(OUT) OBJDIR=$(OUT)/obj/editor check CC1=$(OUT)/cc1.exe CXX1=$(OUT)/cxx1.exe SHC=$(OUT)/shc.exe C2S=$(OUT)/c2s.exe
 
 # The alternative destination, for anyone who would rather the checkout root
 # stayed as it was. Nothing is copied into it - see the `bin` rule below.
@@ -145,5 +159,6 @@ clean:
 	$(MAKE) -C $(CC1_DIR) BINDIR=$(OUT) OBJDIR=$(OUT)/obj/cc1 clean
 	$(MAKE) -C $(SHC_DIR) BINDIR=$(OUT) BUILD=$(OUT)/obj/shc clean
 	$(MAKE) -C $(C2S_DIR) BINDIR=$(OUT) OBJDIR=$(OUT)/obj/c2s clean
+	$(MAKE) -C $(CXX1_DIR) BINDIR=$(OUT) OBJDIR=$(OUT)/obj/cxx1 clean
 	$(MAKE) BINDIR=$(OUT) OBJDIR=$(OUT)/obj/editor clean
 	rm -rf $(OUT)/obj

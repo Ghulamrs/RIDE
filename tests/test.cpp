@@ -385,20 +385,41 @@ void routing() {
 
     editor::Toolchain automatic;   // ToolAuto by default
 
-    // C is the only language with a decision in it. C++ goes to whichever C++
-    // compiler the machine has, and Shalimar to the only thing that reads it.
+    // C and C++ each have a decision in them, and the same one: the compiler
+    // this editor is for, or the machine's own. Shalimar goes to the only
+    // thing that reads it.
     check(editor::resolve(automatic, editor::LangC) == editor::ToolCc1,
           "C goes to cc1, which is what this editor is for");
+    // Until 3.0 C++ went straight to the host's compiler - cl on Windows,
+    // c++ elsewhere - because there was nothing else that read it. cxx1 is
+    // that now, on every machine alike, and the host's is one Ctrl-K away.
+    check(editor::resolve(automatic, editor::LangCpp) == editor::ToolCxx1,
+          "C++ goes to cxx1, the same way C goes to cc1");
+    check(editor::canCompile(editor::ToolCxx1, editor::LangCpp), "which can take it");
+    check(!editor::canCompile(editor::ToolCxx1, editor::LangC),
+          "and not C, which it would read as C++ and answer wrongly for");
+    check(editor::usesArch(editor::ToolCxx1),
+          "and takes a target, since it has the same three as cc1");
+    check(!editor::runsHere(editor::ToolCxx1, "nowhere-else"),
+          "so what it builds for another target stops at the assembly here too");
+    checkEqual(editor::refusal(editor::ToolCxx1, editor::LangC),
+               "cxx1 compiles C++, not C - Ctrl-K for automatic, and it picks cc1",
+               "and a C file handed to it is told where to go");
+    checkEqual(editor::refusal(editor::ToolCc1, editor::LangCpp),
+               "cc1 compiles C, not C++ - Ctrl-K for automatic, and it picks cxx1",
+               "as a C++ file handed to cc1 is");
+    checkEqual(editor::toolchainShown(automatic, editor::ToolCxx1), "cxx1",
+               "and it is cxx1 in the console whatever path it was found at");
 #ifdef _WIN32
-    check(editor::resolve(automatic, editor::LangCpp) == editor::ToolMsvc,
-          "C++ goes to cl, because that is this machine's C++ compiler");
+    check(editor::hostCppToolchain() == editor::ToolMsvc,
+          "the host's C++ compiler is cl, on Windows");
 #else
     // This used to say ToolMsvc on every machine, which meant a C++ file on a
     // Mac was routed to a compiler that is not installed there and never could
     // be - so a project of C and C++ could only ever have been built on
     // Windows, however well the rest of it worked.
-    check(editor::resolve(automatic, editor::LangCpp) == editor::ToolCxx,
-          "C++ goes to the host's c++, there being no cl here to go to");
+    check(editor::hostCppToolchain() == editor::ToolCxx,
+          "the host's C++ compiler is c++ here, there being no cl to go to");
     check(editor::canCompile(editor::ToolCxx, editor::LangCpp), "which can take it");
     check(editor::canCompile(editor::ToolCxx, editor::LangC),
           "and can take C too, which is what makes naming it on a C group worth doing");
@@ -2020,9 +2041,12 @@ void stoppingTheHostsOwnCompiler() {
     debugger.stop();
     check(!debugger.running(), "and it stops when it is told to");
 
-    editor::path::remove(recipe.assemblyPath);
-    for (size_t i = 0; i < recipe.leftovers.size(); ++i)
-        editor::path::remove(recipe.leftovers[i]);
+    // Through removeProgram rather than by hand, so that the .dSYM a debug
+    // build leaves beside the program on a Mac goes with it.
+    editor::Built asBuilt;
+    asBuilt.program = recipe.assemblyPath;
+    asBuilt.leftovers = recipe.leftovers;
+    editor::removeProgram(asBuilt);
     editor::path::removeTree(dir);
 }
 
@@ -2422,7 +2446,7 @@ void whatTheDebuggerHeard() {
                 "    return x;\n"
                 "}\n");
 
-    RStudioProgram* built = rstudio_build_program(cc1, "cl", "shc", editor::ToolCc1,
+    RStudioProgram* built = rstudio_build_program(cc1, "cl", "shc", "cxx1", editor::ToolCc1,
                                           source.c_str(), editor::LangC, host.c_str(),
                                           editor::ConfigDebug);
     if (rstudio_program_ok(built) == 0) {
@@ -2630,10 +2654,10 @@ void theWindowsProjectBuild() {
     check(rstudio_project_target_parts(project) == 2, "in two parts, one per language");
     check(rstudio_project_part_language(project, 0) == editor::LangC, "the C first");
     check(rstudio_project_part_language(project, 1) == editor::LangCpp, "and the C++ after it");
-    check(rstudio_project_part_toolchain(project, 0, "cc1", "cl", "shc", editor::ToolAuto) ==
+    check(rstudio_project_part_toolchain(project, 0, "cc1", "cl", "shc", "cxx1", editor::ToolAuto) ==
               editor::ToolCc1,
           "which go to cc1");
-    check(rstudio_project_part_toolchain(project, 1, "cc1", "cl", "shc", editor::ToolAuto) ==
+    check(rstudio_project_part_toolchain(project, 1, "cc1", "cl", "shc", "cxx1", editor::ToolAuto) ==
               (editor::resolve(editor::Toolchain(), editor::LangCpp)),
           "and to this machine's C++ compiler, without the window being told which");
     checkEqual(rstudio_project_part_group(project, 0), "Sources",
@@ -2651,7 +2675,7 @@ void theWindowsProjectBuild() {
           "a group that names its compiler loads");
     check(rstudio_project_target_ready(project) != 0, "and is ready");
     check(rstudio_project_target_parts(project) == 1, "as one part, because one compiler takes it");
-    check(rstudio_project_part_toolchain(project, 0, "cc1", "cl", "shc", editor::ToolAuto) ==
+    check(rstudio_project_part_toolchain(project, 0, "cc1", "cl", "shc", "cxx1", editor::ToolAuto) ==
               editor::ToolMsvc,
           "the one the group named");
 
@@ -2724,7 +2748,7 @@ void theSeamTheWindowUses() {
                 "}\n");
 
     // Built through the bridge, exactly as the window builds it.
-    RStudioProgram* built = rstudio_build_program(cc1, "cl", "shc", editor::ToolCc1,
+    RStudioProgram* built = rstudio_build_program(cc1, "cl", "shc", "cxx1", editor::ToolCc1,
                                           source.c_str(), editor::LangC,
                                           editor::hostArch(), editor::ConfigDebug);
     check(rstudio_program_ok(built) != 0, "the window's build makes a program");
@@ -3444,7 +3468,8 @@ void aCompilerPerGroup() {
         check(linked.command.find("-lm") != std::string::npos,
               "with -lm always, which is what cc1's own driver does");
         check(linked.command.find(" -g") != std::string::npos,
-              "and -g under debug, which is what runs dsymutil before the objects go");
+              "and -g under debug - the .dSYM itself is buildParts' own step, since a "
+              "link of objects alone never runs dsymutil");
 #endif
     }
 
@@ -3457,6 +3482,165 @@ void aCompilerPerGroup() {
 // "D8003: missing source filename", which reads as a command with no file in
 // it rather than a command with a quote in the wrong place. It cost an
 // afternoon on the Windows box; it is one check here.
+// The fourth compiler, driven for real. Everything above about cxx1 is about
+// the editor's own rules - which word means it, where a C++ file goes - and
+// none of it runs the compiler. This does, when $CXX1 names one: a file
+// built and run, the two-compiler project cc1 and cxx1 make together, and a
+// stop inside the C++ half under the machine's debugger, which is the reading
+// of cxx1's DWARF this editor's Debug tab depends on.
+void theFourthCompiler() {
+    std::printf("cxx1, driven for real\n");
+
+    const char* cxx1 = std::getenv("CXX1");
+    if (cxx1 && *cxx1 && !editor::path::exists(cxx1)) {
+        std::printf("  (no cxx1 at %s, so nothing is built)\n", cxx1);
+        return;
+    }
+    if (!cxx1 || !*cxx1) {
+        std::printf("  (no $CXX1, so nothing is built)\n");
+        return;
+    }
+    const std::string host = editor::hostArch();
+
+    std::string dir = editor::path::join(editor::path::tempDir(), "rstudio-cxx1-test");
+    editor::path::removeTree(dir);
+    editor::path::makeDirectories(dir);
+    std::string source = editor::path::join(dir, "owned.cpp");
+    // Plain C++11 with a class in it, so that it is C++ cxx1 is being asked
+    // for and not C that happens to end in .cpp.
+    writeSource(source,
+                "#include <cstdio>\n"
+                "\n"
+                "class Counter {\n"
+                "public:\n"
+                "    Counter() : n_(0) {}\n"
+                "    void add(int by) { n_ = n_ + by; }\n"
+                "    int value() const { return n_; }\n"
+                "private:\n"
+                "    int n_;\n"
+                "};\n"
+                "\n"
+                "int main()\n"
+                "{\n"
+                "    Counter c;\n"
+                "    for (int i = 1; i <= 3; ++i)\n"
+                "        c.add(i);\n"
+                "    std::printf(\"counted %d\\n\", c.value());\n"
+                "    return c.value();\n"
+                "}\n");
+
+    editor::Toolchain tool;
+    tool.cxx1 = cxx1;
+
+    // Ctrl-B: the assembly, for the tab.
+    editor::Build made = editor::build(tool, editor::ToolCxx1, source, editor::LangCpp, host,
+                                       editor::ConfigDebug);
+    check(made.ok, "cxx1 compiles the file to assembly");
+    check(!made.asmLines.empty(), "and the Assembly tab has something to show");
+    // cxx1 says who it is on every compile unless told -nologo, and cc1 and
+    // shc say nothing - so the editor tells it, the way it tells cl /nologo,
+    // and the console holds what the compiler said about the file and no more.
+    check(!made.diag.present, "with nothing read as a diagnostic");
+    check(made.output.find("ISO C++") == std::string::npos,
+          "and no banner above it - the console says what cc1 and shc's would");
+    check(editor::assemblyRecipe(tool, editor::ToolCxx1, source, editor::LangCpp, host,
+                                 editor::ConfigDebug).command.find(" -nologo ") != std::string::npos,
+          "because the command it ran said -nologo");
+    check(editor::shownCommand(tool, editor::ToolCxx1, "owned.cpp", editor::LangCpp, host,
+                               editor::ConfigDebug).find("nologo") == std::string::npos,
+          "while the one the console shows does not, as cl's does not show /nologo");
+
+    // F5: built, and run, with what it printed and what it returned.
+    editor::Ran ran = editor::runProgram(tool, editor::ToolCxx1, source, editor::LangCpp, host,
+                                         editor::ConfigDebug);
+    check(ran.built && ran.ran, "cxx1 builds a program from it, and it runs");
+    check(ran.output.find("counted 6") != std::string::npos, "printing what it printed");
+    check(ran.status == 6, "and returning what it returned");
+
+    // A diagnostic lands where cc1's does: file, line, column.
+    std::string broken = editor::path::join(dir, "broken.cpp");
+    writeSource(broken, "int main()\n{\n    int x = ;\n    return x;\n}\n");
+    editor::Build bad = editor::build(tool, editor::ToolCxx1, broken, editor::LangCpp, host,
+                                      editor::ConfigDebug);
+    check(!bad.ok && bad.diag.present, "an error is an error");
+    check(bad.diag.line == 3, "on the line cxx1 named");
+    check(bad.diag.file.find("broken.cpp") != std::string::npos, "in the file it named");
+
+    // F4 on a project of both: C to cc1, C++ to cxx1, one link at the end.
+    // This is the case 3.0 is for - a target holding C and C++ where neither
+    // half goes to the host's compiler.
+    const char* cc1 = std::getenv("CC1");
+    if (cc1 && *cc1 && editor::path::exists(cc1)) {
+        tool.cc1 = cc1;
+        std::string cpart = editor::path::join(dir, "twice.c");
+        std::string cpppart = editor::path::join(dir, "main.cpp");
+        writeSource(cpart, "int twice(int n) { return n * 2; }\n");
+        writeSource(cpppart,
+                    "extern \"C\" int twice(int n);\n"
+                    "int main()\n"
+                    "{\n"
+                    "    int total = 0;\n"
+                    "    for (int i = 1; i <= 3; ++i)\n"
+                    "        total = total + twice(i);\n"
+                    "    return total;\n"
+                    "}\n");
+        std::vector<editor::Part> parts(2);
+        parts[0].group = "C";
+        parts[0].lang = editor::LangC;
+        parts[0].sources.push_back(cpart);
+        parts[1].group = "C++";
+        parts[1].lang = editor::LangCpp;
+        parts[1].sources.push_back(cpppart);
+        check(editor::toolchainOf(tool, parts[0]) == editor::ToolCc1 &&
+                  editor::toolchainOf(tool, parts[1]) == editor::ToolCxx1,
+              "a mixed target goes to cc1 and cxx1, by language, with nothing named");
+
+        // Named the way Project::targetProgram names one: with .exe on Windows,
+        // since cmd will not run a file that has no extension - a link into
+        // "both" there succeeds and the run then fails, which is not the
+        // link's fault and reads exactly as if it were.
+#ifdef _WIN32
+        const char* bothName = "both.exe";
+#else
+        const char* bothName = "both";
+#endif
+        editor::Built both = editor::buildParts(tool, parts, host, editor::ConfigDebug,
+                                                editor::path::join(dir, bothName));
+        check(both.ok, "and the two compile and link into one program");
+        if (both.ok) {
+            editor::Ran together = editor::runBuilt(both.program);
+            check(together.ran && together.status == 12,
+                  "which runs, the C++ half having called the C half");
+        }
+
+        // And stopped in the C++ half, on a target cxx1 writes DWARF for.
+        if (editor::dbg_for(editor::ToolCxx1, host) != editor::DebuggerNone && both.ok) {
+            editor::Debugger debugger;
+            check(debugger.start(editor::dbg_for(editor::ToolCxx1, host), both.program),
+                  "the debugger starts on it");
+            if (debugger.running()) {
+                check(debugger.breakAt(cpppart, 6), "a breakpoint on a line of the C++");
+                editor::Stop at = debugger.run();
+                check(at.stopped && at.line == 6, "and running stops on it");
+                check(at.function == "main", "in the function that line is in");
+                std::vector<editor::Variable> locals = debugger.locals();
+                bool sawTotal = false;
+                for (size_t i = 0; i < locals.size(); ++i)
+                    if (locals[i].name == "total") sawTotal = true;
+                check(sawTotal, "with the C++ local read out of cxx1's DWARF");
+                debugger.stop();
+            }
+        } else if (both.ok) {
+            std::printf("  (%s)\n", editor::dbg_whyNot(editor::ToolCxx1, host).c_str());
+        }
+        editor::removeProgram(both);
+    } else {
+        std::printf("  (no $CC1, so the mixed project is not built)\n");
+    }
+
+    editor::path::removeTree(dir);
+}
+
 void aDirectoryInAQuotedArgument() {
     std::printf("a directory on the end of a quoted argument\n");
 
@@ -4061,7 +4245,7 @@ void theWindowStoppingShalimar() {
     // Built through the bridge, exactly as the window builds it - and in the
     // debug configuration, which for shc is what --debug means: the compiler's
     // output is the same either way and the runtime archive is not.
-    RStudioProgram* built = rstudio_build_program("cc1", "cl", shc, editor::ToolShc, source.c_str(),
+    RStudioProgram* built = rstudio_build_program("cc1", "cl", shc, "cxx1", editor::ToolShc, source.c_str(),
                                           editor::LangShalimar, editor::hostArch(),
                                           editor::ConfigDebug);
     check(rstudio_program_ok(built) != 0, "the window's build makes a program");
@@ -4220,7 +4404,7 @@ void theWindowsProjectDebug() {
     check(rstudio_project_load(project, dir.string().c_str(), trouble, sizeof trouble) != 0,
           "a project that says what it builds loads");
 
-    int can = rstudio_project_debug_plan(project, "cc1", "cl", "shc", editor::ToolAuto,
+    int can = rstudio_project_debug_plan(project, "cc1", "cl", "shc", "cxx1", editor::ToolAuto,
                                      host.c_str());
     if (rstudio_debugger_for(editor::ToolCc1, host.c_str()) == 0) {
         // Windows, where cc1 generates MASM and MASM carries no line table.
@@ -4246,12 +4430,12 @@ void theWindowsProjectDebug() {
                 "  \"build\": { \"target\": \"sums\", \"groups\": [\"Sources\"] }\n}\n");
     check(rstudio_project_load(project, dir.string().c_str(), trouble, sizeof trouble) != 0,
           "a project of both languages loads");
-    can = rstudio_project_debug_plan(project, "cc1", "cl", "shc", editor::ToolAuto, host.c_str());
+    can = rstudio_project_debug_plan(project, "cc1", "cl", "shc", "cxx1", editor::ToolAuto, host.c_str());
 
     int parts = rstudio_project_target_parts(project);
     int sightless = 0;
     for (int i = 0; i < parts; ++i) {
-        int theirs = rstudio_project_part_toolchain(project, i, "cc1", "cl", "shc",
+        int theirs = rstudio_project_part_toolchain(project, i, "cc1", "cl", "shc", "cxx1",
                                                 editor::ToolAuto);
         if (rstudio_debugger_for(theirs, host.c_str()) == 0) ++sightless;
     }
@@ -4293,7 +4477,7 @@ void theWindowsProjectDebug() {
     RStudioProject* shm = rstudio_project_new();
     check(rstudio_project_load(shm, shmDir.string().c_str(), trouble, sizeof trouble) != 0,
           "a Shalimar project loads");
-    check(rstudio_project_debug_plan(shm, "cc1", "cl", shc && *shc ? shc : "shc",
+    check(rstudio_project_debug_plan(shm, "cc1", "cl", shc && *shc ? shc : "shc", "cxx1",
                                  editor::ToolAuto, host.c_str()) != 0,
           "and can be debugged on every machine, needing nothing installed");
     check(rstudio_project_debug_kind(shm) == editor::ToolShc, "by shc, which reads nothing");
@@ -4308,7 +4492,7 @@ void theWindowsProjectDebug() {
     if (shc && *shc) {
         // And the whole of the window's new path: build the project's program,
         // attach to that rather than to a temporary one, and stop in it.
-        RStudioBuild* made = rstudio_build_target(shm, "cc1", "cl", shc, editor::ToolAuto,
+        RStudioBuild* made = rstudio_build_target(shm, "cc1", "cl", shc, "cxx1", editor::ToolAuto,
                                           host.c_str(), editor::ConfigDebug);
         check(made != nullptr && rstudio_build_ok(made) != 0, "the project's program builds");
         if (made != nullptr && rstudio_build_ok(made) != 0) {
@@ -4379,6 +4563,7 @@ int main(int argc, char** argv) {
     theOtherShapeOfDiagnostic();
     whatALinkFailureSays();
     aCompilerPerGroup();
+    theFourthCompiler();
     theManualsContents();
     aDirectoryInAQuotedArgument();
     whatTheProjectBuilds();

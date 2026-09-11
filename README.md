@@ -1,9 +1,11 @@
 # RStudio
 
-An editor for three languages of our own: **C** and **C++** through
-[cc1](../Compiler-C) and `cl`, and **Shalimar** through [shc](../Compiler-S).
-It runs on Windows, which is what it is for, and on a Mac and a Linux box,
-which are where it is written and checked.
+An editor for three languages of our own: **C** through [cc1](../Compiler-C),
+**C++** through [cxx1](../C++), and **Shalimar** through [shc](../Compiler-S)
+- with the machine's own C and C++ compiler, `cl` on Windows and `c++`
+elsewhere, one key away for the first two. It runs on Windows, which is what
+it is for, and on a Mac and a Linux box, which are where it is written and
+checked.
 
 Two programs over one core: **`RStudio`**, which is a terminal editor, and
 **`RStudioGui`**, which is the same editor in a window. Those are the names of the
@@ -392,13 +394,19 @@ ssh most of all. The frame is written between the two halves of the
 F2 and F3 move between them. Each tab remembers its own caret and its own
 scroll, so coming back to a file puts you where you were rather than at the top.
 
-**The file chooses its own compiler.** cc1 compiles C; C++ goes to cl. That is
-the whole routing rule, and it is the default - the status bar shows what will
-actually run, with a `*` when the file is what picked it. `Ctrl-K` cycles
-through automatic, cc1-for-everything and cl-for-everything when you want to
-say so yourself; a choice made by hand is kept rather than quietly overridden,
-and a file the chosen compiler cannot take is turned away with a reason instead
-of a wall of somebody else's parse errors.
+**The file chooses its own compiler.** C goes to cc1, C++ to cxx1 and
+Shalimar to shc. That is the whole routing rule, and it is the default - the
+status bar shows what will actually run, with a `*` when the file is what
+picked it. `Ctrl-K` cycles through automatic, cc1, cxx1, shc, cl and the
+host's C++ compiler when you want to say so yourself; a choice made by hand is
+kept rather than quietly overridden, and a file the chosen compiler cannot
+take is turned away with a reason instead of a wall of somebody else's parse
+errors.
+
+> C++ went to cl - to the machine's own C++ compiler - until 3.0, there being
+> nothing else that read it. cxx1 is that now, and the host's compiler is
+> what a group asks for by name, which is where the host's C compiler has
+> always stood.
 
 Each compiler is also *told* which language it is being handed - `/TC` or
 `/TP /EHsc /std:c++14` - rather than left to infer it from the suffix. C++14
@@ -427,9 +435,12 @@ and cl's own listing is MASM, which the assembly tab already colours.
 
 | Language | Suffix | Compiler | Targets | Debug information |
 | --- | --- | --- | --- | --- |
-| C | `.c` `.h` | [cc1](../Compiler-C) | three | DWARF, on two of them |
-| C++ | `.cpp` `.hpp` … | `cl` | its own host | CodeView, always |
+| C | `.c` `.h` | [cc1](../Compiler-C), or the host's | three | DWARF, on two of them |
+| C++ | `.cpp` `.hpp` … | [cxx1](../C++), or the host's | three | DWARF, on two of them |
 | Shalimar | `.shl` | [shc](../Compiler-S) | three | none, by decision |
+
+The host's compiler - `cl` on Windows, `clang++` on a Mac, `g++` on the Linux
+box - builds for its own machine only and carries CodeView or DWARF always.
 
 **The suffix decides, and the Language menu overrides it.** That is for the
 file whose name says the wrong thing or nothing at all - a `.txt` holding a
@@ -606,28 +617,28 @@ object as an input - hand cc1 a `.o` and it reads it as C and complains about a
 stray byte on line 1.
 
 ```
-$ cc1 and clang++ 3 sources -o three
+$ cc1, clang++ and cxx1 3 sources -o three
     src/main.c
     src/legacy.c
     engine/engine.cpp
 $ Sources (cc1)
 $ Legacy (clang++)
-$ Engine (clang++)
+$ Engine (cxx1)
 $ linking with clang++
 [built /home/you/three/three]
 ```
 
-**C is the only language with a decision in it**, and that is the whole shape
-of this. C++ goes to the machine's C++ compiler - cl on Windows, clang++ on a
-Mac, g++ on the Linux box - and there is nothing to choose, because that is
-what a C++ compiler is for and every machine has exactly one worth calling.
-Shalimar goes to shc, which is the only thing that reads it. C is the one that
-two compilers can both take: cc1, which this editor was written for and which
-is the default, and the host's.
+**C and C++ have the same decision in them, and Shalimar has none.** C goes
+to cc1 and C++ to cxx1 - the compilers this editor was written for, and the
+defaults - and each can go instead to the machine's own compiler, cl on
+Windows and clang++ or g++ elsewhere, when a group says so. Shalimar goes to
+shc, which is the only thing that reads it. Until 3.0 C was the only language
+with a decision in it, C++ having nothing but the host's compiler to go to;
+what changed is that C++ now has the pair C always had.
 
-So a group naming its compiler is, in practice, always a group of C saying it
-wants the other one - which is why `Legacy` above is the only group in that
-project with a `"toolchain"` in it, and why the C++ group needs none.
+So a group naming its compiler is a group of C or C++ saying it wants the
+host's - which is why `Legacy` above is the only group in that project with a
+`"toolchain"` in it, and why `Engine`, which is happy with cxx1, needs none.
 
 A group under `auto` holding both languages is **split**, one part per
 language, rather than refused. "A C and C++ project together" is the point, and
@@ -704,22 +715,28 @@ Three tabs:
 ## Trying it
 
 ```
-RStudio examples/smart.cpp --project examples --toolchain msvc
+RStudio examples/smart.cpp --project examples
 ```
 
 `examples/smart.cpp` is the one to open first. It is a small owning class - one
 object, deleted once, moved rather than copied, copying refused by the compiler
 rather than by the destructor - and something that exercises it and prints what
 it is doing. It is C++ on purpose: cc1 compiles C, so this is the file that
-shows the MSVC backend doing the work. Ctrl-B fills the assembly tab with cl's
-listing.
+goes to cxx1. Ctrl-B fills the assembly tab with cxx1's listing, and Ctrl-T
+changes which of the three architectures it is for; Ctrl-K over to cl, or to
+clang++ or g++ off Windows, gives the same file under the machine's own
+compiler for comparison.
 
-`examples/hello.c` is the C one, for cc1, where Ctrl-T changes which of the
-three architectures the assembly is for.
+The examples are written in the C++ every one of those reads. cxx1 takes a
+subset of C++11 on purpose, so `smart.cpp` spells its refused copy the older
+way - private, declared, never defined - and `table.h` names its bound with an
+enumerator rather than a `static const int`; both say so where they do it.
 
-Handing C++ to cc1 is caught before it is run: the editor says so and points at
-Ctrl-K, rather than letting a C compiler fail somewhere inside the first class
-with a diagnostic that explains nothing.
+`examples/hello.c` is the C one, for cc1, where Ctrl-T does the same.
+
+Handing C++ to cc1, or C to cxx1, is caught before it is run: the editor says
+so and points at Ctrl-K, rather than letting the wrong compiler fail somewhere
+inside the first class with a diagnostic that explains nothing.
 
 ## The three variants
 
@@ -787,20 +804,20 @@ else.
 the literal `~/...` to the test process, where nothing expands it. The tell is
 a build failing with a compiler that works perfectly when you run it by hand.
 
-### All three programs at once
+### All five programs at once
 
-The editor drives two compilers, and a change to one usually comes with a
-change to the other. There is one thing to open on each machine that builds
-all three, with the editor built *after* the compilers it drives:
+The editor drives three compilers and a converter, and a change to one usually
+comes with a change to the editor. There is one thing to open on each machine
+that builds all five, with the editor built *after* the four it drives:
 
 ```
-RStudio.xcworkspace                    macOS - RStudio, cc1, shc
-RStudio.sln                            Visual Studio 2022 - RStudio, cc1, shc
+RStudio.xcworkspace                    macOS - RStudio, cc1, cxx1, shc, c2s
+RStudio.sln                            Visual Studio 2022 - the same, plus the window
 make -f workspace.mk                   Linux - the same, since make is what Linux has
-make -f workspace.mk check             and every suite, all three projects
+make -f workspace.mk check             and every suite, all five projects
 ```
 
-**All six files are generated by `tools/make-projects.py` from the three
+**The project files are generated by `tools/make-projects.py` from the
 repositories' own Makefiles**, and `--check` says whether they still match. A
 hand-kept project drifts, and a build tool quietly leaving a file out is not an
 error - just a smaller program - so nothing says so. That happened twice here
@@ -829,9 +846,15 @@ before the build knew about it; now `SRC` is `CORE_SRC` plus `TERMINAL_SRC`,
 and `--check` refuses to run at all if `SRC` is made of variables this script
 has not been taught - which is how the second of those two drifts happened.
 
-The three repositories are expected side by side. That is the only assumption
-any of this makes, and `workspace.mk` takes `CC1_DIR` and `SHC_DIR` for the
-machine where they are not called that.
+The five repositories are expected side by side. That is the only assumption
+any of this makes, and `workspace.mk` takes `CC1_DIR`, `CXX1_DIR`, `SHC_DIR`
+and `C2S_DIR` for the machine where they are not called that. cxx1's is the
+one whose name differs by machine: `C++` beside this checkout on the Mac,
+`Compiler-Cpp` - the repository's name - on the Windows box, which is what
+`RStudio.sln` says, and `~/cxx1` on the Linux box. Its two project files here,
+`cxx1.xcodeproj` and `cxx1.vcxproj` at its root, are the workspace's and are
+written by the generator; the ones in its `ide/` are its own, and its release
+seal covers neither of the generated pair.
 
 ### The other two machines
 
@@ -1219,18 +1242,21 @@ thing for cmd to eat. Until then the compiler was never reached, and cmd said
 ## Usage
 
 ```
-RStudio [file.c] [--project dir] [--toolchain cc1|msvc] [--compiler path]
-    [--cc1 path] [--width n] [--tabs] [--case-indent]
+RStudio [file] [--project dir] [--toolchain auto|cc1|cxx1|msvc|shc|c++]
+    [--config debug|release] [--cc1 path] [--cxx1 path] [--cl path]
+    [--shc path] [--cxx path] [--c2s path]
+    [--width n] [--tabs] [--case-indent] [--plain]
 ```
 
-`--cc1` names the compiler; `$CC1` and `--compiler` do the same. Told none of
-them, both front ends look for a `cc1` **beside the editor** before asking
-PATH - `make product` and `build.bat product` put the editor and the compiler
-it drives in one directory, and that directory should work whatever directory
-you started the editor in. A compiler shipped with a copy of the editor is the
-one that copy is meant to run, so it is preferred to whatever PATH would have
-answered. Indentation is four spaces because that is what cc1's own sources
-use, and they contain no tab at all.
+`--cc1`, `--cxx1` and `--shc` name the compilers; `$CC1`, `$CXX1` and `$SHC`
+do the same. Told none of them, both front ends look for each **beside the
+editor** before asking PATH - `make product` and `build.bat product` put the
+editor and everything it drives in one directory, cxx1's headers included,
+and that directory should work whatever directory you started the editor in.
+A compiler shipped with a copy of the editor is the one that copy is meant to
+run, so it is preferred to whatever PATH would have answered. Indentation is
+four spaces because that is what cc1's own sources use, and they contain no
+tab at all.
 
 | key | |
 |---|---|

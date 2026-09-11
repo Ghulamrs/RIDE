@@ -101,8 +101,10 @@ rem Run from here rather than by calling msbuild directly, because msbuild is
 rem on PATH only after vcvars64.bat - which the top of this file has already
 rem found. One place knows where Visual Studio is.
 rem
-rem RStudio.sln reaches ..\Compiler-C and ..\Compiler-S, so all three have to
-rem be checked out beside each other on this machine.
+rem RStudio.sln reaches ..\Compiler-C, ..\Compiler-Cpp, ..\Compiler-S and
+rem ..\Converter-C2S, so all five have to be checked out beside each other on
+rem this machine - and the C++ compiler's checkout under the repository's
+rem name, Compiler-Cpp, which is what the solution says.
 msbuild RStudio.sln /p:Configuration=Release /p:Platform=x64 /v:minimal /m
 if errorlevel 1 goto :fail
 echo built the solution
@@ -129,13 +131,13 @@ rem configuration and links the other one, so checking a single archive would
 rem confirm exactly the half that was not about to be used.
 if "%BINDIR%"=="" set BINDIR=x64\Release
 set MISSING=0
-for %%f in (cc1.exe shc.exe c2s.exe lib\shmrt-x86_64-windows.lib lib\shmrt-x86_64-windows-debug.lib) do (
+for %%f in (cc1.exe cxx1.exe shc.exe c2s.exe lib\shmrt-x86_64-windows.lib lib\shmrt-x86_64-windows-debug.lib) do (
    if exist "%BINDIR%\%%f" (echo   ok       %%f) else (echo   MISSING  %%f& set MISSING=1)
 )
 if "%MISSING%"=="1" (
    echo.
    echo RStudio is in %BINDIR% without what it drives. Build the solution with
-   echo "build.bat solution", or name them with %%CC1%% and %%SHC%%.
+   echo "build.bat solution", or name them with %%CC1%%, %%CXX1%% and %%SHC%%.
    goto :fail
 )
 echo.
@@ -173,6 +175,15 @@ rem shc's runtime goes too, and into bin\lib\ rather than anywhere tidier,
 rem because that is where shc looks: beside its own binary.
 if "%BINDIR%"=="" set BINDIR=x64\Release
 if exist "%BINDIR%\cc1.exe" copy /y "%BINDIR%\cc1.exe" "%PRODUCT%\bin\" >nul
+if exist "%BINDIR%\cxx1.exe" copy /y "%BINDIR%\cxx1.exe" "%PRODUCT%\bin\" >nul
+rem cxx1's headers go with it: it looks for include\ and lib\ beside its
+rem binary and then one directory up, and falls back to the paths compiled
+rem into it, which name the checkout. One up, because bin\lib\ is shc's.
+if "%CXX1_DIR%"=="" set CXX1_DIR=..\Compiler-Cpp
+if exist "%PRODUCT%\include" rmdir /s /q "%PRODUCT%\include"
+if exist "%PRODUCT%\lib" rmdir /s /q "%PRODUCT%\lib"
+if exist "%CXX1_DIR%\include" xcopy /e /i /q "%CXX1_DIR%\include" "%PRODUCT%\include" >nul
+if exist "%CXX1_DIR%\lib" xcopy /e /i /q "%CXX1_DIR%\lib" "%PRODUCT%\lib" >nul
 if exist "%BINDIR%\shc.exe" copy /y "%BINDIR%\shc.exe" "%PRODUCT%\bin\" >nul
 if exist "%BINDIR%\RStudio.exe" copy /y "%BINDIR%\RStudio.exe" "%PRODUCT%\bin\" >nul
 if exist "%BINDIR%\lib\*.lib" (

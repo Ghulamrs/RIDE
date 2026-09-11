@@ -14,7 +14,8 @@ enum { RSTUDIO_LANG_PLAIN = 0, RSTUDIO_LANG_C, RSTUDIO_LANG_CPP, RSTUDIO_LANG_SH
        RSTUDIO_LANG_ASM, RSTUDIO_LANG_JSON };
 
 enum { RSTUDIO_DIALECT_C = 0, RSTUDIO_DIALECT_SHALIMAR };
-enum { RSTUDIO_TOOL_AUTO = 0, RSTUDIO_TOOL_CC1, RSTUDIO_TOOL_MSVC, RSTUDIO_TOOL_SHC, RSTUDIO_TOOL_CXX };
+enum { RSTUDIO_TOOL_AUTO = 0, RSTUDIO_TOOL_CC1, RSTUDIO_TOOL_MSVC, RSTUDIO_TOOL_SHC, RSTUDIO_TOOL_CXX,
+       RSTUDIO_TOOL_CXX1 };
 enum { RSTUDIO_CONFIG_DEBUG = 0, RSTUDIO_CONFIG_RELEASE };
 
 void rstudio_watch_for_faults(const char* logPath);
@@ -132,7 +133,7 @@ int rstudio_runs_here(int kind, const char* arch);
 const char* rstudio_why_not_run(int kind, const char* arch);
 const char* rstudio_host_arch(void);
 
-const char* rstudio_shown_command(const char* cc1, const char* cl, const char* shc, int kind,
+const char* rstudio_shown_command(const char* cc1, const char* cl, const char* shc, const char* cxx1, int kind,
                               const char* source, int language, const char* arch,
                               int config);
 
@@ -152,7 +153,7 @@ const char* rstudio_conversion_output(RStudioConversion* made);
 
 typedef struct RStudioBuild RStudioBuild;
 
-RStudioBuild* rstudio_build(const char* cc1, const char* cl, const char* shc, int kind, const char* source,
+RStudioBuild* rstudio_build(const char* cc1, const char* cl, const char* shc, const char* cxx1, int kind, const char* source,
                     int language, const char* arch, int config);
 
 int rstudio_project_builds(RStudioProject* project);
@@ -166,18 +167,18 @@ int rstudio_project_target_parts(RStudioProject* project);
 const char* rstudio_project_part_group(RStudioProject* project, int index);
 int rstudio_project_part_language(RStudioProject* project, int index);
 int rstudio_project_part_toolchain(RStudioProject* project, int index, const char* cc1,
-                               const char* cl, const char* shc, int kind);
+                               const char* cl, const char* shc, const char* cxx1, int kind);
 const char* rstudio_project_target_source(RStudioProject* project, int index);
 const char* rstudio_project_target_program(RStudioProject* project);
 
 int rstudio_project_debug_plan(RStudioProject* project, const char* cc1, const char* cl,
-                           const char* shc, int kind, const char* arch);
+                           const char* shc, const char* cxx1, int kind, const char* arch);
 int rstudio_project_debug_kind(RStudioProject* project);
 const char* rstudio_project_why_not_debug(RStudioProject* project);
 int rstudio_project_blind_groups(RStudioProject* project);
 const char* rstudio_project_blind_group(RStudioProject* project, int index);
 
-RStudioBuild* rstudio_build_target(RStudioProject* project, const char* cc1, const char* cl, const char* shc,
+RStudioBuild* rstudio_build_target(RStudioProject* project, const char* cc1, const char* cl, const char* shc, const char* cxx1,
                            int kind, const char* arch, int config);
 void rstudio_build_free(RStudioBuild* built);
 
@@ -194,7 +195,7 @@ const char* rstudio_build_error_message(RStudioBuild* built);
 
 typedef struct RStudioRan RStudioRan;
 
-RStudioRan* rstudio_run(const char* cc1, const char* cl, const char* shc, int kind, const char* source,
+RStudioRan* rstudio_run(const char* cc1, const char* cl, const char* shc, const char* cxx1, int kind, const char* source,
                 int language, const char* arch, int config);
 
 RStudioRan* rstudio_run_built(const char* program);
@@ -209,7 +210,7 @@ int rstudio_ran_error_line(RStudioRan* ran);
 int rstudio_ran_error_column(RStudioRan* ran);
 const char* rstudio_ran_error_message(RStudioRan* ran);
 
-const char* rstudio_shown_run_command(const char* cc1, const char* cl, const char* shc, int kind,
+const char* rstudio_shown_run_command(const char* cc1, const char* cl, const char* shc, const char* cxx1, int kind,
                                   const char* source, int language, const char* arch,
                                   int config);
 
@@ -217,7 +218,7 @@ char* rstudio_about(void);
 
 typedef struct RStudioProgram RStudioProgram;
 
-RStudioProgram* rstudio_build_program(const char* cc1, const char* cl, const char* shc, int kind, const char* source,
+RStudioProgram* rstudio_build_program(const char* cc1, const char* cl, const char* shc, const char* cxx1, int kind, const char* source,
                               int language, const char* arch, int config);
 void rstudio_program_free(RStudioProgram* built);
 

@@ -104,6 +104,7 @@ private:
     String^ cc1_;
     String^ cl_;
     String^ shc_;
+    String^ cxx1_;
     int toolKind_;
     int config_;
     int indentWidth_;
@@ -174,6 +175,7 @@ private:
     ToolStripMenuItem^ toolCc1Item_;
     ToolStripMenuItem^ toolClItem_;
     ToolStripMenuItem^ toolShcItem_;
+    ToolStripMenuItem^ toolCxx1Item_;
     ToolStripMenuItem^ langAutoItem_;
     ToolStripMenuItem^ langCItem_;
     ToolStripMenuItem^ langCppItem_;
@@ -227,6 +229,7 @@ private:
         cc1_ = Named("CC1", "cc1");
         cl_ = Named("CL", "cl");
         shc_ = Named("SHC", "shc");
+        cxx1_ = Named("CXX1", "cxx1");
         toolKind_ = RSTUDIO_TOOL_AUTO;
         languageChoice_ = -1;
         config_ = RSTUDIO_CONFIG_DEBUG;
@@ -508,6 +511,10 @@ private:
             "cc1", nullptr, gcnew EventHandler(this, &MainForm::OnToolCc1));
         toolCc1Item_->ShortcutKeyDisplayString = "Ctrl+K";
         tools->DropDownItems->Add(toolCc1Item_);
+        toolCxx1Item_ = gcnew ToolStripMenuItem(
+            "cxx1", nullptr, gcnew EventHandler(this, &MainForm::OnToolCxx1));
+        toolCxx1Item_->ShortcutKeyDisplayString = "Ctrl+K";
+        tools->DropDownItems->Add(toolCxx1Item_);
 
         toolShcItem_ = gcnew ToolStripMenuItem(
             "shc", nullptr, gcnew EventHandler(this, &MainForm::OnToolShc));
@@ -2355,6 +2362,8 @@ private:
         pin_ptr<Byte> cl = &clBytes[0];
         array<Byte>^ shcBytes = Utf8Of(shc_);
         pin_ptr<Byte> shc = &shcBytes[0];
+        array<Byte>^ cxx1Bytes = Utf8Of(cxx1_);
+        pin_ptr<Byte> cxx1 = &cxx1Bytes[0];
         array<Byte>^ archBytes = Utf8Of(arch_);
         pin_ptr<Byte> arch = &archBytes[0];
 
@@ -2362,7 +2371,8 @@ private:
             "$ " +
             FromUtf8(rstudio_shown_command(reinterpret_cast<const char*>(cc1),
                                        reinterpret_cast<const char*>(cl),
-                                       reinterpret_cast<const char*>(shc), kind,
+                                       reinterpret_cast<const char*>(shc),
+                                       reinterpret_cast<const char*>(cxx1), kind,
                                        reinterpret_cast<const char*>(source), language,
                                        reinterpret_cast<const char*>(arch), config_)) +
             "\r\n";
@@ -2371,7 +2381,8 @@ private:
 
         RStudioBuild* built = rstudio_build(reinterpret_cast<const char*>(cc1),
                                     reinterpret_cast<const char*>(cl),
-                                       reinterpret_cast<const char*>(shc), kind,
+                                       reinterpret_cast<const char*>(shc),
+                                       reinterpret_cast<const char*>(cxx1), kind,
                                     reinterpret_cast<const char*>(source), language,
                                     reinterpret_cast<const char*>(arch), config_);
 
@@ -2431,6 +2442,8 @@ private:
         pin_ptr<Byte> cl = &clBytes[0];
         array<Byte>^ shcBytes = Utf8Of(shc_);
         pin_ptr<Byte> shc = &shcBytes[0];
+        array<Byte>^ cxx1Bytes = Utf8Of(cxx1_);
+        pin_ptr<Byte> cxx1 = &cxx1Bytes[0];
         array<Byte>^ archBytes = Utf8Of(arch_);
         pin_ptr<Byte> arch = &archBytes[0];
 
@@ -2443,7 +2456,8 @@ private:
             "$ " +
             FromUtf8(rstudio_shown_run_command(reinterpret_cast<const char*>(cc1),
                                            reinterpret_cast<const char*>(cl),
-                                       reinterpret_cast<const char*>(shc), kind,
+                                       reinterpret_cast<const char*>(shc),
+                                       reinterpret_cast<const char*>(cxx1), kind,
                                            reinterpret_cast<const char*>(source), language,
                                            reinterpret_cast<const char*>(arch), config_)) +
             "\r\n";
@@ -2452,7 +2466,8 @@ private:
 
         RStudioRan* ran = rstudio_run(reinterpret_cast<const char*>(cc1),
                               reinterpret_cast<const char*>(cl),
-                                       reinterpret_cast<const char*>(shc), kind,
+                                       reinterpret_cast<const char*>(shc),
+                                       reinterpret_cast<const char*>(cxx1), kind,
                               reinterpret_cast<const char*>(source), language,
                               reinterpret_cast<const char*>(arch), config_);
 
@@ -2538,10 +2553,13 @@ private:
         pin_ptr<Byte> cl = &clBytes[0];
         array<Byte>^ shcBytes = Utf8Of(shc_);
         pin_ptr<Byte> shc = &shcBytes[0];
+        array<Byte>^ cxx1Bytes = Utf8Of(cxx1_);
+        pin_ptr<Byte> cxx1 = &cxx1Bytes[0];
 
         RStudioBuild* made = rstudio_build_target(project_, reinterpret_cast<const char*>(cc1),
                                           reinterpret_cast<const char*>(cl),
-                                       reinterpret_cast<const char*>(shc), kind,
+                                       reinterpret_cast<const char*>(shc),
+                                       reinterpret_cast<const char*>(cxx1), kind,
                                           reinterpret_cast<const char*>(arch), config_);
         if (made == nullptr) {
             what_->Text = FromUtf8(rstudio_project_target_why(project_));
@@ -2644,10 +2662,13 @@ private:
                 pin_ptr<Byte> cl = &clBytes[0];
                 array<Byte>^ shcBytes = Utf8Of(shc_);
                 pin_ptr<Byte> shc = &shcBytes[0];
+                array<Byte>^ cxx1Bytes = Utf8Of(cxx1_);
+                pin_ptr<Byte> cxx1 = &cxx1Bytes[0];
 
                 built_ = rstudio_build_program(reinterpret_cast<const char*>(cc1),
                                            reinterpret_cast<const char*>(cl),
-                                           reinterpret_cast<const char*>(shc), workKind_,
+                                           reinterpret_cast<const char*>(shc),
+                                       reinterpret_cast<const char*>(cxx1), workKind_,
                                            reinterpret_cast<const char*>(source),
                                            workLanguage_,
                                            reinterpret_cast<const char*>(arch), config_);
@@ -2662,10 +2683,13 @@ private:
                 pin_ptr<Byte> cl = &clBytes[0];
                 array<Byte>^ shcBytes = Utf8Of(shc_);
                 pin_ptr<Byte> shc = &shcBytes[0];
+                array<Byte>^ cxx1Bytes = Utf8Of(cxx1_);
+                pin_ptr<Byte> cxx1 = &cxx1Bytes[0];
 
                 targetBuilt_ = rstudio_build_target(project_, reinterpret_cast<const char*>(cc1),
                                                 reinterpret_cast<const char*>(cl),
                                                 reinterpret_cast<const char*>(shc),
+                                       reinterpret_cast<const char*>(cxx1),
                                                 toolKind_,
                                                 reinterpret_cast<const char*>(arch), config_);
                 workResult_ = (targetBuilt_ != nullptr && rstudio_build_ok(targetBuilt_) != 0)
@@ -2783,6 +2807,8 @@ private:
         pin_ptr<Byte> cl = &clBytes[0];
         array<Byte>^ shcBytes = Utf8Of(shc_);
         pin_ptr<Byte> shc = &shcBytes[0];
+        array<Byte>^ cxx1Bytes = Utf8Of(cxx1_);
+        pin_ptr<Byte> cxx1 = &cxx1Bytes[0];
 
         int kind = 0;
         int language = 0;
@@ -2802,7 +2828,8 @@ private:
 
             if (rstudio_project_debug_plan(project_, reinterpret_cast<const char*>(cc1),
                                        reinterpret_cast<const char*>(cl),
-                                       reinterpret_cast<const char*>(shc), toolKind_,
+                                       reinterpret_cast<const char*>(shc),
+                                       reinterpret_cast<const char*>(cxx1), toolKind_,
                                        reinterpret_cast<const char*>(arch)) == 0) {
                 what_->Text = FromUtf8(rstudio_project_why_not_debug(project_));
                 return;
@@ -3316,6 +3343,7 @@ private:
             one->Checked = String::Equals(one->Text, arch_, StringComparison::Ordinal);
         toolAutoItem_->Checked = toolKind_ == RSTUDIO_TOOL_AUTO;
         toolCc1Item_->Checked = toolKind_ == RSTUDIO_TOOL_CC1;
+        toolCxx1Item_->Checked = toolKind_ == RSTUDIO_TOOL_CXX1;
         toolClItem_->Checked = toolKind_ == RSTUDIO_TOOL_MSVC;
         toolShcItem_->Checked = toolKind_ == RSTUDIO_TOOL_SHC;
         if (langAutoItem_ != nullptr) {
@@ -3338,7 +3366,8 @@ private:
 
     void NextTool() {
         if (toolKind_ == RSTUDIO_TOOL_AUTO) OnToolCc1(nullptr, nullptr);
-        else if (toolKind_ == RSTUDIO_TOOL_CC1) OnToolShc(nullptr, nullptr);
+        else if (toolKind_ == RSTUDIO_TOOL_CC1) OnToolCxx1(nullptr, nullptr);
+        else if (toolKind_ == RSTUDIO_TOOL_CXX1) OnToolShc(nullptr, nullptr);
         else if (toolKind_ == RSTUDIO_TOOL_SHC) OnToolCl(nullptr, nullptr);
         else OnToolAuto(nullptr, nullptr);
     }
@@ -3390,6 +3419,12 @@ private:
         ShowChoices();
         RefreshDebugTab();
         what_->Text = "compiler: cl";
+    }
+    void OnToolCxx1(Object^, EventArgs^) {
+        toolKind_ = RSTUDIO_TOOL_CXX1;
+        ShowChoices();
+        RefreshDebugTab();
+        what_->Text = "compiler: cxx1";
     }
     void OnToolShc(Object^, EventArgs^) {
         toolKind_ = RSTUDIO_TOOL_SHC;

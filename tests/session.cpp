@@ -1013,15 +1013,19 @@ void buildingWithCl(const std::string& rstudio) {
                       ctrl('b') + ctrl('q'), dir);
     check(onScreen(ok, "lines of"), "cl builds C, found without a Developer prompt");
 
-    // The one cc1 cannot take at all.
+    // The one cc1 cannot take at all. Until 3.0 a C++ file went to cl on
+    // its own here; it goes to cxx1 now, on every machine, and cl is the
+    // compiler it is sent to by name - which is what this checks.
     file::path cpp = dir / "src" / "thing.cpp";
     writeFile(cpp, "class Thing {\npublic:\n    int twice(int n) { return n + n; }\n};\n"
                    "int main(void) { Thing t; return t.twice(2) - 4; }\n");
-    Screen built = drive(rstudio, "\"" + cpp.string() + "\" --project \"" + dir.string() + "\"",
+    Screen built = drive(rstudio, "\"" + cpp.string() + "\" --project \"" + dir.string() +
+                                  "\" --toolchain msvc",
                          ctrl('b') + ctrl('q'), dir);
-    check(onScreen(built, "lines of"), "and C++ goes to cl on its own");
+    check(onScreen(built, "lines of"), "and C++ goes to cl when cl is named");
     check(onScreen(built, "C++"), "with the status bar saying what it is");
-    check(onScreen(built, "cl*"), "and a star, because the file chose it");
+    check(onScreen(built, "cl ") && !onScreen(built, "cl*"),
+          "and no star, because the file did not choose it");
 
     file::path bad = dir / "src" / "bad.c";
     writeFile(bad, "int main(void)\n{\n    int x = ;\n    return 0;\n}\n");
@@ -1074,10 +1078,64 @@ void compiling(const std::string& rstudio, const std::string& cc1) {
     file::remove_all(dir);
 }
 
+// The fourth compiler, driven from the keyboard: the same three things the
+// cc1 case checks, for the file that goes to cxx1 on its own.
+void compilingCpp(const std::string& rstudio, const std::string& cxx1) {
+    std::printf("building with cxx1\n");
+
+    if (cxx1.empty()) {
+        std::printf("  (no cxx1 named, so those cases are not tried)\n");
+        return;
+    }
+
+    file::path dir = freshProject("cxx1");
+    file::path good = dir / "src" / "thing.cpp";
+    writeFile(good, "class Thing {\npublic:\n    int twice(int n) { return n + n; }\n};\n"
+                    "int main() { Thing t; return t.twice(2) - 4; }\n");
+
+    std::string arguments = "\"" + good.string() + "\" --project \"" + dir.string() +
+                            "\" --cxx1 \"" + cxx1 + "\"";
+    Screen ok = drive(rstudio, arguments, ctrl('b') + ctrl('q'), dir);
+    check(onScreen(ok, "lines of"), "C++ goes to cxx1 on its own, and it builds");
+    check(onScreen(ok, "cxx1*"), "with a star, because the file chose it");
+    check(!wasShown(ok, "ISO C++"), "and cxx1's banner is not in the console");
+
+    file::path bad = dir / "src" / "bad.cpp";
+    writeFile(bad, "int main()\n{\n    int x = ;\n    return 0;\n}\n");
+    arguments = "\"" + bad.string() + "\" --project \"" + dir.string() +
+                "\" --cxx1 \"" + cxx1 + "\"";
+    Screen broken = drive(rstudio, arguments, ctrl('b') + ctrl('q'), dir);
+    check(onScreen(broken, "error"), "a build that fails says so");
+    check(onScreen(broken, "3/5"), "and the caret lands on the line cxx1 named");
+    check(onScreen(broken, "col 13"), "in the column it named too");
+
+    // C handed to cxx1 is turned away before anything is run, as C++ handed
+    // to cc1 is: it would be read as C++ and the answer would be wrong.
+    file::path c = dir / "src" / "plain.c";
+    writeFile(c, "int main(void) { return 0; }\n");
+    Screen refused = drive(rstudio, "\"" + c.string() + "\" --project \"" + dir.string() +
+                                "\" --toolchain cxx1 --cxx1 \"" + cxx1 + "\"",
+                           ctrl('b') + ctrl('q'), dir);
+    check(onScreen(refused, "cxx1 compiles C++, not C"), "cxx1 is not handed C");
+
+    // And F5: built, run, and what it printed and returned under the source.
+    file::path prints = dir / "src" / "three.cpp";
+    writeFile(prints, "#include <cstdio>\nint main()\n{\n    std::printf(\"counted to three\\n\");\n"
+                      "    return 3;\n}\n");
+    Screen ran = drive(rstudio, "\"" + prints.string() + "\" --project \"" + dir.string() +
+                                "\" --cxx1 \"" + cxx1 + "\"",
+                       kF5 + ctrl('q'), dir);
+    check(rowsSaying(ran, "counted to three") == 2, "what the program printed reaches the console");
+    check(wasShown(ran, "[program returned 3]"), "and what it returned is said as a number");
+
+    file::remove_all(dir);
+}
+
 // The project's own build, as against the file in front of you. Two sources
 // that only work together, so that a program coming out at all is proof they
 // were linked and not merely compiled one at a time.
-void buildingTheProject(const std::string& rstudio, const std::string& cc1) {
+void buildingTheProject(const std::string& rstudio, const std::string& cc1,
+                        const std::string& cxx1) {
     std::printf("building the project, not just the file\n");
 
     if (cc1.empty()) {
@@ -1168,6 +1226,14 @@ void buildingTheProject(const std::string& rstudio, const std::string& cc1) {
     // The main.c above was left broken on purpose by the case before this one,
     // so it is written again - this case is about the mixture and a syntax
     // error would stop it before the mixture was reached.
+    //
+    // The C++ half goes to cxx1 since 3.0, so this needs a cxx1 as well as a
+    // cc1; without one the mixture is not tried and the case says so, the
+    // way every case that needs a compiler does.
+    if (cxx1.empty()) {
+        std::printf("  (no cxx1 named, so the mixed target is not built)\n");
+    } else {
+    std::string mixedArguments = arguments + " --cxx1 \"" + cxx1 + "\"";
     writeFile(dir / "src" / "main.c",
               "#include <stdio.h>\n\n#include \"sum.h\"\n\n"
               "int twice(int n);\n\n"
@@ -1180,37 +1246,33 @@ void buildingTheProject(const std::string& rstudio, const std::string& cc1) {
               "  \"groups\": {\n"
               "    \"Sources\": [\"src/sum.c\", \"src/main.c\", \"src/extra.cpp\"]\n  },\n"
               "  \"build\": { \"target\": \"sums\", \"groups\": [\"Sources\"] }\n}\n");
-    Screen mixed = drive(rstudio, arguments, kF4 + ctrl('q'), dir);
+    Screen mixed = drive(rstudio, mixedArguments, kF4 + ctrl('q'), dir);
     // wasShown, not onScreen: the console panel holds nine rows and a build
     // that runs two compilers and a linker writes more than that, so the first
     // compiler's line has scrolled off by the time it is over. What is being
     // checked is that the editor said it, not that it is still visible.
     check(wasShown(mixed, "Sources (cc1)"), "a group of two languages sends the C to cc1");
-    // cl where there is one and c++ where there is not, and the point is that
-    // nothing in the project file said either. Written out rather than asked
-    // of the editor's own resolve(): this harness links src/path.cpp and
-    // nothing else on purpose - it drives the editor as a program, and a test
-    // that shares the editor's opinion cannot catch the editor being wrong.
-#if defined(_WIN32)
-    const char* cpp = "cl";
-#elif defined(__APPLE__)
-    const char* cpp = "clang++";
-#else
-    const char* cpp = "g++";
-#endif
-    check(wasShown(mixed, std::string("Sources (") + cpp + ")"),
-          "and the C++ to this machine's C++ compiler, without being told to");
+    // cxx1 on every machine, and the point is that nothing in the project
+    // file said so. Until 3.0 this was cl where there is one and c++ where
+    // there is not - the host's compiler, which is now the one a group has
+    // to ask for by name. Written out rather than asked of the editor's own
+    // resolve(): this harness links src/path.cpp and nothing else on purpose
+    // - it drives the editor as a program, and a test that shares the
+    // editor's opinion cannot catch the editor being wrong.
+    check(wasShown(mixed, "Sources (cxx1)"),
+          "and the C++ to cxx1, without being told to");
     check(!wasShown(mixed, "cannot make one program"),
           "and is not refused for holding both any more");
     check(wasShown(mixed, "linking with"), "and links the two compilers' objects itself");
     check(onScreen(mixed, "built sums"), "the two compilers' objects link into one program");
 
     // And it runs, which is the whole of what a mixed target is for: a C main
-    // calling a function cl or c++ compiled, in one program.
-    Screen ranMixed = drive(rstudio, arguments,
+    // calling a function cxx1 compiled, in one program.
+    Screen ranMixed = drive(rstudio, mixedArguments,
                             kF10 + times(kRight, 3) + times(kDown, 3) + kEnter + ctrl('q'),
                             dir);
-    check(wasShown(ranMixed, "answer 42"), "and runs, C calling into what the C++ compiler made");
+    check(wasShown(ranMixed, "answer 42"), "and runs, C calling into what cxx1 made");
+    }
 
     // Debugging the project is the same choice again: the program under the
     // debugger is the one the project builds, not the file in front of you.
@@ -1749,7 +1811,8 @@ void aDirectoryWithNoProject(const std::string& rstudio) {
     // that walks them.
     Screen about = drive(rstudio, "--project \"" + dir.string() + "\"",
                          kF10 + times(kRight, 8) + times(kDown, 2) + kEnter + ctrl('q'), dir);
-    check(onScreen(about, "RStudio 1.2"), "About names the product and version");
+    check(onScreen(about, "RStudio 3.0"), "About names the product and version");
+    check(onScreen(about, "cxx1"), "and the fourth compiler is on its list");
     check(onScreen(about, "G. R. Akhtar"), "and who it belongs to");
     check(onScreen(about, "Islamabad"), "and where they are, which the last line must not lose");
 
@@ -2215,7 +2278,8 @@ void stoppingShalimar(const std::string& rstudio, const std::string& shc) {
 // editor names the linker itself, because no compiler here takes an object as
 // an input - hand cc1 a .o and it reads it as C and complains about a stray
 // byte on line 1.
-void aCompilerPerGroup(const std::string& rstudio, const std::string& cc1) {
+void aCompilerPerGroup(const std::string& rstudio, const std::string& cc1,
+                       const std::string& cxx1) {
     std::printf("a compiler per group, and one link\n");
 
     // The machine's real C++ compiler, by name. Written out rather than asked
@@ -2275,11 +2339,14 @@ void aCompilerPerGroup(const std::string& rstudio, const std::string& cc1) {
     check(wasShown(ran, "helper 42"), "running it runs what the two groups made together");
 
     // Three groups and three routings, which is the shape the whole thing was
-    // for. C++ names nothing anywhere - every machine has one C++ compiler and
-    // there is nothing to choose - and the only group that names a compiler is
-    // a group of C that wants the other one. That is the asymmetry: C is the
-    // one language two compilers can both take.
-    {
+    // for. C++ names nothing and goes to cxx1; the group that names a
+    // compiler is a group of C that wants the host's C++ compiler instead.
+    // Since 3.0 C and C++ have the same shape - the editor's own compiler
+    // by default, the machine's by name - and cxx1 has to be here for the
+    // C++ group to build at all.
+    if (cxx1.empty()) {
+        std::printf("  (no cxx1 named, so the three-routing project is not built)\n");
+    } else {
         file::path three = freshProject("three-routings");
         file::create_directories(three / "engine");
         writeFile(three / "src" / "main.c",
@@ -2311,13 +2378,14 @@ void aCompilerPerGroup(const std::string& rstudio, const std::string& cc1) {
                   "  \"build\": { \"target\": \"three\", "
                   "\"groups\": [\"Sources\", \"Legacy\", \"Engine\"] }\n}\n");
 
-        std::string theirs = "--project \"" + three.string() + "\" --cc1 \"" + cc1 + "\"";
+        std::string theirs = "--project \"" + three.string() + "\" --cc1 \"" + cc1 +
+                             "\" --cxx1 \"" + cxx1 + "\"";
         Screen made = drive(rstudio, theirs, kF4 + ctrl('q'), three);
         check(wasShown(made, "Sources (cc1)"), "a C group that says nothing goes to cc1");
         check(wasShown(made, std::string("Legacy (") + cpp + ")"),
               "a C group that names the host's C++ compiler goes there instead");
-        check(wasShown(made, std::string("Engine (") + cpp + ")"),
-              "and a C++ group needs to name nothing, there being one answer");
+        check(wasShown(made, "Engine (cxx1)"),
+              "and a C++ group that names nothing goes to cxx1");
         check(onScreen(made, "built three"), "all three link into one program");
 
         Screen went = drive(rstudio, theirs,
@@ -2505,6 +2573,15 @@ int main(int argc, char** argv) {
         const char* fromEnv = std::getenv("C2S");
         if (fromEnv) c2s = fromEnv;
     }
+    std::string cxx1;
+    {
+        const char* fromEnv = std::getenv("CXX1");
+        if (fromEnv) cxx1 = fromEnv;
+    }
+    if (!cxx1.empty() && !editor::path::exists(cxx1)) {
+        std::printf("no cxx1 at %s - the cases that need one are not tried\n\n", cxx1.c_str());
+        cxx1.clear();
+    }
     if (!c2s.empty() && !editor::path::exists(c2s)) {
         std::printf("no c2s at %s - the cases that need one are not tried\n\n", c2s.c_str());
         c2s.clear();
@@ -2543,7 +2620,8 @@ int main(int argc, char** argv) {
     selectingAndPasting(rstudio);
     multiByteText(rstudio);
     compiling(rstudio, cc1);
-    buildingTheProject(rstudio, cc1);
+    compilingCpp(rstudio, cxx1);
+    buildingTheProject(rstudio, cc1, cxx1);
     buildingWithCl(rstudio);
     configurations(rstudio, cc1);
     debugPanelPerTarget(rstudio);
@@ -2553,7 +2631,7 @@ int main(int argc, char** argv) {
     convertingFromTheMenu(rstudio, c2s);
     aShalimarProject(rstudio, shc);
     stoppingShalimar(rstudio, shc);
-    aCompilerPerGroup(rstudio, cc1);
+    aCompilerPerGroup(rstudio, cc1, cxx1);
     theHelpMenu(rstudio);
     theMenuSaysWhereYouAre(rstudio);
     theDebugMenuGroups(rstudio, shc);

@@ -256,6 +256,16 @@ Editor::Editor()
         if (!beside.empty()) tool_.cc1 = beside;
     }
 
+    // cxx1 the same way: named, beside this program, or left to PATH.
+    const char* cxx1FromEnv = std::getenv("CXX1");
+    if (cxx1FromEnv && *cxx1FromEnv) {
+        tool_.cxx1 = cxx1FromEnv;
+    } else {
+        std::string beside = path::besideProgram("cxx1.exe");
+        if (beside.empty()) beside = path::besideProgram("cxx1");
+        if (!beside.empty()) tool_.cxx1 = beside;
+    }
+
     const char* shcFromEnv = std::getenv("SHC");
     if (shcFromEnv && *shcFromEnv) {
         tool_.shc = shcFromEnv;
@@ -941,6 +951,7 @@ bool Editor::menuItemIsCurrent(Action action) const {
 
         case ActionToolAuto: return tool_.kind == ToolAuto;
         case ActionToolCc1:  return tool_.kind == ToolCc1;
+        case ActionToolCxx1: return tool_.kind == ToolCxx1;
         case ActionToolShc:  return tool_.kind == ToolShc;
         case ActionToolMsvc: return tool_.kind == ToolMsvc;
         case ActionToolCxx:  return tool_.kind == ToolCxx;
@@ -2190,6 +2201,7 @@ void Editor::compile() {
 
     Toolchain shownAs = tool_;
     shownAs.cc1 = baseName(tool_.cc1);
+    shownAs.cxx1 = baseName(tool_.cxx1);
     shownAs.cl = baseName(tool_.cl);
     std::string shownFile = project_.loaded() ? project_.relative(buf_.path())
                                               : baseName(buf_.path());
@@ -2255,6 +2267,7 @@ void Editor::buildAndRun() {
 
     Toolchain shownAs = tool_;
     shownAs.cc1 = baseName(tool_.cc1);
+    shownAs.cxx1 = baseName(tool_.cxx1);
     shownAs.cl = baseName(tool_.cl);
     std::string shownFile = project_.loaded() ? project_.relative(buf_.path())
                                               : baseName(buf_.path());
@@ -2815,7 +2828,8 @@ void Editor::showKeys() {
     console_.push_back("             Debug menu: Debug project puts the project's own");
     console_.push_back("             program under the debugger instead of this file");
     console_.push_back("F2 / F3      previous / next file Ctrl-L   line numbers");
-    console_.push_back("Ctrl-K       automatic, cc1, cl   Ctrl-T   next target");
+    console_.push_back("Ctrl-K       next compiler        Ctrl-T   next target");
+    console_.push_back("             automatic, cc1, cxx1, shc, cl and the host's C++");
     console_.push_back("Ctrl-D       debug or release");
     console_.push_back("Ctrl-W       next pane            Ctrl-T   next target");
     console_.push_back("Ctrl-P       project pane         Ctrl-A   re-indent (selection)");
@@ -2912,14 +2926,18 @@ void Editor::perform(Action action) {
             resetDebug();
 
             say("debug:" + configFlags(resolve(tool_, lang_), config_, kArches[arch_]) +
-                (optimises(resolve(tool_, lang_)) ? "" : " - cc1 has no -O"));
+                (optimises(resolve(tool_, lang_))
+                     ? std::string()
+                     : std::string(" - ") + toolchainName(resolve(tool_, lang_)) + " has no -O"));
             break;
         case ActionConfigRelease:
             config_ = ConfigRelease;
             settings::rememberConfiguration("release");
             resetDebug();
             say("release:" + configFlags(resolve(tool_, lang_), config_, kArches[arch_]) +
-                (optimises(resolve(tool_, lang_)) ? "" : " - cc1 has no -O"));
+                (optimises(resolve(tool_, lang_))
+                     ? std::string()
+                     : std::string(" - ") + toolchainName(resolve(tool_, lang_)) + " has no -O"));
             break;
         case ActionShowConsole:  panelOpen_ = true; tab_ = TabConsole; panelOff_ = 0; break;
         case ActionShowDebug:    panelOpen_ = true; tab_ = TabDebug; panelOff_ = 0; break;
@@ -2931,7 +2949,8 @@ void Editor::perform(Action action) {
             resetDebug();
             say(usesArch(tool_.kind)
                     ? std::string("target: ") + kArches[arch_]
-                    : std::string("target is a cc1 setting - cl builds for its own host"));
+                    : std::string("target is a cc1, cxx1 or shc setting - " +
+                                  toolchainShown(tool_, tool_.kind) + " builds for its own host"));
             break;
         case ActionLangAuto:
             langChoice_ = LangCount;
@@ -2967,6 +2986,11 @@ void Editor::perform(Action action) {
             tool_.kind = ToolCc1;
             resetDebug();
             say("compiler: cc1, for every file");
+            break;
+        case ActionToolCxx1:
+            tool_.kind = ToolCxx1;
+            resetDebug();
+            say("compiler: cxx1, for every file");
             break;
         case ActionToolMsvc:
             tool_.kind = ToolMsvc;
@@ -3133,16 +3157,20 @@ void Editor::processKey(int key) {
 
         case ctrl('k'):
 
+            // The Tools menu's order: automatic, cc1, cxx1, shc, cl, and the
+            // host's C++ compiler where that is not cl.
             perform(tool_.kind == ToolAuto
                         ? ActionToolCc1
                         : (tool_.kind == ToolCc1
-                               ? ActionToolShc
-                               : (tool_.kind == ToolShc
-                                      ? ActionToolMsvc
-                                      : (tool_.kind == ToolMsvc &&
-                                                 hostCppToolchain() != ToolMsvc
-                                             ? ActionToolCxx
-                                             : ActionToolAuto))));
+                               ? ActionToolCxx1
+                               : (tool_.kind == ToolCxx1
+                                      ? ActionToolShc
+                                      : (tool_.kind == ToolShc
+                                             ? ActionToolMsvc
+                                             : (tool_.kind == ToolMsvc &&
+                                                        hostCppToolchain() != ToolMsvc
+                                                    ? ActionToolCxx
+                                                    : ActionToolAuto)))));
             return;
         case ctrl('w'): cycleFocus(); return;
 
@@ -3261,6 +3289,13 @@ void Editor::run() {
         }
         if (term_.eof()) break;
     }
+
+    // Leaving the editor ends a debugging session the way Stop debugging
+    // does. The Debugger's destructor already stopped lldb or gdb; what it
+    // could not do was remove the temporary program F8 built - so a quit in
+    // the middle of a session left rstudio-run-<pid>, and on a Mac its
+    // .dSYM, in the temporary directory, one pair per session.
+    if (debugging()) debugStop();
 
     Terminal::write("\x1b[2J\x1b[H");
 }

@@ -262,7 +262,7 @@ Build build(const Toolchain& tool, ToolchainKind kind, const std::string& source
 
     if (!result.ok && !result.diag.present && looksLikeMissingProgram(result.output)) {
         std::string hint = std::string(programOf(tool, kind)) +
-                           " could not be run - name it with --cc1 or --cl, or put it on PATH";
+                           " could not be run - name it with --cc1, --cxx1 or --cl, or put it on PATH";
         result.output += hint + "\n";
         if (sink) sink(context, hint);
     }
@@ -324,7 +324,7 @@ Built buildProgram(const Toolchain& tool, ToolchainKind kind, const std::string&
 
     if (!result.ok && !result.diag.present && looksLikeMissingProgram(result.output)) {
         std::string hint = std::string(programOf(tool, kind)) +
-                           " could not be run - name it with --cc1 or --cl, or put it on PATH";
+                           " could not be run - name it with --cc1, --cxx1 or --cl, or put it on PATH";
         result.output += hint + "\n";
         if (sink) sink(context, hint);
     }
@@ -363,7 +363,7 @@ Built buildTarget(const Toolchain& tool, ToolchainKind kind,
 
     if (!result.ok && !result.diag.present && looksLikeMissingProgram(result.output)) {
         std::string hint = std::string(programOf(tool, kind)) +
-                           " could not be run - name it with --cc1 or --cl, or put it on PATH";
+                           " could not be run - name it with --cc1, --cxx1 or --cl, or put it on PATH";
         result.output += hint + "\n";
         if (sink) sink(context, hint);
     }
@@ -420,7 +420,7 @@ Built buildParts(const Toolchain& tool, const std::vector<Part>& parts,
             result.diag = parseDiagnostic(result.output, parts[i].sources[0]);
             if (rc < 0 || (!result.diag.present && looksLikeMissingProgram(result.output))) {
                 std::string hint = std::string(programOf(tool, kind)) +
-                                   " could not be run - name it with --cc1 or --cl, or put "
+                                   " could not be run - name it with --cc1, --cxx1 or --cl, or put "
                                    "it on PATH";
                 result.output += hint + "\n";
                 if (sink) sink(context, hint);
@@ -435,6 +435,21 @@ Built buildParts(const Toolchain& tool, const std::vector<Part>& parts,
 
     Recipe link = linkRecipe(tool, made, withCpp, arch, config, program);
     int linked = runCaptured(link.command, result.output, sink, context);
+
+#ifdef __APPLE__
+    // **The DWARF is in the objects, and the objects are about to go.** On a
+    // Mac the linker leaves debug information where the compiler wrote it
+    // and puts a map to those files in the program; lldb follows the map. The
+    // driver runs dsymutil to gather it into a .dSYM only when it compiled
+    // the sources itself - a link of objects, which is all this is, gets no
+    // bundle however many -g it is given. So the bundle is asked for here,
+    // before the objects are removed, or a breakpoint in a project of two
+    // compilers stops nowhere and says nothing about why. Found when the
+    // first cc1-and-cxx1 project was put under the debugger; a one-compiler
+    // project never saw it because its compiler links the sources itself.
+    if (linked == 0 && config == ConfigDebug)
+        runCaptured("dsymutil \"" + program + "\"", result.output, sink, context);
+#endif
 
     path::removeTree(objects);
 
@@ -469,6 +484,14 @@ void removeProgram(const Built& built) {
     if (!built.program.empty()) std::remove(built.program.c_str());
     for (size_t i = 0; i < built.leftovers.size(); ++i)
         std::remove(built.leftovers[i].c_str());
+#ifdef __APPLE__
+    // The .dSYM a debug build leaves beside the program - the compiler's
+    // driver makes one for a single file, buildParts makes one for a project
+    // - is a directory, and std::remove does not take those. Left behind, a
+    // temporary directory filled with rstudio-run-<pid>.dSYM bundles, one per
+    // F8, which is how this was noticed.
+    if (!built.program.empty()) path::removeTree(built.program + ".dSYM");
+#endif
 }
 
 Ran runProgram(const Toolchain& tool, ToolchainKind kind, const std::string& sourcePath,

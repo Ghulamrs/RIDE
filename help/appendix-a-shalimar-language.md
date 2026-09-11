@@ -14,7 +14,7 @@ reach is not a reference.
 | | |
 | --- | --- |
 | taken from | `Shalimar/SHALIMAR_LANGUAGE.md` |
-| at commit | `8dd4232`, 2026-08-12 — the one that last touched it |
+| at commit | `ebe4f17`, 2026-08-27 — the one that last touched it |
 | checked by | `tools/check-help.sh`, which diffs this against the original |
 
 **Run `tools/check-help.sh` after touching either.** It is the whole reason
@@ -315,7 +315,7 @@ Parameter      ::= [ "&" ] Identifier { "[" "]" } ":" Type
 
 Block          ::= "{" { Statement } "}"
 
-Statement      ::= Declaration            (* only at the top level of a function body *)
+Statement      ::= Declaration
                  | Assignment
                  | CompoundAssign
                  | MultiAssign
@@ -481,9 +481,25 @@ real  m[3][3] : {{1.,2.},{3.,4.}}
 int   cube[2][3][5]
 ```
 
-**A declaration may appear only at the top level of a function body, or at global scope.** Inside an
-`if`, `while` or `for` body it is a parse error naming the variable. The rule keeps every local's
-lifetime the whole call, which is what lets the checker type a function in one pass.
+**A declaration may appear wherever a statement may.** Inside an `if`, `while` or `for` body is
+fine, and so is halfway down a function after the work has started — the shape a C program has, so
+a program converted from one does not have to be rearranged to be read.
+
+**What did not change is the lifetime.** A declared local is still the whole call's: one name, one
+variable, one type, from the top of the call to the bottom, which is what lets the checker type a
+function in one pass. Two consequences follow, and they are the whole of the rule:
+
+- **The name is visible only to the end of its block** — exactly the rule a name made by a first
+  assignment has always followed ([§7.1](#71-assignment)). `int t` inside an `if` cannot be read
+  after that `if` closes; it reports `Undefined variable 't'`. Visibility ending with the block is
+  what keeps this stage and the run in step, because the interpreter's box ends with the block too,
+  and a checker that allowed the read would pass a program the run then failed.
+- **Two sibling blocks may not each declare `t`.** The second reports `Variable 't' already
+  defined`. A block-scoped language would make those two different variables; this one does not,
+  because one call has one `t`. A declaration inside a block a surrounding one already declared is
+  refused for the same reason.
+
+A name made by first assignment is unaffected and still belongs to its block alone.
 
 Only declarations and `fun` definitions may appear at global scope; a statement there is an error.
 
@@ -690,6 +706,22 @@ That boundary is not a list somebody maintains. A function is borrowable when
 its C signature can be written in Shalimar's types, and Shalimar's types are
 `int`, `real`, `char` and arrays of them. Every pointer-taking function in the
 C library falls outside it for the same reason.
+
+**A borrowed name may not also be a variable.** In a file that says `uses fmod`,
+`fmod` is the library function and nothing else — it cannot be declared, assigned,
+taken as a parameter, used as a loop counter, or made a multi-assign target:
+
+```
+uses fmod
+real fmod : 2.5   ->  Error: 'fmod' is borrowed on line 1 - drop the borrow or use
+                             another name
+```
+
+The cure is at one line or the other, which is why the message names both. This is
+stricter than a constant — `pi` may be had by declaring it — because a borrow has
+already claimed the name for the whole file. And it is per file: a file that does
+not borrow `fmod` may use the name however it likes, including one that calls into
+a file that does.
 
 **Borrowing something and never calling it is not an error.** It emits nothing.
 
@@ -1061,9 +1093,12 @@ exist.
 
 ## 12. Library functions and constants
 
-**Every function in this table must be borrowed before it can be called** —
-`uses sqrt` and so on, per file, as 7.5.1 describes. None of them is available
-by being known. The two constants, `pi` and `e`, are not borrowed: they are
+**Every library function in this table must be borrowed before it can be
+called** — `uses sqrt` and so on, per file, as 7.5.1 describes. None of them is
+available by being known. The exception is the last row: `int`, `real` and
+`char` are conversions rather than calls, they are spelt with type keywords,
+and `uses int` cannot even be written — `uses` takes an identifier and `int` is
+not one. The two constants, `pi` and `e`, are not borrowed either: they are
 values rather than calls, and reserved outright (see the 2.x note below).
 
 | Function | Args | Notes |
@@ -1089,6 +1124,12 @@ values rather than calls, and reserved outright (see the 2.x note below).
 | `int(x)` `real(x)` `char(x)` | 1 | conversions, see below |
 
 Argument counts are enforced exactly, for built-ins as for user functions.
+
+**This table is the whole of what exists**, and a name outside it is refused where it is asked
+for. The boundary it sits inside is wider: about sixty C functions have signatures writable in
+`int`, `real`, `char` and arrays of them, and `Compiler-S/docs/FOREIGN.md` lists the
+thirty-three measured candidates with the traps among them. That list is a record of what
+*could* be added, not of what a program may call — `uses asinh` is an error today.
 
 **A user function may take a built-in's name, and wins.** `fun <real> = sqrt(x: real)` makes `sqrt`
 the program's for the whole file and the built-in is simply not there — the rule C gets from
@@ -1199,7 +1240,6 @@ Reported one at a time; parsing stops at the first.
 - `Program ends unfinished` — running off the end has no spelling to quote, so it gets a sentence.
 - `Missing '{' to start block` / `Missing '}' to close block`
 - `'?' must start its line`
-- `'x': declare it at the top of the function`
 - `'return' outside a function`
 - `'break' outside a loop` / `'continue' outside a loop`
 - `'?' must be inside a function`

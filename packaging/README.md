@@ -1,8 +1,8 @@
 # Packaging
 
-RStudio and the two compilers it drives, as one installable thing on each
+RStudio and the three compilers it drives, as one installable thing on each
 platform. They are packaged together because they are used together: the editor
-drives cc1 and shc and is not much good without them.
+drives cc1, cxx1 and shc and is not much good without them.
 
 | | | built and installed |
 | --- | --- | --- |
@@ -23,7 +23,7 @@ brew install --build-from-source --HEAD <tap>/rstudio-editor
 
 The RPM builds from three checkouts sitting side by side, which is what this
 project actually is. The formula cannot: Homebrew builds in a temporary
-directory, so the two compilers are **resources** fetched from their own
+directory, so the three compilers are **resources** fetched from their own
 repositories — which means the formula installs what is *pushed*, not what is
 in your tree.
 

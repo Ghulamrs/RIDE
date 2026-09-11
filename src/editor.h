@@ -69,6 +69,7 @@ public:
 
     void setConverter(const std::string& path) { c2s_ = path; }
     void setCxx(const std::string& path) { tool_.cxx = path; }
+    void setCxx1(const std::string& path) { tool_.cxx1 = path; }
     void setToolchain(ToolchainKind kind) { tool_.kind = kind; }
     void setConfig(Configuration config) { config_ = config; }
 

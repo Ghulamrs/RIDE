@@ -39,8 +39,8 @@ line comes back to the stop.
 
 | | |
 | --- | --- |
-| cc1 on `arm64-darwin`, `x86_64-linux` | lldb or gdb, reading cc1's own DWARF |
-| cc1 on `x86_64-windows` | **no** — MASM carries no line table |
+| cc1 or cxx1 on `arm64-darwin`, `x86_64-linux` | lldb or gdb, reading the compiler's own DWARF |
+| cc1 or cxx1 on `x86_64-windows` | **no** — MASM carries no line table |
 | `cl` | cdb, reading CodeView from the `.pdb` |
 | `clang++`, `g++` | lldb or gdb |
 | `shc` | the program stops **itself** — no debugger at all |

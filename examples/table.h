@@ -13,7 +13,9 @@
 
 class Table {
 public:
-    static const int kMost = 12;
+    /* An enumerator rather than a static const int, so that cxx1 reads it as
+       the constant the array bounds below need; cl and clang++ take either. */
+    enum { kMost = 12 };
 
     Table() : held_(0) {}
 

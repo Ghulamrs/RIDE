@@ -59,6 +59,7 @@ build/
 # The .dSYM bundles arrived with it: an Xcode Release build writes one beside
 # each program, and `RStudio.exe` above does not match `RStudio.exe.dSYM`.
 cc1.exe
+cxx1.exe
 shc.exe
 c2s.exe
 lib/

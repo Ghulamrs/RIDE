@@ -1,8 +1,9 @@
 // A small smart class, and something that exercises it.
 //
 // This is the file to open when trying the editor out. It is C++, which is the
-// point: cc1 compiles C, so this one is built with the MSVC toolchain - Ctrl-K
-// switches to cl, Ctrl-B builds, and the assembly tab fills with cl's listing.
+// point: cc1 compiles C, so this one goes to cxx1 - Ctrl-B builds, and the
+// assembly tab fills with its listing. Ctrl-K switches to the machine's own
+// C++ compiler, cl on Windows, for the same file and a second listing.
 //
 // The class is deliberately plain. It owns one thing, hands it back when it
 // goes out of scope, moves rather than copies, and has no template machinery
@@ -23,8 +24,6 @@ public:
 
     ~Owned() { delete held_; }
 
-    Owned(const Owned&) = delete;
-    Owned& operator=(const Owned&) = delete;
 
     // Moving is how ownership travels. The one moved from is left empty, which
     // is what stops its destructor from deleting what it no longer owns.
@@ -59,6 +58,13 @@ public:
     }
 
 private:
+    // Private, declared and never defined - which is what "= delete" spelled
+    // before C++11, and what cxx1 reads. A copy is still refused by the
+    // compiler at the place it is attempted, and cl and clang++ read this the
+    // same way, so the file builds under all three.
+    Owned(const Owned&);
+    Owned& operator=(const Owned&);
+
     T* held_;
 };
 

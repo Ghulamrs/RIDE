@@ -1,21 +1,55 @@
 # C++
 
-C++ needs no decision. Every machine has exactly one C++ compiler worth
-calling, so `auto` routes to it and **a C++ group never needs to name one**.
+C++ goes to **cxx1**, the C++11 compiler that grew out of cc1, and has had
+the same shape as C since 3.0: the editor's own compiler by default, and the
+machine's own — `cl` on Windows, `clang++` on a Mac, `g++` on Linux — when a
+group asks for it by name. Until 3.0 C++ had no decision in it and went
+straight to the host's compiler; that compiler is still there, one Ctrl-K
+away, and every project written for it still builds.
 
 | | |
 | --- | --- |
 | suffix | `.cpp`, `.cc`, `.cxx` |
-| compiler | `cl` on Windows, `clang++` on a Mac, `g++` on Linux |
-| targets | none — it builds for the machine it is on |
-| debug | `/Od /Zi /D_DEBUG` for cl; `-g -D_DEBUG=1` otherwise |
-| release | `/O2 /DNDEBUG` for cl; `-O2 -DNDEBUG=1` otherwise |
+| compiler | `cxx1` by default; `cl` or the host's `c++` when a group says so |
+| targets | `x86_64-windows`, `x86_64-linux`, `arm64-darwin` — the same three as cc1 |
+| debug | `-g -D_DEBUG=1`, and the define alone where there is no line table |
+| release | `-DNDEBUG=1` — cxx1, like cc1, has no optimiser |
 
-**By name, not as "c++".** The console says which compiler ran — `(clang++)` on
-a Mac, `(g++)` on the Linux box, `(cl)` on Windows — because which one it is
-*is* the information, and the generic alias tells a reader less than the
+## Where cxx1 is found
+
+`--cxx1`, then `$CXX1`, then a `cxx1` beside the editor, then PATH — the same
+four steps as cc1, and the same rule about naming one that is not there: the
+editor drops it with a word and carries on as if nothing had been named.
+
+cxx1 carries its own standard headers, in `include/` and `lib/` beside its
+binary or one directory above it, and falls back to the paths compiled into
+it. A copy that is moved on its own still finds the checkout it was built
+from; `make product` and `build.bat product` copy the two directories so that
+a product does not depend on one.
+
+## What cxx1 reads
+
+C++11, as a subset on purpose — the language cxx1 accepts is not the one it
+is written in, and its own README says which. Two things a C++ file may
+reasonably hold that it refuses today are `= delete` on a member and a
+`static const int` member used as an array bound in its own class; the
+examples here spell both the older way, which every compiler reads. A file
+that needs more than cxx1 has is a file for the host's compiler, and Ctrl-K
+is how it gets there.
+
+cxx1 announces itself on every compile unless told `-nologo`. The editor
+tells it, the way it tells cl `/nologo`, so the console holds what the
+compiler said about the file and no more — the same as for cc1 and shc.
+
+## The host's compiler, by name
+
+**By name, not as "c++".** The console says which compiler ran — `(clang++)`
+on a Mac, `(g++)` on the Linux box, `(cl)` on Windows — because which one it
+is *is* the information, and the generic alias tells a reader less than the
 machine already knows. `--cxx` or `$CXX` names another; a project file never
 does, because which C++ compiler a machine has is a fact about the machine.
+A group that wants it says `"toolchain": "c++"`, and a group that wants cl
+on Windows says `"msvc"`.
 
 > This used to route to `cl` on every machine, which meant a C++ file on a Mac
 > was sent to a compiler that is not installed there and never could be. A
@@ -30,6 +64,11 @@ newer Visual Studio, which is not the toolset this is built with.
 
 ## Debugging
 
+**cxx1 writes DWARF for `x86_64-linux` and `arm64-darwin`** — line tables,
+types, objects and lexical blocks — and lldb or gdb read it like cc1's, so
+breakpoints, stepping, locals and the stack all work. On `x86_64-windows` it
+writes MASM and no line table, exactly as cc1 does, and the Debug tab says so.
+
 **cl writes CodeView into a `.pdb`, and `cdb` reads one.** cdb comes with the
 Windows SDK's debugging tools and is not installed by default, so the editor
 looks for it rather than assuming — and says *"cl writes a .pdb and cdb reads
@@ -38,16 +77,17 @@ one, but cdb is not installed"* when it is missing.
 `clang++` and `g++` write DWARF and are read by lldb and gdb like anything
 else.
 
-So on Windows, C and C++ are in different positions: a `.c` goes to cc1 and
-carries no line table, while a `.cpp` on the same machine goes to cl and
-carries everything. That is a fact about the two compilers, not about the
-machine, which is why the editor asks `debuggerFor(compiler, target)` and never
-`debuggerFor(machine)`.
+So on Windows, C++ under cxx1 is where C under cc1 is — no line table — and
+C++ under cl carries everything. That is a fact about the compilers, not about
+the machine, which is why the editor asks `debuggerFor(compiler, target)` and
+never `debuggerFor(machine)`.
 
 ## Beside C in one program
 
 A target may hold both. Each group compiles to objects with its own compiler
-and the editor links them — see [page 7](07-building.md).
+and the editor links them — see [page 7](07-building.md). The ordinary case
+is now cc1 and cxx1 side by side, with nothing named in the project file at
+all, and the host's linker joining what the two produced.
 
 One thing the editor has to arrange for you on Windows: **cl is given `/MT`**
 there, because cc1's own driver links `libcmt` and two C runtimes in one

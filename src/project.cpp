@@ -16,6 +16,7 @@ ToolchainKind toolchainFrom(const std::string& word) {
     if (word == "cc1") return ToolCc1;
     if (word == "msvc" || word == "cl") return ToolMsvc;
     if (word == "shc") return ToolShc;
+    if (word == "cxx1") return ToolCxx1;
 
     if (word == "c++" || word == "cxx" || word == "g++" || word == "clang++")
         return hostCppToolchain();
@@ -26,6 +27,7 @@ const char* toolchainWord(ToolchainKind kind) {
     if (kind == ToolCc1) return "cc1";
     if (kind == ToolMsvc) return "msvc";
     if (kind == ToolShc) return "shc";
+    if (kind == ToolCxx1) return "cxx1";
 
     if (kind == ToolCxx) return "c++";
     return "auto";

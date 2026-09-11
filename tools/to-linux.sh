@@ -36,16 +36,23 @@ BOX="${ED1_LINUX_BOX:-ec2-user@52.202.164.123}"
 DIR="${ED1_LINUX_DIR:-rstudio}"
 WHAT="${1:-check}"
 
-# cc1 lives on that box too, and its own checkout is what has it. Named here
-# rather than found, so that a suite reporting "no cc1" is reporting a fact
-# about that machine and not about this script.
-CC1_THERE="${ED1_LINUX_CC1:-\$HOME/ansicc/cc1.exe}"
-
-# And shc, which Compiler-S's own relay leaves in ~/shalimar. Both are named
-# rather than searched for, so that a suite saying "no cc1 named" is saying
-# something about that machine and not about this script having looked in the
-# wrong place - which is exactly what it said the first time.
-SHC_THERE="${ED1_LINUX_SHC:-\$HOME/shalimar/shc.exe}"
+# The compilers live on that box too. Named here rather than found, so that
+# a suite reporting "no cc1" is reporting a fact about that machine and not
+# about this script - which is exactly what it said the first time, when it
+# looked in the wrong place.
+#
+# Where they are, as of 2026-09-11: ~/ansicc and ~/shalimar, the checkouts
+# these used to name, are gone from that box - it is an 8 GB nano and they
+# went for the room. What remains is ~/build-ws, a workspace build of
+# 2026-08-26 holding cc1.exe, shc.exe with its lib/, and c2s.exe; and cxx1,
+# whose own tools/verify-three re-extracts and rebuilds ~/cxx1-verify on every
+# run, so that one is the freshest compiler on the machine. `make check` is
+# given all four; the editor is built from this tree, and those are what it
+# drives there.
+CC1_THERE="${ED1_LINUX_CC1:-\$HOME/build-ws/cc1.exe}"
+CXX1_THERE="${ED1_LINUX_CXX1:-\$HOME/cxx1-verify/cxx1.exe}"
+SHC_THERE="${ED1_LINUX_SHC:-\$HOME/build-ws/shc.exe}"
+C2S_THERE="${ED1_LINUX_C2S:-\$HOME/build-ws/c2s.exe}"
 
 # src/obj is excluded and that is not tidiness. The first run of this script
 # carried the Mac's own Mach-O objects over, make found them newer than the
@@ -72,7 +79,7 @@ ssh -n -i "$KEY" "$BOX" "cd ~/$DIR && tar xzf ed1-src.tgz 2>/dev/null; find . -n
     [ -x ./RStudio.exe ] || { echo 'no RStudio.exe was built'; exit 2; } ; \
     if [ \"$WHAT\" = build ]; then echo 'built RStudio.exe'; exit 0; fi ; \
     if [ \"$WHAT\" = workspace ]; then \
-        make -f workspace.mk check CC1_DIR=\$HOME/ansicc SHC_DIR=\$HOME/shalimar ; \
+        make -f workspace.mk check CC1_DIR=\$HOME/ansicc CXX1_DIR=\$HOME/cxx1 SHC_DIR=\$HOME/shalimar C2S_DIR=\$HOME/converter ; \
     else \
-        make check CC1=$CC1_THERE SHC=$SHC_THERE ; \
+        make check CC1=$CC1_THERE CXX1=$CXX1_THERE SHC=$SHC_THERE C2S=$C2S_THERE ; \
     fi"

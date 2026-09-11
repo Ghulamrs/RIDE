@@ -5,6 +5,13 @@ none of it was built. It is all built now, on all three machines. What follows
 is what was done, what the plan got wrong, and the two things that are still
 limits.
 
+> **Read with 3.0 in mind.** Where this says C++ goes to the host's compiler -
+> cl, clang++ or g++ - with no decision in it, that was true until 3.0. C++
+> goes to cxx1 now, by default, and to the host's compiler when a group says
+> `"c++"` or `"msvc"`; C++ has the pair C always had. The mechanism below is
+> unchanged - a compiler per group, objects, one link - and the ordinary mixed
+> target is now cc1 beside cxx1 with nothing named in the project file.
+
 ## What it is
 
 The compiler used to be a property of the project. It is a property of a

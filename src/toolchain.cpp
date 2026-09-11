@@ -40,6 +40,14 @@ std::string languageFlag(ToolchainKind kind, Language lang) {
     return (lang == LangCpp) ? " -x c++" : " -x c";
 }
 
+// cxx1 says who it is on stderr before every compile, and cc1 and shc say
+// nothing - so the console showed a banner above the first error for one
+// language in three. Its -nologo is cl's /nologo, and is passed the same way:
+// in the command that runs, and not in the one the console shows.
+std::string quietFlag(ToolchainKind kind) {
+    return kind == ToolCxx1 ? std::string(" -nologo") : std::string();
+}
+
 std::string quoteDirectory(const std::string& s) {
     std::string path = s;
     if (!path.empty() && path[path.size() - 1] == kSep) path += kSep;
@@ -151,11 +159,14 @@ ToolchainKind hostCppToolchain() {
 #endif
 }
 
+// C++ goes to cxx1 the way C goes to cc1: the compiler this editor is for,
+// with the machine's own reachable by name. Until 3.0 C++ had no decision in
+// it and went straight to the host's; now it has the same one C has.
 ToolchainKind resolve(const Toolchain& tool, Language lang) {
     if (tool.kind != ToolAuto) return tool.kind;
     if (lang == LangShalimar) return ToolShc;
 
-    return (lang == LangCpp) ? hostCppToolchain() : ToolCc1;
+    return (lang == LangCpp) ? ToolCxx1 : ToolCc1;
 }
 
 const char* toolchainName(ToolchainKind kind) {
@@ -164,6 +175,7 @@ const char* toolchainName(ToolchainKind kind) {
         case ToolCc1:  return "cc1";
         case ToolShc:  return "shc";
         case ToolCxx:  return "c++";
+        case ToolCxx1: return "cxx1";
         default:       return "auto";
     }
 }
@@ -178,10 +190,13 @@ const char* programOf(const Toolchain& tool, ToolchainKind kind) {
     if (kind == ToolMsvc) return tool.cl.c_str();
     if (kind == ToolShc) return tool.shc.c_str();
     if (kind == ToolCxx) return tool.cxx.c_str();
+    if (kind == ToolCxx1) return tool.cxx1.c_str();
     return tool.cc1.c_str();
 }
 
-bool usesArch(ToolchainKind kind) { return kind == ToolCc1 || kind == ToolShc; }
+bool usesArch(ToolchainKind kind) {
+    return kind == ToolCc1 || kind == ToolShc || kind == ToolCxx1;
+}
 
 const char* configName(Configuration config) {
     return config == ConfigRelease ? "release" : "debug";
@@ -195,7 +210,8 @@ bool emitsDebugInfo(ToolchainKind kind, const std::string& arch) {
 
     if (kind == ToolCxx) return true;
 
-    if (kind != ToolCc1) return false;
+    // cc1 and cxx1 alike: DWARF on the two GNU targets, MASM on the third.
+    if (kind != ToolCc1 && kind != ToolCxx1) return false;
     return arch == "x86_64-linux" || arch == "arm64-darwin";
 }
 
@@ -224,7 +240,8 @@ std::vector<std::string> debugNote(ToolchainKind kind, const std::string& arch) 
         said.push_back("read back out of itself; the editor stops at -S and assembles");
         said.push_back("nothing, so nothing has been linked or run.");
     } else if (emitsDebugInfo(kind, arch)) {
-        said.push_back("cc1 writes DWARF for " + arch + " - line tables, types, objects and");
+        said.push_back(std::string(toolchainName(kind)) + " writes DWARF for " + arch +
+                       " - line tables, types, objects and");
         said.push_back("lexical blocks - so a debugger has something to read here. This");
         said.push_back("editor is not that debugger: it builds to assembly and stops, so");
         said.push_back("nothing has been assembled, linked or run. What the build did leave");
@@ -237,8 +254,9 @@ std::vector<std::string> debugNote(ToolchainKind kind, const std::string& arch) 
         said.push_back("F8 stops on. So there is a debugger here and no debug format. What");
         said.push_back("it cannot do is read a variable. This is the assembly the build");
         said.push_back("produced, read back out of itself.");
-    } else if (kind == ToolCc1) {
-        said.push_back("cc1 writes no debug information for " + arch + ": it generates MASM");
+    } else if (kind == ToolCc1 || kind == ToolCxx1) {
+        said.push_back(std::string(toolchainName(kind)) + " writes no debug information for " +
+                       arch + ": it generates MASM");
         said.push_back("there, and MASM carries no line table. So there is nothing to step");
         said.push_back("through. This is what the build produced, read back out of its own");
         said.push_back("assembly.");
@@ -253,8 +271,8 @@ std::vector<std::string> debugNote(ToolchainKind kind, const std::string& arch) 
 bool canCompile(ToolchainKind kind, Language lang) {
     if (lang == LangShalimar) return kind == ToolShc;
     if (kind == ToolShc) return false;
-    if (lang == LangCpp) return kind == ToolMsvc || kind == ToolCxx;
-    if (lang == LangC) return true;
+    if (lang == LangCpp) return kind == ToolMsvc || kind == ToolCxx || kind == ToolCxx1;
+    if (lang == LangC) return kind != ToolCxx1;
     return false;
 }
 
@@ -266,8 +284,9 @@ std::string refusal(ToolchainKind kind, Language lang) {
         return std::string("shc compiles Shalimar, not ") + languageName(lang) +
                " - Ctrl-K for automatic";
     if (lang == LangCpp && kind == ToolCc1)
-        return std::string("cc1 compiles C, not C++ - Ctrl-K for automatic, and it picks ") +
-               toolchainName(hostCppToolchain());
+        return "cc1 compiles C, not C++ - Ctrl-K for automatic, and it picks cxx1";
+    if (lang == LangC && kind == ToolCxx1)
+        return "cxx1 compiles C++, not C - Ctrl-K for automatic, and it picks cc1";
     if (lang != LangC && lang != LangCpp)
         return std::string("nothing to compile: this is ") + languageName(lang) +
                ", not C or C++";
@@ -358,8 +377,8 @@ Recipe targetRecipe(const Toolchain& tool, ToolchainKind kind,
         return recipe;
     }
 
-    recipe.command = quote(programOf(tool, kind)) + languageFlag(kind, lang) + named +
-                     " -o " + quote(program) + configFlags(kind, config, arch);
+    recipe.command = quote(programOf(tool, kind)) + quietFlag(kind) + languageFlag(kind, lang) +
+                     named + " -o " + quote(program) + configFlags(kind, config, arch);
     return recipe;
 }
 
@@ -433,7 +452,7 @@ Recipe objectRecipe(const Toolchain& tool, ToolchainKind kind,
     }
 
     recipe.command = "cd " + quote(objectDir) + " && " +
-                     quote(programOf(tool, kind)) + " -c" +
+                     quote(programOf(tool, kind)) + quietFlag(kind) + " -c" +
                      languageFlag(kind, lang) + named +
                      configFlags(kind, config, arch);
 
@@ -501,7 +520,7 @@ Recipe programRecipe(const Toolchain& tool, ToolchainKind kind,
         return recipe;
     }
 
-    recipe.command = quote(program) + " " + quote(source) + " -o " +
+    recipe.command = quote(program) + quietFlag(kind) + " " + quote(source) + " -o " +
                      quote(recipe.assemblyPath) + configFlags(kind, config, arch);
     return recipe;
 }
@@ -546,7 +565,7 @@ Recipe assemblyRecipe(const Toolchain& tool, ToolchainKind kind,
     }
 
     recipe.assemblyPath = stem + ".s";
-    recipe.command = quote(program) + " -S" + languageFlag(kind, lang) + " " +
+    recipe.command = quote(program) + quietFlag(kind) + " -S" + languageFlag(kind, lang) + " " +
                      quote(source) + " -o " + quote(recipe.assemblyPath) +
                      (usesArch(kind) ? " -arch " + arch : std::string()) +
                      configFlags(kind, config, arch);

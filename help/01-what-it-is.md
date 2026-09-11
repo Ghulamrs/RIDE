@@ -1,9 +1,11 @@
 # 1. What it is
 
-RStudio is an editor for three languages of our own: **C** and **C++** through
-[cc1](../../Compiler-C) and `cl`, and **Shalimar** through
-[shc](../../Compiler-S). It edits, builds, runs and debugs, and it does all
-four without leaving the keyboard.
+RStudio is an editor for three languages of our own: **C** through
+[cc1](../../Compiler-C), **C++** through [cxx1](../../C++), and **Shalimar**
+through [shc](../../Compiler-S) — with the machine's own C and C++ compiler,
+`cl` on Windows and `c++` elsewhere, reachable by name for the first two. It
+edits, builds, runs and debugs, and it does all four without leaving the
+keyboard.
 
 It is not a general-purpose editor that happens to know some compilers. It was
 written for cc1 and grew the other two, and that shows in what it does well: a
@@ -61,7 +63,7 @@ the Linux box, where `auto` used to route C++ to a `cl` that was not installed.
 And it is why the product is called RStudio. Three languages is where *CC1
 Studio Workbench* stopped being a description.
 
-**1.2 — Shalimar borrows, and can call C.** The release this manual is for.
+**1.2 — Shalimar borrows, and can call C.**
 
 Shalimar stopped having a library of its own. `sin` and its nineteen
 neighbours were available to every program whether it wanted them or not, and
@@ -83,6 +85,22 @@ declaration and the app refuses it by name.
 
 [Calling C from Shalimar](mixing-c-and-shalimar.md) is the page; the worked
 examples are in the two compilers' own repositories.
+
+**3.0 — cxx1.** The release this manual is for. A fourth compiler, and the
+second language of our own that has one: C++ goes to **cxx1**, the C++11
+compiler that grew out of cc1, the way C goes to cc1 — by default, on every
+machine alike, with the same three targets and DWARF on the same two of them.
+The host's C++ compiler is not gone; it is what a group asks for by name now,
+which is exactly the position the host's C compiler has always been in. So C
+stopped being the only language with a decision in it, and the two decisions
+are the same one.
+
+What it changed around the edges: a project of C and C++ builds with nothing
+named and neither half going to the host; the Debug tab reads cxx1's DWARF
+through the same lldb or gdb it reads cc1's; `Help ▸ About` lists four
+compilers, one per line, because cxx1's `--version` is two lines long; and
+the workspace on each machine builds five programs rather than four.
+[C++](cpp.md) is the page.
 
 ## What it will not do
 

@@ -1,15 +1,15 @@
-# RStudio, cc1 and shc as one Homebrew formula.
+# RStudio, cc1, cxx1 and shc as one Homebrew formula.
 #
 #   brew install --build-from-source packaging/rstudio-editor.rb
 #   brew test rstudio-editor
 #
-# The three programs are one formula because they are one thing to use: the
-# editor drives the two compilers and is not much good without them.
+# The four programs are one formula because they are one thing to use: the
+# editor drives the three compilers and is not much good without them.
 #
 # Named rstudio-editor and not rstudio. "RStudio" is also a widely known IDE for
 # R - there is a cask by that name - and a formula called rstudio that installed
 # something else would be a trap for whoever typed it. The programs keep their
-# own names: RStudio.exe, cc1.exe and shc.exe.
+# own names: RStudio.exe, cc1.exe, cxx1.exe and shc.exe.
 #
 # Two things this has to get right, and both are about how these programs find
 # their own files once they are somewhere other than the tree they were built
@@ -23,10 +23,12 @@
 #
 #   cc1.exe has its include directory compiled in, so INCDIR is set at build
 #   time to where this formula puts the headers rather than to the build tree.
+#   cxx1.exe has two - INCDIR for its C headers and CXXINCDIR for the C++ ones
+#   - and is told both the same way.
 class RstudioEditor < Formula
-  desc "Editor for C, C++ and Shalimar, with the two compilers it drives"
+  desc "Editor for C, C++ and Shalimar, with the three compilers it drives"
   homepage "https://github.com/Ghulamrs/RStudio"
-  version "1.1"
+  version "3.0"
   license :cannot_represent
 
   # The editor is the formula; the two compilers are resources, fetched from
@@ -46,6 +48,10 @@ class RstudioEditor < Formula
     url "https://github.com/Ghulamrs/Compiler-C.git", branch: "main"
   end
 
+  resource "cxx1" do
+    url "https://github.com/Ghulamrs/Compiler-Cpp.git", branch: "main"
+  end
+
   resource "shc" do
     url "https://github.com/Ghulamrs/Compiler-S.git", branch: "main"
   end
@@ -59,6 +65,15 @@ class RstudioEditor < Formula
       system "make", "INCDIR=#{lib}/cc1"
       bin.install "cc1.exe"
       (lib/"cc1").install Dir["lib/*"]
+    end
+
+    # cxx1, told where both of its header directories will live, for the
+    # same reason cc1 is.
+    resource("cxx1").stage do
+      system "make", "INCDIR=#{lib}/cxx1", "CXXINCDIR=#{include}/cxx1"
+      bin.install "cxx1.exe"
+      (lib/"cxx1").install Dir["lib/*"]
+      (include/"cxx1").install Dir["include/*"]
     end
 
     # shc, which builds both runtime archives with it: the release one and the
@@ -82,8 +97,8 @@ class RstudioEditor < Formula
       The manual is in #{doc}, and Help > Contents inside the editor lists the
       same pages.
 
-      RStudio.exe is the editor; cc1.exe and shc.exe are the compilers it
-      drives. It finds them on PATH, so nothing needs configuring.
+      RStudio.exe is the editor; cc1.exe, cxx1.exe and shc.exe are the
+      compilers it drives. It finds them on PATH, so nothing needs configuring.
     EOS
   end
 
@@ -97,6 +112,16 @@ class RstudioEditor < Formula
     C
     system bin/"cc1.exe", "probe.c", "-o", "probec"
     assert_equal "42", shell_output("./probec").strip
+
+    # cxx1, through one of its own headers, so that the check reaches the
+    # include directories and not only the binary.
+    (testpath/"probe.cpp").write <<~CPP
+      #include <cstdio>
+      class Six { public: int times(int n) const { return 6 * n; } };
+      int main() { Six s; std::printf("%d\\n", s.times(7)); return 0; }
+    CPP
+    system bin/"cxx1.exe", "-nologo", "probe.cpp", "-o", "probecpp"
+    assert_equal "42", shell_output("./probecpp").strip
 
     # Shalimar's ? separates what it prints with spaces and leaves one on the
     # end, so this is stripped rather than matched exactly.

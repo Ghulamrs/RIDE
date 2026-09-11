@@ -110,12 +110,14 @@ EDITOR := $(BINDIR)/RStudio.exe
 # file - the behaviour before this, kept for the case it was right for. And
 # `?=`, so CC1 in the environment or on the command line still wins.
 CC1 ?= $(abspath $(wildcard $(BINDIR)/cc1.exe))
+CXX1 ?= $(abspath $(wildcard $(BINDIR)/cxx1.exe))
 SHC ?= $(abspath $(wildcard $(BINDIR)/shc.exe))
 C2S ?= $(abspath $(wildcard $(BINDIR)/c2s.exe))
 
 # Exported because the two suites read them differently: `session` is handed
 # them on its command line, and `test` picks them out of the environment.
 export CC1
+export CXX1
 export SHC
 export C2S
 
@@ -171,6 +173,7 @@ $(OBJDIR)/%.o: src/%.cpp
 check-tools:
 	@bad=0; \
 	[ -z "$(CC1)" ] || [ -x "$(CC1)" ] || { echo "CC1 names '$(CC1)', which is not there." >&2; bad=1; }; \
+	[ -z "$(CXX1)" ] || [ -x "$(CXX1)" ] || { echo "CXX1 names '$(CXX1)', which is not there." >&2; bad=1; }; \
 	[ -z "$(SHC)" ] || [ -x "$(SHC)" ] || { echo "SHC names '$(SHC)', which is not there." >&2; bad=1; }; \
 	[ -z "$(C2S)" ] || [ -x "$(C2S)" ] || { echo "C2S names '$(C2S)', which is not there." >&2; bad=1; }; \
 	[ $$bad -eq 0 ] || { \
@@ -196,11 +199,11 @@ tests/test: tests/test.cpp src/compile.cpp src/indent.cpp src/syntax.cpp \
 	    src/buffer.cpp $(SHM_SRC)
 
 # The other half of the checking: the editor itself, driven by keystrokes.
-# CC1 and SHC name compilers for the build cases, and C2S the converter for
-# the Language menu's Convert; without them those cases are skipped rather
+# CC1, CXX1 and SHC name compilers for the build cases, and C2S the converter
+# for the Language menu's Convert; without them those cases are skipped rather
 # than failed.
 session: tests/session $(EDITOR) check-tools
-	CC1="$(CC1)" SHC="$(SHC)" C2S="$(C2S)" ./tests/session $(EDITOR)
+	CC1="$(CC1)" CXX1="$(CXX1)" SHC="$(SHC)" C2S="$(C2S)" ./tests/session $(EDITOR)
 
 tests/session: tests/session.cpp src/path.cpp src/path.h
 	$(CXX) $(CXXFLAGS) -Isrc -o $@ tests/session.cpp src/path.cpp
@@ -227,7 +230,8 @@ check: test session
 # and finds it beside itself, so "built" and "usable" are two states and this
 # checks the second. It is not a compiler and nothing links it - the Language
 # menu's two Convert items run it over the open file.
-DEPENDENCIES := cc1.exe shc.exe c2s.exe \
+# cxx1 joined in 3.0, found the same way and for the same reason.
+DEPENDENCIES := cc1.exe cxx1.exe shc.exe c2s.exe \
        lib/shmrt-$(SHM_TARGET).a lib/shmrt-$(SHM_TARGET)-debug.a
 
 confirm: $(EDITOR)
@@ -242,8 +246,8 @@ confirm: $(EDITOR)
 	done; \
 	if [ $$missing -ne 0 ]; then \
 	    echo ""; \
-	    echo "RStudio.exe is in $(BINDIR) without what it drives. Build the three"; \
-	    echo "together with 'make -f workspace.mk', or name them with \$$CC1 and \$$SHC."; \
+	    echo "RStudio.exe is in $(BINDIR) without what it drives. Build the four"; \
+	    echo "together with 'make -f workspace.mk', or name them with \$$CC1, \$$CXX1 and \$$SHC."; \
 	    exit 1; \
 	fi; \
 	echo ""; \
@@ -261,6 +265,10 @@ xcodeproj:
 #
 # PRODUCT names it, so a different one can be asked for without editing this.
 PRODUCT ?= $(HOME)/cc1-studio
+# Where cxx1's headers are copied from for the product. The binary comes from
+# BINDIR like the others; the headers stay in the checkout - C++ beside this
+# one, Compiler-Cpp on GitHub and the Windows box, ~/cxx1 on the Linux box.
+CXX1_DIR ?= ../C++
 
 # `confirm` and not `$(EDITOR)`, for the reason build.bat gives on its own
 # product rule: an editor without its compilers is not a product, it is half of
@@ -283,7 +291,15 @@ product: confirm
 	rm -rf "$(PRODUCT)/bin" "$(PRODUCT)/examples"
 	mkdir -p "$(PRODUCT)/bin/lib" "$(PRODUCT)/examples"
 	cp $(EDITOR) "$(PRODUCT)/bin/"
-	cp $(BINDIR)/cc1.exe $(BINDIR)/shc.exe "$(PRODUCT)/bin/"
+	cp $(BINDIR)/cc1.exe $(BINDIR)/cxx1.exe $(BINDIR)/shc.exe $(BINDIR)/c2s.exe "$(PRODUCT)/bin/"
+# cxx1's headers go with it, since 3.0: it looks for include/ and lib/ beside
+# its binary and then one directory up, and falls back to the paths compiled
+# into it, which name the checkout it was built from - a product that outlives
+# that checkout would compile nothing that says #include. One up rather than
+# beside, because bin/lib/ is shc's runtime and cxx1's lib/ is C headers.
+	rm -rf "$(PRODUCT)/include" "$(PRODUCT)/lib"
+	cp -R $(CXX1_DIR)/include "$(PRODUCT)/include"
+	cp -R $(CXX1_DIR)/lib "$(PRODUCT)/lib"
 # Into bin/lib/ rather than anywhere tidier, because that is where shc looks:
 # beside its own binary. Both archives, debug included - see DEPENDENCIES.
 	cp $(BINDIR)/lib/shmrt-$(SHM_TARGET).a \

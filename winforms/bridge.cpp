@@ -45,6 +45,7 @@ static_assert(RSTUDIO_LANG_JSON == static_cast<int>(editor::LangJson), "language
 static_assert(RSTUDIO_TOOL_MSVC == static_cast<int>(editor::ToolMsvc), "toolchain numbering has drifted");
 static_assert(RSTUDIO_TOOL_SHC == static_cast<int>(editor::ToolShc), "toolchain numbering has drifted");
 static_assert(RSTUDIO_TOOL_CXX == static_cast<int>(editor::ToolCxx), "toolchain numbering has drifted");
+static_assert(RSTUDIO_TOOL_CXX1 == static_cast<int>(editor::ToolCxx1), "toolchain numbering has drifted");
 static_assert(RSTUDIO_CONFIG_RELEASE == static_cast<int>(editor::ConfigRelease), "config numbering has drifted");
 
 char* give(const std::string& text) {
@@ -591,13 +592,14 @@ int rstudio_uses_arch(int kind) {
     return editor::usesArch(static_cast<editor::ToolchainKind>(kind)) ? 1 : 0;
 }
 
-const char* rstudio_shown_command(const char* cc1, const char* cl, const char* shc, int kind,
+const char* rstudio_shown_command(const char* cc1, const char* cl, const char* shc, const char* cxx1, int kind,
                               const char* source, int language, const char* arch,
                               int config) {
     editor::Toolchain tool;
     if (cc1 && *cc1) tool.cc1 = cc1;
     if (cl && *cl) tool.cl = cl;
     if (shc && *shc) tool.shc = shc;
+    if (cxx1 && *cxx1) tool.cxx1 = cxx1;
 
     scratch() = editor::shownCommand(tool, static_cast<editor::ToolchainKind>(kind),
                                      source ? source : "",
@@ -618,13 +620,14 @@ const char* rstudio_why_not_run(int kind, const char* arch) {
 
 const char* rstudio_host_arch(void) { return editor::hostArch(); }
 
-const char* rstudio_shown_run_command(const char* cc1, const char* cl, const char* shc, int kind,
+const char* rstudio_shown_run_command(const char* cc1, const char* cl, const char* shc, const char* cxx1, int kind,
                                   const char* source, int language, const char* arch,
                                   int config) {
     editor::Toolchain tool;
     if (cc1 && *cc1) tool.cc1 = cc1;
     if (cl && *cl) tool.cl = cl;
     if (shc && *shc) tool.shc = shc;
+    if (cxx1 && *cxx1) tool.cxx1 = cxx1;
 
     scratch() = editor::shownProgramCommand(tool, static_cast<editor::ToolchainKind>(kind),
                                             source ? source : "",
@@ -634,12 +637,13 @@ const char* rstudio_shown_run_command(const char* cc1, const char* cl, const cha
     return scratch().c_str();
 }
 
-RStudioRan* rstudio_run(const char* cc1, const char* cl, const char* shc, int kind, const char* source,
+RStudioRan* rstudio_run(const char* cc1, const char* cl, const char* shc, const char* cxx1, int kind, const char* source,
                 int language, const char* arch, int config) {
     editor::Toolchain tool;
     if (cc1 && *cc1) tool.cc1 = cc1;
     if (cl && *cl) tool.cl = cl;
     if (shc && *shc) tool.shc = shc;
+    if (cxx1 && *cxx1) tool.cxx1 = cxx1;
 
     RStudioRan* out = new RStudioRan();
     out->ran = editor::runProgram(tool, static_cast<editor::ToolchainKind>(kind),
@@ -661,12 +665,13 @@ int rstudio_ran_error_line(RStudioRan* ran) { return static_cast<int>(ran->ran.d
 int rstudio_ran_error_column(RStudioRan* ran) { return static_cast<int>(ran->ran.diag.col); }
 const char* rstudio_ran_error_message(RStudioRan* ran) { return ran->ran.diag.message.c_str(); }
 
-RStudioProgram* rstudio_build_program(const char* cc1, const char* cl, const char* shc, int kind, const char* source,
+RStudioProgram* rstudio_build_program(const char* cc1, const char* cl, const char* shc, const char* cxx1, int kind, const char* source,
                               int language, const char* arch, int config) {
     editor::Toolchain tool;
     if (cc1 && *cc1) tool.cc1 = cc1;
     if (cl && *cl) tool.cl = cl;
     if (shc && *shc) tool.shc = shc;
+    if (cxx1 && *cxx1) tool.cxx1 = cxx1;
 
     RStudioProgram* out = new RStudioProgram();
     out->built = editor::buildProgram(tool, static_cast<editor::ToolchainKind>(kind),
@@ -1078,7 +1083,7 @@ int rstudio_project_part_language(RStudioProject* project, int index) {
 }
 
 int rstudio_project_part_toolchain(RStudioProject* project, int index, const char* cc1,
-                               const char* cl, const char* shc, int kind) {
+                               const char* cl, const char* shc, const char* cxx1, int kind) {
     if (!project || index < 0 || index >= static_cast<int>(project->parts.size()))
         return static_cast<int>(editor::ToolAuto);
     editor::Toolchain tool;
@@ -1086,6 +1091,7 @@ int rstudio_project_part_toolchain(RStudioProject* project, int index, const cha
     if (cc1 && *cc1) tool.cc1 = cc1;
     if (cl && *cl) tool.cl = cl;
     if (shc && *shc) tool.shc = shc;
+    if (cxx1 && *cxx1) tool.cxx1 = cxx1;
     return static_cast<int>(
         editor::toolchainOf(tool, project->parts[static_cast<size_t>(index)]));
 }
@@ -1116,7 +1122,7 @@ const char* rstudio_project_target_program(RStudioProject* project) {
 }
 
 int rstudio_project_debug_plan(RStudioProject* project, const char* cc1, const char* cl,
-                           const char* shc, int kind, const char* arch) {
+                           const char* shc, const char* cxx1, int kind, const char* arch) {
     if (!project) return 0;
     project->plan = editor::DebugPlan();
     project->whyNot.clear();
@@ -1129,6 +1135,7 @@ int rstudio_project_debug_plan(RStudioProject* project, const char* cc1, const c
     if (cc1 && *cc1) tool.cc1 = cc1;
     if (cl && *cl) tool.cl = cl;
     if (shc && *shc) tool.shc = shc;
+    if (cxx1 && *cxx1) tool.cxx1 = cxx1;
     tool.kind = static_cast<editor::ToolchainKind>(kind);
 
     project->plan = editor::dbg_planFor(tool, project->parts, arch ? arch : "");
@@ -1156,7 +1163,7 @@ const char* rstudio_project_blind_group(RStudioProject* project, int index) {
     return project->plan.blind[static_cast<size_t>(index)].c_str();
 }
 
-RStudioBuild* rstudio_build_target(RStudioProject* project, const char* cc1, const char* cl, const char* shc,
+RStudioBuild* rstudio_build_target(RStudioProject* project, const char* cc1, const char* cl, const char* shc, const char* cxx1,
                            int kind, const char* arch, int config) {
     if (!rstudio_project_target_ready(project)) return 0;
 
@@ -1164,6 +1171,7 @@ RStudioBuild* rstudio_build_target(RStudioProject* project, const char* cc1, con
     if (cc1 && *cc1) tool.cc1 = cc1;
     if (cl && *cl) tool.cl = cl;
     if (shc && *shc) tool.shc = shc;
+    if (cxx1 && *cxx1) tool.cxx1 = cxx1;
 
     tool.kind = static_cast<editor::ToolchainKind>(kind);
 
@@ -1223,12 +1231,13 @@ const char* rstudio_conversion_output(RStudioConversion* made) {
     return made->made.output.c_str();
 }
 
-RStudioBuild* rstudio_build(const char* cc1, const char* cl, const char* shc, int kind, const char* source,
+RStudioBuild* rstudio_build(const char* cc1, const char* cl, const char* shc, const char* cxx1, int kind, const char* source,
                     int language, const char* arch, int config) {
     editor::Toolchain tool;
     if (cc1 && *cc1) tool.cc1 = cc1;
     if (cl && *cl) tool.cl = cl;
     if (shc && *shc) tool.shc = shc;
+    if (cxx1 && *cxx1) tool.cxx1 = cxx1;
 
     RStudioBuild* out = new RStudioBuild();
     out->built = editor::build(tool, static_cast<editor::ToolchainKind>(kind),

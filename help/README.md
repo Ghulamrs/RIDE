@@ -1,12 +1,13 @@
-# RStudio 1.1 — the manual
+# RStudio 3.0 — the manual
 
 Ten pages about the editor, and one about each language it drives. Every page
 stands on its own; read them in order the first time and out of order after
 that.
 
 **1.0** was the editor for C and C++; **1.1** is the release Shalimar arrived
-in, and the one this manual is for. [Page 1](01-what-it-is.md) has the
-difference in full.
+in; **1.2** let Shalimar borrow, and call C; **3.0** is the release cxx1
+arrived in, and the one this manual is for. [Page 1](01-what-it-is.md) has
+the differences in full.
 
 `Help ▸ Contents` in the editor lists these same pages with a line each, and
 `F1` shows the keys. This directory is the long form.
@@ -30,7 +31,7 @@ not of the others:
 | | |
 | --- | --- |
 | [C](c.md) | cc1, three targets, DWARF on two of them |
-| [C++](cpp.md) | cl on Windows, clang++ or g++ elsewhere |
+| [C++](cpp.md) | cxx1, three targets, and the host's compiler by name |
 | [Shalimar](shalimar.md) | shc, the library a file borrows, the indent dialect, and a program that stops itself |
 | [C and Shalimar](mixing-c-and-shalimar.md) | calling a C library from a Shalimar program |
 

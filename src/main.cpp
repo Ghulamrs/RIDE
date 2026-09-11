@@ -28,6 +28,7 @@ int main(int argc, char** argv) {
     std::string cl;
     std::string shc;
     std::string cxx;
+    std::string cxx1;
     std::string c2s;
     long width = 0;
     int plain = 0;
@@ -45,6 +46,8 @@ int main(int argc, char** argv) {
             shc = argv[++i];
         } else if (std::strcmp(argv[i], "--cxx") == 0 && i + 1 < argc) {
             cxx = argv[++i];
+        } else if (std::strcmp(argv[i], "--cxx1") == 0 && i + 1 < argc) {
+            cxx1 = argv[++i];
         } else if (std::strcmp(argv[i], "--c2s") == 0 && i + 1 < argc) {
             c2s = argv[++i];
         } else if (std::strcmp(argv[i], "--config") == 0 && i + 1 < argc) {
@@ -63,8 +66,8 @@ int main(int argc, char** argv) {
         } else if (std::strcmp(argv[i], "-h") == 0 ||
                    std::strcmp(argv[i], "--help") == 0) {
             std::printf(
-                "usage: %s [file] [--project dir] [--toolchain auto|cc1|msvc|shc|c++]\n"
-                "           [--config debug|release] [--cc1 path] [--cl path]\n"
+                "usage: %s [file] [--project dir] [--toolchain auto|cc1|cxx1|msvc|shc|c++]\n"
+                "           [--config debug|release] [--cc1 path] [--cxx1 path] [--cl path]\n"
                 "           [--shc path] [--cxx path] [--c2s path]\n"
                 "           [--width n] [--tabs] [--case-indent] [--plain]\n"
                 "  RStudio - the console half, which is RStudio.exe on Linux and\n"
@@ -72,25 +75,25 @@ int main(int argc, char** argv) {
                 "  editor in a window, over the same core.\n"
                 "\n"
                 "  --toolchain    auto (the default) lets the file choose: C goes\n"
-                "                 to cc1, C++ to this machine's C++ compiler - cl\n"
-                "                 on Windows, c++ elsewhere - and Shalimar to shc.\n"
-                "                 Only C has a real choice in it; the other two go\n"
-                "                 to the only thing that reads them. Naming one uses\n"
-                "                 it for everything, and it says so where it cannot\n"
-                "                 take the file\n"
+                "                 to cc1, C++ to cxx1 and Shalimar to shc. C and C++\n"
+                "                 each have a second answer - this machine's own\n"
+                "                 compiler, cl on Windows and c++ elsewhere - and\n"
+                "                 Shalimar goes to the only thing that reads it.\n"
+                "                 Naming one uses it for everything, and it says so\n"
+                "                 where it cannot take the file\n"
                 "  --config       debug (the default) or release. For cl that is\n"
-                "                 /Od /Zi /D_DEBUG or /O2 /DNDEBUG; for cc1, -g and\n"
-                "                 the define on the targets that carry a line table,\n"
-                "                 and the define alone on the one that does not\n"
-                "  --cc1, --cl,   the programs to run; $CC1 names the first, $SHC\n"
-                "  --shc, --cxx   the third and $CXX the fourth, and\n"
-                "                 without either a cc1 beside this editor is used,\n"
-                "                 and failing that PATH is asked. cl is\n"
-                "                 also found through Visual Studio 2022 itself, so\n"
-                "                 no Developer Command Prompt is needed. --cxx is\n"
-                "                 c++ by default, which is clang++ on a Mac and g++\n"
-                "                 on Linux; a project file never names it, because\n"
-                "                 which one it is, is a fact about a machine\n"
+                "                 /Od /Zi /D_DEBUG or /O2 /DNDEBUG; for cc1 and cxx1,\n"
+                "                 -g and the define on the targets that carry a line\n"
+                "                 table, and the define alone on the one that does not\n"
+                "  --cc1, --cxx1, the programs to run; $CC1, $CXX1, $SHC and $CXX\n"
+                "  --cl, --shc,   name them too, and without either a cc1, cxx1 or\n"
+                "  --cxx          shc beside this editor is used, and failing that\n"
+                "                 PATH is asked. cl is also found through Visual\n"
+                "                 Studio 2022 itself, so no Developer Command Prompt\n"
+                "                 is needed. --cxx is c++ by default, which is clang++\n"
+                "                 on a Mac and g++ on Linux; a project file never\n"
+                "                 names it, because which one it is, is a fact about\n"
+                "                 a machine\n"
                 "  --project      what the pane on the left shows; the file's own\n"
                 "                 directory by default\n"
                 "  --width n      columns per indent step (4)\n"
@@ -116,7 +119,9 @@ int main(int argc, char** argv) {
     }
 
     if (!toolchain.empty() && toolchain != "auto" && toolchain != "cc1" &&
-        toolchain != "msvc" && toolchain != "cl" && toolchain != "shc") {
+        toolchain != "msvc" && toolchain != "cl" && toolchain != "shc" &&
+        toolchain != "cxx1" && toolchain != "c++" && toolchain != "cxx" &&
+        toolchain != "g++" && toolchain != "clang++") {
         std::fprintf(stderr, "%s: unknown toolchain %s\n", me.c_str(), toolchain.c_str());
         return 2;
     }
@@ -154,6 +159,7 @@ int main(int argc, char** argv) {
     if (toolchain == "msvc" || toolchain == "cl") ed.setToolchain(editor::ToolMsvc);
     else if (toolchain == "cc1") ed.setToolchain(editor::ToolCc1);
     else if (toolchain == "shc") ed.setToolchain(editor::ToolShc);
+    else if (toolchain == "cxx1") ed.setToolchain(editor::ToolCxx1);
     else if (toolchain == "c++" || toolchain == "cxx" || toolchain == "g++" ||
              toolchain == "clang++") ed.setToolchain(editor::hostCppToolchain());
     else if (toolchain == "auto") ed.setToolchain(editor::ToolAuto);
@@ -176,6 +182,7 @@ int main(int argc, char** argv) {
     if (!cc1.empty()) ed.setCc1(cc1);
     if (!cl.empty()) ed.setCl(cl);
     if (!shc.empty()) ed.setShc(shc);
+    if (!cxx1.empty()) ed.setCxx1(cxx1);
     if (!c2s.empty()) ed.setConverter(c2s);
 
     if (cxx.empty()) {

@@ -7,8 +7,8 @@
 Three machines, three shapes, one idea: open one thing and get all four
 programs, with the editor built after the three it drives.
 
-    macOS    RStudio.xcworkspace          RStudio.exe, cc1.exe, shc.exe, c2s.exe
-    Windows  RStudio.sln                  RStudioConsole, RStudioGui, cc1, shc, c2s
+    macOS    RStudio.xcworkspace          RStudio.exe, cc1.exe, cxx1.exe, shc.exe, c2s.exe
+    Windows  RStudio.sln                  RStudioConsole, RStudioGui, cc1, cxx1, shc, c2s
     Linux    workspace.mk                 make -f workspace.mk
 
 Was make-xcodeproj.py while Xcode was all it wrote.
@@ -17,8 +17,16 @@ Three command line tools, built by clang++, from three separate repositories:
 
     RStudio  this editor         RStudio/Editor.xcodeproj
     cc1      the C compiler      ../Compiler-C/cc1.xcodeproj
+    cxx1     the C++ compiler    ../C++/cxx1.xcodeproj
     shc      the Shalimar one    ../Compiler-S/shc.xcodeproj
     c2s      the converter       ../Converter-C2S/c2s.xcodeproj
+
+cxx1 joined in 3.0. Its checkout is called C++ here and Compiler-Cpp on
+GitHub and on the Windows box, which is the one place the name matters: the
+solution names ..\Compiler-Cpp, and the Makefile's CXX1_DIR is overridable
+for the Linux box, where it is ~/cxx1. cxx1 keeps its own IDE projects in
+ide/ for its own use; the two written here at its root are the workspace's,
+as shc's and c2s's are, and its release seal covers neither.
 
 c2s is the odd one of the four: the editor runs it but does not compile with
 it. It converts C89 to Shalimar and back, and the editor's Language menu has
@@ -181,6 +189,7 @@ def projects():
             # cc1 to cc1.exe stopped the workspace building the compilers
             # without anything saying so.
             "depends": [("cc1.exe", "../Compiler-C/cc1.xcodeproj"),
+                        ("cxx1.exe", "../C++/cxx1.xcodeproj"),
                         ("shc.exe", "../Compiler-S/shc.xcodeproj"),
                         ("c2s.exe", "../Converter-C2S/c2s.xcodeproj")],
         },
@@ -219,6 +228,26 @@ def projects():
             # incomplete copy step this whole arrangement exists to avoid.
             "install_extra": ('mkdir -p "$dest/lib"\n'
                               'cp -f "$BUILT_PRODUCTS_DIR"/lib/*.a "$dest/lib/"\n'),
+        },
+        {
+            "product": "cxx1.exe",
+            "root": os.path.join(SIBLINGS, "C++"),
+            "out": os.path.join(SIBLINGS, "C++", "cxx1.xcodeproj"),
+            # SRCS is three wildcards over src/, src/parser and src/backend -
+            # the same shape as cc1's, which it was forked from, plus the
+            # parser directory the fork grew.
+            "sources": by_glob(os.path.join(SIBLINGS, "C++"),
+                               ("src", "src/parser", "src/backend")),
+            "headers": headers_under(os.path.join(SIBLINGS, "C++"), ("src",)),
+            "include": "$(SRCROOT)/src",
+            # Both header directories, compiled in as its Makefile compiles
+            # them: lib/ holds the C headers and include/ the C++ ones on top.
+            # cxx1's own ide/ project once carried only the first, and a
+            # binary built that way answered `cannot find <vector>` - see its
+            # ide/README.md. The driver looks beside itself first in any case;
+            # these are the fallback for a binary that was moved on its own.
+            "defines": [("CXX1_INCLUDE_DIR", "$(SRCROOT)/lib"),
+                        ("CXX1_CXX_INCLUDE_DIR", "$(SRCROOT)/include")],
         },
         {
             "product": "c2s.exe",
@@ -394,10 +423,13 @@ def project_text(spec):
                  "includeInIndex = 0; path = %s; sourceTree = BUILT_PRODUCTS_DIR; };\n"
                  % (PRODUCT, product, product))
     for d in dep_ids:
+        # Quoted, since one of these is ../C++/cxx1.xcodeproj and a '+' is not
+        # a character an unquoted pbxproj string may hold - Xcode read the
+        # project as damaged and the workspace lost the editor, silently.
         lines.append("\t\t%s /* %s.xcodeproj */ = {isa = PBXFileReference; "
                      "lastKnownFileType = \"wrapper.pb-project\"; name = %s.xcodeproj; "
                      "path = %s; sourceTree = \"<group>\"; };\n"
-                     % (d["file"], d["product"], d["product"], d["path"]))
+                     % (d["file"], d["product"], d["product"], pbx_quoted(d["path"])))
     lines.append("/* End PBXFileReference section */\n")
 
     if dep_ids:
@@ -784,12 +816,18 @@ def pbx_quoted(text):
                          .replace("\n", "\\n"))
 
 
-def vcxproj_text(product, sources, defines, extra=""):
+def vcxproj_text(product, sources, defines, extra="", includes=(), disabled=()):
     """A command line tool for MSVC, held to the same flags build.bat uses.
 
     /std:c++14 /W4 /WX /EHsc /permissive- - the same four this project has
     always been built with on that machine, so the solution and build.bat
     produce the same program rather than two that differ in what they refused.
+
+    `includes` and `disabled` are for a project whose own MSVC build carries
+    them - cxx1's msvc/build.cmd puts its compat/ directory on the include
+    path and turns off five warnings that fire on code it forked rather than
+    wrote. A project written here has to say what that script says, or it is
+    a stricter build of the same tree and fails where the tree's own passes.
     """
     configurations = "".join(
         '    <ProjectConfiguration Include="%s|x64">\n'
@@ -848,6 +886,7 @@ def vcxproj_text(product, sources, defines, extra=""):
         '      <ExceptionHandling>Sync</ExceptionHandling>\n'
         '      <ConformanceMode>true</ConformanceMode>\n'
         '      <PreprocessorDefinitions>%s</PreprocessorDefinitions>\n'
+        '%s%s'
         '    </ClCompile>\n'
         '    <Link>\n'
         '      <SubSystem>Console</SubSystem>\n'
@@ -858,7 +897,12 @@ def vcxproj_text(product, sources, defines, extra=""):
         '  <Import Project="$(VCTargetsPath)\\Microsoft.Cpp.targets" />\n'
         '</Project>\n'
         % (configurations, guid(product), product, per_config, product,
-           definitions, extra, compiled))
+           definitions,
+           ('      <AdditionalIncludeDirectories>%s;%%(AdditionalIncludeDirectories)'
+            '</AdditionalIncludeDirectories>\n' % ";".join(includes)) if includes else "",
+           ('      <DisableSpecificWarnings>%s</DisableSpecificWarnings>\n'
+            % ";".join(disabled)) if disabled else "",
+           extra, compiled))
 
 
 SOLUTION_FOLDER = "{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}"
@@ -972,6 +1016,9 @@ def workspace_mk_text():
 CC1_DIR ?= ../Compiler-C
 SHC_DIR ?= ../Compiler-S
 C2S_DIR ?= ../Converter-C2S
+# The C++ compiler's checkout is C++ beside this one, Compiler-Cpp on GitHub
+# and ~/cxx1 on the Linux box - so this one is the likeliest to need naming.
+CXX1_DIR ?= ../C++
 
 # ---- one directory, named once and given to all four ------------------------
 #
@@ -996,7 +1043,7 @@ C2S_DIR ?= ../Converter-C2S
 BINDIR ?= $(CURDIR)
 OUT := $(abspath $(BINDIR))
 
-.PHONY: all cc1 shc c2s editor confirm bin check clean
+.PHONY: all cc1 cxx1 shc c2s editor confirm bin check clean
 
 # `confirm` and not `editor`, so that the last thing a workspace build does is
 # check that what the editor drives is actually beside it.
@@ -1020,9 +1067,16 @@ shc:
 c2s:
 	$(MAKE) -C $(C2S_DIR) BINDIR=$(OUT) OBJDIR=$(OUT)/obj/c2s
 
-# The dependency, said the same way it is said in the other two: the editor is
-# built after the things it drives. Nothing of them ends up inside it.
-editor: cc1 shc c2s
+# The C++ compiler, since 3.0, built the way cc1 is: its Makefile takes the
+# same two variables. Its headers stay in its own tree - the driver finds
+# them beside itself or through the paths compiled into it - so, unlike shc's
+# runtime archives, nothing of it has to travel to $(OUT) but the binary.
+cxx1:
+	$(MAKE) -C $(CXX1_DIR) BINDIR=$(OUT) OBJDIR=$(OUT)/obj/cxx1
+
+# The dependency, said the same way it is said in the other three: the editor
+# is built after the things it drives. Nothing of them ends up inside it.
+editor: cc1 cxx1 shc c2s
 	$(MAKE) BINDIR=$(OUT) OBJDIR=$(OUT)/obj/editor
 
 # Asked of RStudio rather than answered here. The editor is the thing that
@@ -1062,6 +1116,10 @@ endif
 # is below: those are the ones this build produced, and they are the ones
 # whose behaviour the converter's output is being judged against.
 	$(MAKE) -C $(C2S_DIR) BINDIR=$(OUT) OBJDIR=$(OUT)/obj/c2s test CC1=$(OUT)/cc1.exe SHC=$(OUT)/shc.exe
+# cxx1's own suites, against the binary just built into $(OUT) - its Makefile
+# runs them on $(TARGET), which BINDIR names. The differential suites ask the
+# host's g++ or clang++ for the answers, so they run wherever the editor does.
+	$(MAKE) -C $(CXX1_DIR) BINDIR=$(OUT) OBJDIR=$(OUT)/obj/cxx1 test
 # The three just built into $(OUT), and not the copies in those repositories'
 # own trees. Those are usually the same file and occasionally are not, and the
 # occasion is exactly the one worth catching: this build wrote its compilers
@@ -1072,7 +1130,7 @@ endif
 # need a compiler and says so quietly - so the count fell from 792 and 232 to
 # 686 and 115 and everything still read as green. A suite that skips is not a
 # suite that passes.
-	$(MAKE) BINDIR=$(OUT) OBJDIR=$(OUT)/obj/editor check CC1=$(OUT)/cc1.exe SHC=$(OUT)/shc.exe C2S=$(OUT)/c2s.exe
+	$(MAKE) BINDIR=$(OUT) OBJDIR=$(OUT)/obj/editor check CC1=$(OUT)/cc1.exe CXX1=$(OUT)/cxx1.exe SHC=$(OUT)/shc.exe C2S=$(OUT)/c2s.exe
 
 # The alternative destination, for anyone who would rather the checkout root
 # stayed as it was. Nothing is copied into it - see the `bin` rule below.
@@ -1096,6 +1154,7 @@ clean:
 	$(MAKE) -C $(CC1_DIR) BINDIR=$(OUT) OBJDIR=$(OUT)/obj/cc1 clean
 	$(MAKE) -C $(SHC_DIR) BINDIR=$(OUT) BUILD=$(OUT)/obj/shc clean
 	$(MAKE) -C $(C2S_DIR) BINDIR=$(OUT) OBJDIR=$(OUT)/obj/c2s clean
+	$(MAKE) -C $(CXX1_DIR) BINDIR=$(OUT) OBJDIR=$(OUT)/obj/cxx1 clean
 	$(MAKE) BINDIR=$(OUT) OBJDIR=$(OUT)/obj/editor clean
 	rm -rf $(OUT)/obj
 """
@@ -1204,6 +1263,9 @@ def same_sources(there, wanted_text, path):
 def main():
     checking = "--check" in sys.argv[1:]
     specs = projects()
+    # By product rather than by position, since a project joining the list -
+    # cxx1 did, in 3.0 - moved every index after it.
+    spec_of = {spec["product"]: spec for spec in specs}
     stale = []
 
     # Before anything is read: the Makefile must be made of the variables this
@@ -1241,7 +1303,7 @@ def main():
                                 ["_CRT_SECURE_NO_WARNINGS"]),
                    "RStudioConsole.vcxproj"))
     wanted.append((os.path.join(SIBLINGS, "Compiler-S", "shc.vcxproj"),
-                   vcxproj_text("shc", specs[2]["sources"], ["_CRT_SECURE_NO_WARNINGS"],
+                   vcxproj_text("shc", spec_of["shc.exe"]["sources"], ["_CRT_SECURE_NO_WARNINGS"],
                                 shc_runtime_step()),
                    "shc.vcxproj"))
     # The converter's, which docs/ANALYSIS.md section 12 scheduled as part of
@@ -1249,12 +1311,34 @@ def main():
     # than by hand for the same reason the others are: its Makefile is five
     # wildcards, and a hand-kept list of twenty-two files drifts.
     wanted.append((os.path.join(SIBLINGS, "Converter-C2S", "c2s.vcxproj"),
-                   vcxproj_text("c2s", specs[3]["sources"],
+                   vcxproj_text("c2s", spec_of["c2s.exe"]["sources"],
                                 ["_CRT_SECURE_NO_WARNINGS"]),
                    "c2s.vcxproj"))
 
+    # cxx1's, at the root of its checkout beside the .xcodeproj written above,
+    # and not its own ide/cxx1.vcxproj. That one sets OutDir to its own
+    # build\ unconditionally, so a solution build would leave cxx1.exe there
+    # and not beside the editor - the cc1 trap again - and the file that
+    # writes it, ide/generate.py, is under cxx1's release seal. A project
+    # written here costs the seal nothing. What its msvc/build.cmd passes is
+    # passed here: the two header directories compiled in, spelled with
+    # forward slashes because they become C string literals, compat/ on the
+    # include path for <unistd.h>, and the five warnings it disables.
+    cxx1_root = "$([System.String]::Copy('$(ProjectDir)').Replace('\\','/'))"
+    wanted.append((os.path.join(SIBLINGS, "C++", "cxx1.vcxproj"),
+                   vcxproj_text("cxx1", spec_of["cxx1.exe"]["sources"],
+                                ["_CRT_SECURE_NO_WARNINGS",
+                                 'CXX1_INCLUDE_DIR="%slib"' % cxx1_root,
+                                 'CXX1_CXX_INCLUDE_DIR="%sinclude"' % cxx1_root],
+                                includes=("$(ProjectDir)msvc\\compat", "$(ProjectDir)src"),
+                                disabled=("4996", "4267", "4244", "4456", "4146")),
+                   "cxx1.vcxproj"))
+
     entries = [
         ("cc1", "../Compiler-C/msvc/cc1.vcxproj", CC1_GUID, []),
+        # Compiler-Cpp, not C++: that is the checkout's name on the Windows
+        # box, after the repository, and the solution is only read there.
+        ("cxx1", "../Compiler-Cpp/cxx1.vcxproj", guid("cxx1"), []),
         ("shc", "../Compiler-S/shc.vcxproj", guid("shc"), []),
         # c2s is built with them and not by them: the editor runs it over the
         # open file from the Language menu, and finds it beside itself the
@@ -1262,7 +1346,7 @@ def main():
         ("c2s", "../Converter-C2S/c2s.vcxproj", guid("c2s"), []),
         # the editor after both, which is the dependency this whole thing is
         # for - said in a .sln the way the workspace says it in a .xcodeproj.
-        ("RStudioConsole", "RStudioConsole.vcxproj", guid("RStudioConsole"), [CC1_GUID, guid("shc"), guid("c2s")]),
+        ("RStudioConsole", "RStudioConsole.vcxproj", guid("RStudioConsole"), [CC1_GUID, guid("cxx1"), guid("shc"), guid("c2s")]),
         # The window, on the same footing as the console half. It is in the
         # solution for two reasons: so that one build makes all four, and
         # because being in a solution is what moves its output into the
@@ -1272,7 +1356,7 @@ def main():
         # version of it set OutDir, IntDir, BasicRuntimeChecks and a platform
         # version, and the binary died at startup with heap corruption before
         # main. Nothing in that file is touched to get this.
-        ("RStudioGui", "winforms/RStudioGui.vcxproj", GUI_GUID, [CC1_GUID, guid("shc"), guid("c2s")]),
+        ("RStudioGui", "winforms/RStudioGui.vcxproj", GUI_GUID, [CC1_GUID, guid("cxx1"), guid("shc"), guid("c2s")]),
     ]
     wanted.append((os.path.join(HERE, "RStudio.sln"), solution_text(entries),
                    "RStudio.sln"))
@@ -1313,7 +1397,7 @@ def main():
         return 1
 
     if checking:
-        print("all four projects and the workspace are what the Makefiles say,")
+        print("all five projects and the workspace are what the Makefiles say,")
         print("and so are the two kept by hand - the window's and cc1's")
         return 0
 
@@ -1321,8 +1405,8 @@ def main():
         print("%-4s %d sources, %d headers  ->  %s"
               % (spec["product"], len(spec["sources"]), len(spec["headers"]),
                  os.path.relpath(spec["out"], SIBLINGS)))
-    print("RStudio.xcworkspace  opens all four on a Mac")
-    print("RStudio.sln          all five for Visual Studio 2022")
+    print("RStudio.xcworkspace  opens all five on a Mac")
+    print("RStudio.sln          all six for Visual Studio 2022")
     print("workspace.mk         and for make on the Linux box")
     return 0
 

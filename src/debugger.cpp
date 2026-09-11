@@ -377,7 +377,8 @@ std::string dbg_whyNot(ToolchainKind kind, const std::string& arch) {
         return "cl writes a .pdb and cdb reads one, but cdb is not installed - "
                "add Debugging Tools for Windows";
     if (!emitsDebugInfo(kind, arch))
-        return "cc1 generates MASM for " + arch + ", which carries no line table";
+        return std::string(toolchainName(kind)) + " generates MASM for " + arch +
+               ", which carries no line table";
     return std::string("no ") + dbg_name(dbg_here()) + " on this machine";
 }
 

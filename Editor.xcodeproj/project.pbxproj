@@ -89,9 +89,10 @@
 		FCEAEAEAE0D3842C42B1F9AA /* src/utf8.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = src/utf8.h; sourceTree = "<group>"; };
 		995EF1784AA84428E41D623A /* src/workspace.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = src/workspace.h; sourceTree = "<group>"; };
 		7D3DCDDC1F56CA3A8133A72F /* RStudio.exe */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = RStudio.exe; sourceTree = BUILT_PRODUCTS_DIR; };
-		CBF1505F8E434A970C8CCCBC /* cc1.exe.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = cc1.exe.xcodeproj; path = ../Compiler-C/cc1.xcodeproj; sourceTree = "<group>"; };
-		0CF12007761D2B13C30AA2B2 /* shc.exe.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = shc.exe.xcodeproj; path = ../Compiler-S/shc.xcodeproj; sourceTree = "<group>"; };
-		F37F914312A3544D790C94C4 /* c2s.exe.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = c2s.exe.xcodeproj; path = ../Converter-C2S/c2s.xcodeproj; sourceTree = "<group>"; };
+		CBF1505F8E434A970C8CCCBC /* cc1.exe.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = cc1.exe.xcodeproj; path = "../Compiler-C/cc1.xcodeproj"; sourceTree = "<group>"; };
+		AED20E2FC2634DC5C3485227 /* cxx1.exe.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = cxx1.exe.xcodeproj; path = "../C++/cxx1.xcodeproj"; sourceTree = "<group>"; };
+		0CF12007761D2B13C30AA2B2 /* shc.exe.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = shc.exe.xcodeproj; path = "../Compiler-S/shc.xcodeproj"; sourceTree = "<group>"; };
+		F37F914312A3544D790C94C4 /* c2s.exe.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = c2s.exe.xcodeproj; path = "../Converter-C2S/c2s.xcodeproj"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXContainerItemProxy section */
@@ -108,6 +109,20 @@
 			proxyType = 1;
 			remoteGlobalIDString = 13A704A3342D8BFA7D8B141A;
 			remoteInfo = cc1.exe;
+		};
+		9228B59F64CC3C183829BA1B /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = AED20E2FC2634DC5C3485227 /* cxx1.exe.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = F9BB07A4187E2CF6D0A9D200;
+			remoteInfo = cxx1.exe;
+		};
+		DF445D00865E2A8BAEC31A3B /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = AED20E2FC2634DC5C3485227 /* cxx1.exe.xcodeproj */;
+			proxyType = 1;
+			remoteGlobalIDString = 18A333A5AFDA179A6C4A9DFF;
+			remoteInfo = cxx1.exe;
 		};
 		32C71739C1D5E1E64990D710 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -155,6 +170,7 @@
 			children = (
 				97FB948E4EAC59940BFC4C23 /* Sources */,
 				CBF1505F8E434A970C8CCCBC /* cc1.exe.xcodeproj */,
+				AED20E2FC2634DC5C3485227 /* cxx1.exe.xcodeproj */,
 				0CF12007761D2B13C30AA2B2 /* shc.exe.xcodeproj */,
 				F37F914312A3544D790C94C4 /* c2s.exe.xcodeproj */,
 				744890367C8084A94875E5BE /* Products */,
@@ -235,6 +251,14 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
+		27B3BEEFE5AFF3576F7DD53B /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				81F17EAB690B2712E971217D /* cxx1.exe */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
 		E23FF50175724F7BD162AEA1 /* Products */ = {
 			isa = PBXGroup;
 			children = (
@@ -259,6 +283,13 @@
 			fileType = "compiled.mach-o.executable";
 			path = cc1.exe;
 			remoteRef = 7F8BF1984EEDE904FB532793 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		81F17EAB690B2712E971217D /* cxx1.exe */ = {
+			isa = PBXReferenceProxy;
+			fileType = "compiled.mach-o.executable";
+			path = cxx1.exe;
+			remoteRef = 9228B59F64CC3C183829BA1B /* PBXContainerItemProxy */;
 			sourceTree = BUILT_PRODUCTS_DIR;
 		};
 		200C65D80FBABB40A830E74A /* shc.exe */ = {
@@ -290,6 +321,7 @@
 			);
 			dependencies = (
 				2D94428F2DEC64F3AD33CDB5 /* PBXTargetDependency */,
+				C982206FA11F72E9CBA681A9 /* PBXTargetDependency */,
 				F3E42DA26B9285E6C32D11A2 /* PBXTargetDependency */,
 				EF18CE9F2F4C0054317F0417 /* PBXTargetDependency */,
 			);
@@ -305,6 +337,11 @@
 			isa = PBXTargetDependency;
 			name = cc1.exe;
 			targetProxy = 507013D911A0E20E653D2E0D /* PBXContainerItemProxy */;
+		};
+		C982206FA11F72E9CBA681A9 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = cxx1.exe;
+			targetProxy = DF445D00865E2A8BAEC31A3B /* PBXContainerItemProxy */;
 		};
 		F3E42DA26B9285E6C32D11A2 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
@@ -339,6 +376,10 @@
 				{
 					ProductGroup = C56C1CE51D444BDEAAFDD653 /* Products */;
 					ProjectRef = CBF1505F8E434A970C8CCCBC /* cc1.exe.xcodeproj */;
+				},
+				{
+					ProductGroup = 27B3BEEFE5AFF3576F7DD53B /* Products */;
+					ProjectRef = AED20E2FC2634DC5C3485227 /* cxx1.exe.xcodeproj */;
 				},
 				{
 					ProductGroup = E23FF50175724F7BD162AEA1 /* Products */;

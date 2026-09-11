@@ -26,7 +26,7 @@
 %global _build_id_links none
 
 Name:           rstudio-editor
-Version:        1.1
+Version:        3.0
 Release:        1%{?dist}
 Summary:        An editor for C, C++ and Shalimar, with the two compilers it drives
 
@@ -42,15 +42,17 @@ BuildRequires:  gcc-c++, make
 Requires:       gcc, binutils
 
 %description
-RStudio is a terminal editor for three languages: C and C++ through cc1 and the
-host's C++ compiler, and Shalimar through shc. It edits, builds, runs and
-debugs without leaving the keyboard.
+RStudio is a terminal editor for three languages: C through cc1, C++ through
+cxx1, and Shalimar through shc - with the host's own C and C++ compiler one
+key away for the first two. It edits, builds, runs and debugs without leaving
+the keyboard.
 
-This package carries all three programs, because the editor drives the other
-two and is not much use on its own:
+This package carries all four programs, because the editor drives the other
+three and is not much use on its own:
 
   RStudio.exe   the editor
   cc1.exe       a C compiler, three targets, its own DWARF
+  cxx1.exe      a C++11 compiler, the same three targets, its own DWARF
   shc.exe       a compiler for Shalimar, and the runtime it links against
 
 The manual is in %{prefix_dir}/share/doc, and Help > Contents inside the
@@ -66,6 +68,13 @@ editor lists the same pages.
 # not $(CURDIR)/lib, which is the build tree and will not exist afterwards.
 %make_build -C %{_sourcedir}/Compiler-C INCDIR=%{prefix_dir}/lib/cc1
 
+# cxx1 the same way, with both of its header directories placed: lib/ holds
+# the C headers and include/ the C++ ones on top. The checkout is called C++
+# beside the others on the machine this is written on and Compiler-Cpp on
+# GitHub; the RPM takes the repository's name.
+%make_build -C %{_sourcedir}/Compiler-Cpp INCDIR=%{prefix_dir}/lib/cxx1 \
+    CXXINCDIR=%{prefix_dir}/include/cxx1
+
 # shc, and both runtime archives with it.
 %make_build -C %{_sourcedir}/Compiler-S
 
@@ -76,11 +85,14 @@ editor lists the same pages.
 install -d %{buildroot}%{prefix_dir}/bin
 install -d %{buildroot}%{prefix_dir}/lib
 install -d %{buildroot}%{prefix_dir}/lib/cc1
+install -d %{buildroot}%{prefix_dir}/lib/cxx1
+install -d %{buildroot}%{prefix_dir}/include/cxx1
 install -d %{buildroot}%{prefix_dir}/share/doc/rstudio-editor
 install -d %{buildroot}/etc/profile.d
 
 install -m 0755 %{_sourcedir}/RStudio/RStudio.exe    %{buildroot}%{prefix_dir}/bin/
 install -m 0755 %{_sourcedir}/Compiler-C/cc1.exe     %{buildroot}%{prefix_dir}/bin/
+install -m 0755 %{_sourcedir}/Compiler-Cpp/cxx1.exe  %{buildroot}%{prefix_dir}/bin/
 install -m 0755 %{_sourcedir}/Compiler-S/shc.exe     %{buildroot}%{prefix_dir}/bin/
 
 # shc looks here, one directory up from the binary. Both archives: the release
@@ -90,10 +102,14 @@ install -m 0644 %{_sourcedir}/Compiler-S/lib/shmrt-*.a %{buildroot}%{prefix_dir}
 # cc1's headers, at the path compiled into it above.
 cp -a %{_sourcedir}/Compiler-C/lib/. %{buildroot}%{prefix_dir}/lib/cc1/
 
+# cxx1's two, at the two paths compiled into it above.
+cp -a %{_sourcedir}/Compiler-Cpp/lib/. %{buildroot}%{prefix_dir}/lib/cxx1/
+cp -a %{_sourcedir}/Compiler-Cpp/include/. %{buildroot}%{prefix_dir}/include/cxx1/
+
 cp -a %{_sourcedir}/RStudio/help/. %{buildroot}%{prefix_dir}/share/doc/rstudio-editor/
 
 cat > %{buildroot}/etc/profile.d/rstudio-editor.sh <<'PROFILE'
-# RStudio and the two compilers it drives.
+# RStudio and the three compilers it drives.
 case ":$PATH:" in
   *:/opt/rstudio/bin:*) ;;
   *) PATH="/opt/rstudio/bin:$PATH" ;;
@@ -120,6 +136,16 @@ PROBE
 %{_sourcedir}/Compiler-C/cc1.exe probe.c -o probec
 test "$(./probec)" = "42"
 
+# cxx1, through one of its own headers, so that the check reaches the include
+# directories and not only the binary.
+cat > probe.cpp <<'PROBE'
+#include <cstdio>
+class Six { public: int times(int n) const { return 6 * n; } };
+int main() { Six s; std::printf("%d\n", s.times(7)); return 0; }
+PROBE
+%{_sourcedir}/Compiler-Cpp/cxx1.exe -nologo probe.cpp -o probecpp
+test "$(./probecpp)" = "42"
+
 # Shalimar's ? separates what it prints with spaces and leaves one on the end,
 # so this is "42 " and not "42". Trimmed rather than matched exactly, because
 # what is being checked is that the compiler produced a working program - the
@@ -138,16 +164,24 @@ test "$(./probeshm | tr -d '[:space:]')" = "42"
 %dir %{prefix_dir}
 %dir %{prefix_dir}/bin
 %dir %{prefix_dir}/lib
+%dir %{prefix_dir}/include
 %dir %{prefix_dir}/share
 %dir %{prefix_dir}/share/doc
 %{prefix_dir}/bin/RStudio.exe
 %{prefix_dir}/bin/cc1.exe
+%{prefix_dir}/bin/cxx1.exe
 %{prefix_dir}/bin/shc.exe
 %{prefix_dir}/lib/shmrt-*.a
 %{prefix_dir}/lib/cc1/
+%{prefix_dir}/lib/cxx1/
+%{prefix_dir}/include/cxx1/
 %{prefix_dir}/share/doc/rstudio-editor/
 /etc/profile.d/rstudio-editor.sh
 
 %changelog
+* Fri Sep 11 2026 G. R. Akhtar <akhtar170313@gmail.com> - 3.0-1
+- RStudio 3.0, the release cxx1 arrived in: C++ goes to cxx1 by default and
+  to the host's compiler by name. cxx1.exe and its two header directories
+  join the package. Not yet rebuilt as an RPM since this change.
 * Sat Aug 22 2026 G. R. Akhtar <akhtar170313@gmail.com> - 1.1-1
 - First package. RStudio 1.1, the release Shalimar arrived in.

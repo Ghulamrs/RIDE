@@ -21,16 +21,21 @@ The Console tab gets the command and everything the compiler said. A build of
 several groups says each one as it starts:
 
 ```
-$ cc1 and clang++ 3 sources -o three
+$ cc1, clang++ and cxx1 3 sources -o three
     src/main.c
     src/legacy.c
     engine/engine.cpp
 $ Sources (cc1)
 $ Legacy (clang++)
-$ Engine (clang++)
+$ Engine (cxx1)
 $ linking with clang++
 [built /home/you/three/three]
 ```
+
+`Sources` and `Engine` named nothing: C went to cc1 and C++ to cxx1, which is
+where each goes on its own. `Legacy` is a group of C that asked for the
+host's C++ compiler by name. The link is the host's, since cxx1's objects
+want the C++ runtime the machine has.
 
 **An error in a file nothing has opened opens it.** cc1 stops at the first one,
 and in a build of six files that is usually not the file you were looking at,
@@ -49,8 +54,8 @@ rather than in whichever file the target happened to list first.
 | `x86_64-linux` | GNU assembly |
 | `arm64-darwin` | this Mac's own |
 
-**Only the host's own target reaches a program.** cc1 and shc generate for all
-three, but the assembler and linker they hand off to are this machine's, so a
+**Only the host's own target reaches a program.** cc1, cxx1 and shc generate
+for all three, but the assembler and linker they hand off to are this machine's, so a
 cross target stops at the assembly — which is shown in the Assembly tab. The
 editor says so rather than failing obscurely.
 
@@ -67,7 +72,7 @@ differs, and the editor says which rather than pretending they are the same:
 | --- | --- | --- |
 | `cl` | `/Od /Zi /D_DEBUG` | `/O2 /DNDEBUG` |
 | `clang++`, `g++` | `-g -D_DEBUG=1` | `-O2 -DNDEBUG=1` |
-| `cc1` | `-g -D_DEBUG=1`, and the define alone where there is no line table | `-DNDEBUG=1` |
+| `cc1`, `cxx1` | `-g -D_DEBUG=1`, and the define alone where there is no line table | `-DNDEBUG=1` |
 | `shc` | `--debug` | nothing |
 
 **cc1 has no optimiser**, so release for it is the define and nothing else. The
