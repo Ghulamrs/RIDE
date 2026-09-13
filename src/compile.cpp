@@ -403,7 +403,7 @@ Built buildParts(const Toolchain& tool, const std::vector<Part>& parts,
     // For the emulated target the parts' assembly is the program: each part
     // writes its .s files straight into <program>.vm, and there is no link.
     const bool emulated = isEmulated(arch);
-    std::string objects = emulated ? program + ".vm" : temporaryDirectory("rstudio-parts");
+    std::string objects = emulated ? emulatedProgram(program) : temporaryDirectory("rstudio-parts");
     if (emulated) path::removeTree(objects);
     path::makeDirectories(objects);
 

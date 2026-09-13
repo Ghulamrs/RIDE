@@ -89,40 +89,55 @@
 		FCEAEAEAE0D3842C42B1F9AA /* src/utf8.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = src/utf8.h; sourceTree = "<group>"; };
 		995EF1784AA84428E41D623A /* src/workspace.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = src/workspace.h; sourceTree = "<group>"; };
 		7D3DCDDC1F56CA3A8133A72F /* RStudio.exe */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = RStudio.exe; sourceTree = BUILT_PRODUCTS_DIR; };
-		CBF1505F8E434A970C8CCCBC /* cc1.exe.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = cc1.exe.xcodeproj; path = "../Compiler-C/cc1.xcodeproj"; sourceTree = "<group>"; };
-		AED20E2FC2634DC5C3485227 /* cxx1.exe.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = cxx1.exe.xcodeproj; path = "../C++/cxx1.xcodeproj"; sourceTree = "<group>"; };
+		F1DCFDB65F93625E5F8AFCEC /* cc1i.exe.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = cc1i.exe.xcodeproj; path = "../VM6747/Compiler-Ci/cc1.xcodeproj"; sourceTree = "<group>"; };
+		935BB4E07B0FFC8A1ED9426B /* cxx1i.exe.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = cxx1i.exe.xcodeproj; path = "../VM6747/Compiler-Cppi/cxx1.xcodeproj"; sourceTree = "<group>"; };
+		7F746CB55AD3A770E177E479 /* vm6747.exe.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = vm6747.exe.xcodeproj; path = "../VM6747/Emulator/vm6747.xcodeproj"; sourceTree = "<group>"; };
 		0CF12007761D2B13C30AA2B2 /* shc.exe.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = shc.exe.xcodeproj; path = "../Compiler-S/shc.xcodeproj"; sourceTree = "<group>"; };
 		F37F914312A3544D790C94C4 /* c2s.exe.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = c2s.exe.xcodeproj; path = "../Converter-C2S/c2s.xcodeproj"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXContainerItemProxy section */
-		7F8BF1984EEDE904FB532793 /* PBXContainerItemProxy */ = {
+		47F56FB48E51D46EB5DA3D61 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
-			containerPortal = CBF1505F8E434A970C8CCCBC /* cc1.exe.xcodeproj */;
+			containerPortal = F1DCFDB65F93625E5F8AFCEC /* cc1i.exe.xcodeproj */;
 			proxyType = 2;
-			remoteGlobalIDString = 0B2AA8C75983F5F017A0983A;
-			remoteInfo = cc1.exe;
+			remoteGlobalIDString = A4AB2C867FBE0347639CA98D;
+			remoteInfo = cc1i.exe;
 		};
-		507013D911A0E20E653D2E0D /* PBXContainerItemProxy */ = {
+		7AD4A4EB531C06093B951BA8 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
-			containerPortal = CBF1505F8E434A970C8CCCBC /* cc1.exe.xcodeproj */;
+			containerPortal = F1DCFDB65F93625E5F8AFCEC /* cc1i.exe.xcodeproj */;
 			proxyType = 1;
-			remoteGlobalIDString = 13A704A3342D8BFA7D8B141A;
-			remoteInfo = cc1.exe;
+			remoteGlobalIDString = CB54FB9D454F639E6B801F13;
+			remoteInfo = cc1i.exe;
 		};
-		9228B59F64CC3C183829BA1B /* PBXContainerItemProxy */ = {
+		BC1A6148C6C0A2AEB47D4712 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
-			containerPortal = AED20E2FC2634DC5C3485227 /* cxx1.exe.xcodeproj */;
+			containerPortal = 935BB4E07B0FFC8A1ED9426B /* cxx1i.exe.xcodeproj */;
 			proxyType = 2;
-			remoteGlobalIDString = F9BB07A4187E2CF6D0A9D200;
-			remoteInfo = cxx1.exe;
+			remoteGlobalIDString = B0DEE53FB510C2BF164ECD03;
+			remoteInfo = cxx1i.exe;
 		};
-		DF445D00865E2A8BAEC31A3B /* PBXContainerItemProxy */ = {
+		0C5220640D8312249A3B7260 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
-			containerPortal = AED20E2FC2634DC5C3485227 /* cxx1.exe.xcodeproj */;
+			containerPortal = 935BB4E07B0FFC8A1ED9426B /* cxx1i.exe.xcodeproj */;
 			proxyType = 1;
-			remoteGlobalIDString = 18A333A5AFDA179A6C4A9DFF;
-			remoteInfo = cxx1.exe;
+			remoteGlobalIDString = 9BDE0D6970DFE91E74C9FC29;
+			remoteInfo = cxx1i.exe;
+		};
+		08A1E754EF8E6C30382025DF /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 7F746CB55AD3A770E177E479 /* vm6747.exe.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 207AA90626EB58B979BE4229;
+			remoteInfo = vm6747.exe;
+		};
+		ABE5B94E2FACF985D9D840E6 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 7F746CB55AD3A770E177E479 /* vm6747.exe.xcodeproj */;
+			proxyType = 1;
+			remoteGlobalIDString = B216694C7B15F1C133F86537;
+			remoteInfo = vm6747.exe;
 		};
 		32C71739C1D5E1E64990D710 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -169,8 +184,9 @@
 			isa = PBXGroup;
 			children = (
 				97FB948E4EAC59940BFC4C23 /* Sources */,
-				CBF1505F8E434A970C8CCCBC /* cc1.exe.xcodeproj */,
-				AED20E2FC2634DC5C3485227 /* cxx1.exe.xcodeproj */,
+				F1DCFDB65F93625E5F8AFCEC /* cc1i.exe.xcodeproj */,
+				935BB4E07B0FFC8A1ED9426B /* cxx1i.exe.xcodeproj */,
+				7F746CB55AD3A770E177E479 /* vm6747.exe.xcodeproj */,
 				0CF12007761D2B13C30AA2B2 /* shc.exe.xcodeproj */,
 				F37F914312A3544D790C94C4 /* c2s.exe.xcodeproj */,
 				744890367C8084A94875E5BE /* Products */,
@@ -243,18 +259,26 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
-		C56C1CE51D444BDEAAFDD653 /* Products */ = {
+		13B029C0A44C6D968CEBD565 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				9E64DBEC33C4030133D83BC4 /* cc1.exe */,
+				BED6F55AE98A4ECDEABEDAA5 /* cc1i.exe */,
 			);
 			name = Products;
 			sourceTree = "<group>";
 		};
-		27B3BEEFE5AFF3576F7DD53B /* Products */ = {
+		D66B2904A7EDD006972170A0 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				81F17EAB690B2712E971217D /* cxx1.exe */,
+				56DFEDCFBF1F0D877E5FC597 /* cxx1i.exe */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		47293FECF5DDBB1C279EA509 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				3826624F713632D368FA691F /* vm6747.exe */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -278,18 +302,25 @@
 /* End PBXGroup section */
 
 /* Begin PBXReferenceProxy section */
-		9E64DBEC33C4030133D83BC4 /* cc1.exe */ = {
+		BED6F55AE98A4ECDEABEDAA5 /* cc1i.exe */ = {
 			isa = PBXReferenceProxy;
 			fileType = "compiled.mach-o.executable";
-			path = cc1.exe;
-			remoteRef = 7F8BF1984EEDE904FB532793 /* PBXContainerItemProxy */;
+			path = cc1i.exe;
+			remoteRef = 47F56FB48E51D46EB5DA3D61 /* PBXContainerItemProxy */;
 			sourceTree = BUILT_PRODUCTS_DIR;
 		};
-		81F17EAB690B2712E971217D /* cxx1.exe */ = {
+		56DFEDCFBF1F0D877E5FC597 /* cxx1i.exe */ = {
 			isa = PBXReferenceProxy;
 			fileType = "compiled.mach-o.executable";
-			path = cxx1.exe;
-			remoteRef = 9228B59F64CC3C183829BA1B /* PBXContainerItemProxy */;
+			path = cxx1i.exe;
+			remoteRef = BC1A6148C6C0A2AEB47D4712 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		3826624F713632D368FA691F /* vm6747.exe */ = {
+			isa = PBXReferenceProxy;
+			fileType = "compiled.mach-o.executable";
+			path = vm6747.exe;
+			remoteRef = 08A1E754EF8E6C30382025DF /* PBXContainerItemProxy */;
 			sourceTree = BUILT_PRODUCTS_DIR;
 		};
 		200C65D80FBABB40A830E74A /* shc.exe */ = {
@@ -320,8 +351,9 @@
 			buildRules = (
 			);
 			dependencies = (
-				2D94428F2DEC64F3AD33CDB5 /* PBXTargetDependency */,
-				C982206FA11F72E9CBA681A9 /* PBXTargetDependency */,
+				23CB94287C5CF9303297A080 /* PBXTargetDependency */,
+				320658C674B7EED4220FCA2D /* PBXTargetDependency */,
+				A4E2F5287A5ED8052FA26C2F /* PBXTargetDependency */,
 				F3E42DA26B9285E6C32D11A2 /* PBXTargetDependency */,
 				EF18CE9F2F4C0054317F0417 /* PBXTargetDependency */,
 			);
@@ -333,15 +365,20 @@
 /* End PBXNativeTarget section */
 
 /* Begin PBXTargetDependency section */
-		2D94428F2DEC64F3AD33CDB5 /* PBXTargetDependency */ = {
+		23CB94287C5CF9303297A080 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			name = cc1.exe;
-			targetProxy = 507013D911A0E20E653D2E0D /* PBXContainerItemProxy */;
+			name = cc1i.exe;
+			targetProxy = 7AD4A4EB531C06093B951BA8 /* PBXContainerItemProxy */;
 		};
-		C982206FA11F72E9CBA681A9 /* PBXTargetDependency */ = {
+		320658C674B7EED4220FCA2D /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			name = cxx1.exe;
-			targetProxy = DF445D00865E2A8BAEC31A3B /* PBXContainerItemProxy */;
+			name = cxx1i.exe;
+			targetProxy = 0C5220640D8312249A3B7260 /* PBXContainerItemProxy */;
+		};
+		A4E2F5287A5ED8052FA26C2F /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = vm6747.exe;
+			targetProxy = ABE5B94E2FACF985D9D840E6 /* PBXContainerItemProxy */;
 		};
 		F3E42DA26B9285E6C32D11A2 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
@@ -374,12 +411,16 @@
 			projectDirPath = "";
 			projectReferences = (
 				{
-					ProductGroup = C56C1CE51D444BDEAAFDD653 /* Products */;
-					ProjectRef = CBF1505F8E434A970C8CCCBC /* cc1.exe.xcodeproj */;
+					ProductGroup = 13B029C0A44C6D968CEBD565 /* Products */;
+					ProjectRef = F1DCFDB65F93625E5F8AFCEC /* cc1i.exe.xcodeproj */;
 				},
 				{
-					ProductGroup = 27B3BEEFE5AFF3576F7DD53B /* Products */;
-					ProjectRef = AED20E2FC2634DC5C3485227 /* cxx1.exe.xcodeproj */;
+					ProductGroup = D66B2904A7EDD006972170A0 /* Products */;
+					ProjectRef = 935BB4E07B0FFC8A1ED9426B /* cxx1i.exe.xcodeproj */;
+				},
+				{
+					ProductGroup = 47293FECF5DDBB1C279EA509 /* Products */;
+					ProjectRef = 7F746CB55AD3A770E177E479 /* vm6747.exe.xcodeproj */;
 				},
 				{
 					ProductGroup = E23FF50175724F7BD162AEA1 /* Products */;

@@ -5,13 +5,16 @@
       location = "group:Editor.xcodeproj">
    </FileRef>
    <FileRef
-      location = "group:../Compiler-C/cc1.xcodeproj">
+      location = "group:../VM6747/Compiler-Ci/cc1.xcodeproj">
    </FileRef>
    <FileRef
       location = "group:../Compiler-S/shc.xcodeproj">
    </FileRef>
    <FileRef
-      location = "group:../C++/cxx1.xcodeproj">
+      location = "group:../VM6747/Compiler-Cppi/cxx1.xcodeproj">
+   </FileRef>
+   <FileRef
+      location = "group:../VM6747/Emulator/vm6747.xcodeproj">
    </FileRef>
    <FileRef
       location = "group:../Converter-C2S/c2s.xcodeproj">

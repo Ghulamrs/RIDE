@@ -72,6 +72,12 @@ import sys
 
 HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SIBLINGS = os.path.dirname(HERE)
+# 3.5: the C and C++ compilers are the VM6747 line - cc1i and cxx1i, three
+# host targets and the TMS320C6747 - and vm6747, the emulator, is built with
+# them. Three repositories under VM6747/ beside this one, on every machine.
+CC1_REPO = os.path.join("VM6747", "Compiler-Ci")
+CXX1_REPO = os.path.join("VM6747", "Compiler-Cppi")
+VM_REPO = os.path.join("VM6747", "Emulator")
 
 
 def ident(product, *parts):
@@ -188,20 +194,21 @@ def projects():
             # dependency and builds only this target, which is how renaming
             # cc1 to cc1.exe stopped the workspace building the compilers
             # without anything saying so.
-            "depends": [("cc1.exe", "../Compiler-C/cc1.xcodeproj"),
-                        ("cxx1.exe", "../C++/cxx1.xcodeproj"),
+            "depends": [("cc1i.exe", "../" + CC1_REPO + "/cc1.xcodeproj"),
+                        ("cxx1i.exe", "../" + CXX1_REPO + "/cxx1.xcodeproj"),
+                        ("vm6747.exe", "../" + VM_REPO + "/vm6747.xcodeproj"),
                         ("shc.exe", "../Compiler-S/shc.xcodeproj"),
                         ("c2s.exe", "../Converter-C2S/c2s.xcodeproj")],
         },
         {
-            "product": "cc1.exe",
-            "root": os.path.join(SIBLINGS, "Compiler-C"),
-            "out": os.path.join(SIBLINGS, "Compiler-C", "cc1.xcodeproj"),
+            "product": "cc1i.exe",
+            "root": os.path.join(SIBLINGS, CC1_REPO),
+            "out": os.path.join(SIBLINGS, CC1_REPO, "cc1.xcodeproj"),
             # Its Makefile says $(wildcard src/*.cpp) $(wildcard src/backend/*.cpp),
             # so the directories are the list.
-            "sources": by_glob(os.path.join(SIBLINGS, "Compiler-C"),
+            "sources": by_glob(os.path.join(SIBLINGS, CC1_REPO),
                                ("src", "src/backend")),
-            "headers": headers_under(os.path.join(SIBLINGS, "Compiler-C"), ("src",)),
+            "headers": headers_under(os.path.join(SIBLINGS, CC1_REPO), ("src",)),
             "include": "$(SRCROOT)/src $(SRCROOT)/lib",
             # INCDIR = $(CURDIR)/lib in its Makefile. $(SRCROOT) is where the
             # .xcodeproj sits, which is that same directory.
@@ -230,15 +237,15 @@ def projects():
                               'cp -f "$BUILT_PRODUCTS_DIR"/lib/*.a "$dest/lib/"\n'),
         },
         {
-            "product": "cxx1.exe",
-            "root": os.path.join(SIBLINGS, "C++"),
-            "out": os.path.join(SIBLINGS, "C++", "cxx1.xcodeproj"),
+            "product": "cxx1i.exe",
+            "root": os.path.join(SIBLINGS, CXX1_REPO),
+            "out": os.path.join(SIBLINGS, CXX1_REPO, "cxx1.xcodeproj"),
             # SRCS is three wildcards over src/, src/parser and src/backend -
             # the same shape as cc1's, which it was forked from, plus the
             # parser directory the fork grew.
-            "sources": by_glob(os.path.join(SIBLINGS, "C++"),
+            "sources": by_glob(os.path.join(SIBLINGS, CXX1_REPO),
                                ("src", "src/parser", "src/backend")),
-            "headers": headers_under(os.path.join(SIBLINGS, "C++"), ("src",)),
+            "headers": headers_under(os.path.join(SIBLINGS, CXX1_REPO), ("src",)),
             "include": "$(SRCROOT)/src",
             # Both header directories, compiled in as its Makefile compiles
             # them: lib/ holds the C headers and include/ the C++ ones on top.
@@ -248,6 +255,17 @@ def projects():
             # these are the fallback for a binary that was moved on its own.
             "defines": [("CXX1_INCLUDE_DIR", "$(SRCROOT)/lib"),
                         ("CXX1_CXX_INCLUDE_DIR", "$(SRCROOT)/include")],
+        },
+        {
+            # The emulator that runs the fourth target's programs: plain
+            # C++14 under src/, nothing else, and the editor finds it beside
+            # itself as it finds the compilers.
+            "product": "vm6747.exe",
+            "root": os.path.join(SIBLINGS, VM_REPO),
+            "out": os.path.join(SIBLINGS, VM_REPO, "vm6747.xcodeproj"),
+            "sources": by_glob(os.path.join(SIBLINGS, VM_REPO), ("src",)),
+            "headers": headers_under(os.path.join(SIBLINGS, VM_REPO), ("src",)),
+            "include": "$(SRCROOT)/src",
         },
         {
             "product": "c2s.exe",
@@ -915,7 +933,7 @@ def cc1_guid():
     the solution has to name the GUID it actually uses. Reading it is the only
     way the two cannot drift apart.
     """
-    return guid_in(os.path.join(SIBLINGS, "Compiler-C", "msvc", "cc1.vcxproj"),
+    return guid_in(os.path.join(SIBLINGS, CC1_REPO, "msvc", "cc1.vcxproj"),
                    "cc1's own project")
 
 
@@ -1013,12 +1031,14 @@ def workspace_mk_text():
 # the same two repositories are ~/ansicc and ~/shalimar:
 #
 #   make -f workspace.mk CC1_DIR=$HOME/ansicc SHC_DIR=$HOME/shalimar
-CC1_DIR ?= ../Compiler-C
+# 3.5: the C and C++ compilers are the VM6747 line - cc1i and cxx1i, the
+# three host targets and the TMS320C6747 - and vm6747, the emulator that runs
+# the fourth, is built with them. Compiler-C and C++ stay sealed beside.
+CC1_DIR ?= ../VM6747/Compiler-Ci
 SHC_DIR ?= ../Compiler-S
 C2S_DIR ?= ../Converter-C2S
-# The C++ compiler's checkout is C++ beside this one, Compiler-Cpp on GitHub
-# and ~/cxx1 on the Linux box - so this one is the likeliest to need naming.
-CXX1_DIR ?= ../C++
+CXX1_DIR ?= ../VM6747/Compiler-Cppi
+VM_DIR ?= ../VM6747/Emulator
 
 # ---- one directory, named once and given to all four ------------------------
 #
@@ -1043,7 +1063,7 @@ CXX1_DIR ?= ../C++
 BINDIR ?= $(CURDIR)
 OUT := $(abspath $(BINDIR))
 
-.PHONY: all cc1 cxx1 shc c2s editor confirm bin check clean
+.PHONY: all cc1 cxx1 vm6747 shc c2s editor confirm bin check clean
 
 # `confirm` and not `editor`, so that the last thing a workspace build does is
 # check that what the editor drives is actually beside it.
@@ -1073,10 +1093,12 @@ c2s:
 # runtime archives, nothing of it has to travel to $(OUT) but the binary.
 cxx1:
 	$(MAKE) -C $(CXX1_DIR) BINDIR=$(OUT) OBJDIR=$(OUT)/obj/cxx1
+vm6747:
+	$(MAKE) -C $(VM_DIR) BINDIR=$(OUT) OBJDIR=$(OUT)/obj/vm6747
 
 # The dependency, said the same way it is said in the other three: the editor
 # is built after the things it drives. Nothing of them ends up inside it.
-editor: cc1 cxx1 shc c2s
+editor: cc1 cxx1 vm6747 shc c2s
 	$(MAKE) BINDIR=$(OUT) OBJDIR=$(OUT)/obj/editor
 
 # Asked of RStudio rather than answered here. The editor is the thing that
@@ -1100,22 +1122,24 @@ HOST := $(shell uname -s)
 
 check: confirm
 ifeq ($(HOST),Darwin)
-	cd $(CC1_DIR) && CC1=$(OUT)/cc1.exe ./tests/arm64.sh
-	cd $(CC1_DIR) && CC1=$(OUT)/cc1.exe ./tests/fingerprint.sh
+	cd $(CC1_DIR) && CC1=$(OUT)/cc1i.exe ./tests/arm64.sh
+	cd $(CC1_DIR) && CC1=$(OUT)/cc1i.exe ./tests/fingerprint.sh
 else
 	$(MAKE) -C $(CC1_DIR) test
 endif
+	cd $(CC1_DIR) && CC1=$(OUT)/cc1i.exe VM=$(OUT)/vm6747.exe ./tests/tms6747.sh
+	cd $(CXX1_DIR) && CXX1=$(OUT)/cxx1i.exe VM=$(OUT)/vm6747.exe ./tests/tms6747.sh
 # LIBDIR too: Compiler-S's examples suite builds a C library from
 # Compiler-C/examples, and this is the only place that knows where Compiler-C
 # actually is on this machine - it is ~/ansicc on the Linux box. Without it
 # that check found nothing and said nothing.
-	$(MAKE) -C $(SHC_DIR) SHC=$(OUT)/shc.exe CC1=$(OUT)/cc1.exe \
+	$(MAKE) -C $(SHC_DIR) SHC=$(OUT)/shc.exe CC1=$(OUT)/cc1i.exe \
 	    LIBDIR=$(abspath $(CC1_DIR))/examples/shalimar-library test
 # The converter's suite is differential and needs both compilers as oracles.
 # It is given the two just built into $(OUT), for the same reason the editor's
 # is below: those are the ones this build produced, and they are the ones
 # whose behaviour the converter's output is being judged against.
-	$(MAKE) -C $(C2S_DIR) BINDIR=$(OUT) OBJDIR=$(OUT)/obj/c2s test CC1=$(OUT)/cc1.exe SHC=$(OUT)/shc.exe
+	$(MAKE) -C $(C2S_DIR) BINDIR=$(OUT) OBJDIR=$(OUT)/obj/c2s test CC1=$(OUT)/cc1i.exe SHC=$(OUT)/shc.exe
 # cxx1's own suites, against the binary just built into $(OUT) - its Makefile
 # runs them on $(TARGET), which BINDIR names. The differential suites ask the
 # host's g++ or clang++ for the answers, so they run wherever the editor does.
@@ -1130,7 +1154,7 @@ endif
 # need a compiler and says so quietly - so the count fell from 792 and 232 to
 # 686 and 115 and everything still read as green. A suite that skips is not a
 # suite that passes.
-	$(MAKE) BINDIR=$(OUT) OBJDIR=$(OUT)/obj/editor check CC1=$(OUT)/cc1.exe CXX1=$(OUT)/cxx1.exe SHC=$(OUT)/shc.exe C2S=$(OUT)/c2s.exe
+	$(MAKE) BINDIR=$(OUT) OBJDIR=$(OUT)/obj/editor check CC1=$(OUT)/cc1i.exe CXX1=$(OUT)/cxx1i.exe SHC=$(OUT)/shc.exe C2S=$(OUT)/c2s.exe
 
 # The alternative destination, for anyone who would rather the checkout root
 # stayed as it was. Nothing is copied into it - see the `bin` rule below.
@@ -1325,20 +1349,29 @@ def main():
     # forward slashes because they become C string literals, compat/ on the
     # include path for <unistd.h>, and the five warnings it disables.
     cxx1_root = "$([System.String]::Copy('$(ProjectDir)').Replace('\\','/'))"
-    wanted.append((os.path.join(SIBLINGS, "C++", "cxx1.vcxproj"),
-                   vcxproj_text("cxx1", spec_of["cxx1.exe"]["sources"],
+    wanted.append((os.path.join(SIBLINGS, CXX1_REPO, "cxx1.vcxproj"),
+                   vcxproj_text("cxx1i", spec_of["cxx1i.exe"]["sources"],
                                 ["_CRT_SECURE_NO_WARNINGS",
                                  'CXX1_INCLUDE_DIR="%slib"' % cxx1_root,
                                  'CXX1_CXX_INCLUDE_DIR="%sinclude"' % cxx1_root],
                                 includes=("$(ProjectDir)msvc\\compat", "$(ProjectDir)src"),
                                 disabled=("4996", "4267", "4244", "4456", "4146")),
                    "cxx1.vcxproj"))
+    # vm6747's, at the root of its checkout: the emulator's msvc/build.cmd
+    # passes the one define, and its Makefile the same warnings as cc1's.
+    wanted.append((os.path.join(SIBLINGS, VM_REPO, "vm6747.vcxproj"),
+                   vcxproj_text("vm6747", spec_of["vm6747.exe"]["sources"],
+                                ["_CRT_SECURE_NO_WARNINGS"],
+                                includes=("$(ProjectDir)src",)),
+                   "vm6747.vcxproj"))
 
     entries = [
-        ("cc1", "../Compiler-C/msvc/cc1.vcxproj", CC1_GUID, []),
-        # Compiler-Cpp, not C++: that is the checkout's name on the Windows
-        # box, after the repository, and the solution is only read there.
-        ("cxx1", "../Compiler-Cpp/cxx1.vcxproj", guid("cxx1"), []),
+        # The VM6747 line, laid out on the Windows box as it is here:
+        # VM6747\Compiler-Ci, VM6747\Compiler-Cppi and VM6747\Emulator beside
+        # this checkout, which is where tools/to-windows.sh puts them.
+        ("cc1i", "../" + CC1_REPO.replace(os.sep, "/") + "/msvc/cc1.vcxproj", CC1_GUID, []),
+        ("cxx1i", "../" + CXX1_REPO.replace(os.sep, "/") + "/cxx1.vcxproj", guid("cxx1i"), []),
+        ("vm6747", "../" + VM_REPO.replace(os.sep, "/") + "/vm6747.vcxproj", guid("vm6747"), []),
         ("shc", "../Compiler-S/shc.vcxproj", guid("shc"), []),
         # c2s is built with them and not by them: the editor runs it over the
         # open file from the Language menu, and finds it beside itself the
@@ -1346,7 +1379,7 @@ def main():
         ("c2s", "../Converter-C2S/c2s.vcxproj", guid("c2s"), []),
         # the editor after both, which is the dependency this whole thing is
         # for - said in a .sln the way the workspace says it in a .xcodeproj.
-        ("RStudioConsole", "RStudioConsole.vcxproj", guid("RStudioConsole"), [CC1_GUID, guid("cxx1"), guid("shc"), guid("c2s")]),
+        ("RStudioConsole", "RStudioConsole.vcxproj", guid("RStudioConsole"), [CC1_GUID, guid("cxx1i"), guid("vm6747"), guid("shc"), guid("c2s")]),
         # The window, on the same footing as the console half. It is in the
         # solution for two reasons: so that one build makes all four, and
         # because being in a solution is what moves its output into the
@@ -1356,7 +1389,7 @@ def main():
         # version of it set OutDir, IntDir, BasicRuntimeChecks and a platform
         # version, and the binary died at startup with heap corruption before
         # main. Nothing in that file is touched to get this.
-        ("RStudioGui", "winforms/RStudioGui.vcxproj", GUI_GUID, [CC1_GUID, guid("cxx1"), guid("shc"), guid("c2s")]),
+        ("RStudioGui", "winforms/RStudioGui.vcxproj", GUI_GUID, [CC1_GUID, guid("cxx1i"), guid("vm6747"), guid("shc"), guid("c2s")]),
     ]
     wanted.append((os.path.join(HERE, "RStudio.sln"), solution_text(entries),
                    "RStudio.sln"))
@@ -1370,9 +1403,9 @@ def main():
             ("winforms/RStudioGui.vcxproj",
              os.path.join(HERE, "winforms", "RStudioGui.vcxproj"),
              "winforms", window_sources()),
-            ("Compiler-C/msvc/cc1.vcxproj",
-             os.path.join(SIBLINGS, "Compiler-C", "msvc", "cc1.vcxproj"),
-             "msvc", set(by_glob(os.path.join(SIBLINGS, "Compiler-C"),
+            (CC1_REPO + "/msvc/cc1.vcxproj",
+             os.path.join(SIBLINGS, CC1_REPO, "msvc", "cc1.vcxproj"),
+             "msvc", set(by_glob(os.path.join(SIBLINGS, CC1_REPO),
                                  ("src", "src/backend"))))):
         wrong = drift(path, inside, wanted_sources)
         if wrong:

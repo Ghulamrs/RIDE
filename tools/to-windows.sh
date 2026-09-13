@@ -34,7 +34,12 @@ cd "$(dirname "${BASH_SOURCE[0]}")/.."
 BOX="${ED1_WINDOWS_BOX:-windows}"
 ROOT="${ED1_WINDOWS_ROOT:-C:\\Users\\GRA\\source}"
 DIR="$ROOT\\RStudio"
-CXX1_DIR="$ROOT\\Compiler-Cpp"
+# 3.5: the three VM6747 repositories travel with the editor - they have no
+# remote, by that line's rules - laid out on the box as they are here.
+VM_ROOT="$ROOT\\VM6747"
+CC1I_DIR="$VM_ROOT\\Compiler-Ci"
+CXX1_DIR="$VM_ROOT\\Compiler-Cppi"
+EMU_DIR="$VM_ROOT\\Emulator"
 WHAT="${1:-check}"
 TMP="${TMPDIR:-/tmp}"
 
@@ -57,13 +62,23 @@ tar --no-mac-metadata \
 # ---- cxx1 ------------------------------------------------------------------
 # The parts its Visual Studio project compiles and includes, and nothing of
 # its own build tree.
-( cd ../C++ && tar --no-mac-metadata --exclude '* 2.*' --exclude 'obj' \
-    -czf "$TMP/cxx1-src.tgz" src include lib msvc Makefile cxx1.vcxproj README.md ) || exit 2
+( cd ../VM6747/Compiler-Ci && tar --no-mac-metadata --exclude '* 2.*' --exclude 'obj' --exclude '*.exe' --exclude 'out-*' \
+    -czf "$TMP/cc1i-src.tgz" src lib msvc tests examples Makefile README.md ) || exit 2
+( cd ../VM6747/Compiler-Cppi && tar --no-mac-metadata --exclude '* 2.*' --exclude 'obj' --exclude '*.exe' --exclude 'out-*' \
+    -czf "$TMP/cxx1-src.tgz" src include lib msvc tests Makefile cxx1.vcxproj README.md ) || exit 2
+( cd ../VM6747/Emulator && tar --no-mac-metadata --exclude '* 2.*' --exclude '*.exe' \
+    -czf "$TMP/vm6747-src.tgz" src msvc tests Makefile vm6747.vcxproj README.md ) || exit 2
 
-say "copying to $BOX:$DIR and $CXX1_DIR"
-ssh -n "$BOX" "if not exist \"$DIR\" mkdir \"$DIR\" & if not exist \"$CXX1_DIR\" mkdir \"$CXX1_DIR\"" || exit 2
+say "copying to $BOX:$DIR and $VM_ROOT"
+# One directory per call: in cmd, `if not exist X mkdir X & if ...` makes the
+# second `if` part of the first one's body, so it runs only when X was missing.
+for d in "$DIR" "$CC1I_DIR" "$CXX1_DIR" "$EMU_DIR"; do
+  ssh -n "$BOX" "if not exist \"$d\" mkdir \"$d\"" || exit 2
+done
 scp -q "$TMP/rstudio-src.tgz" "$BOX:$DIR\\rstudio-src.tgz" || exit 2
+scp -q "$TMP/cc1i-src.tgz" "$BOX:$CC1I_DIR\\cc1i-src.tgz" || exit 2
 scp -q "$TMP/cxx1-src.tgz" "$BOX:$CXX1_DIR\\cxx1-src.tgz" || exit 2
+scp -q "$TMP/vm6747-src.tgz" "$BOX:$EMU_DIR\\vm6747-src.tgz" || exit 2
 
 # ---- the script that does the work there -----------------------------------
 # One .cmd, generated here so that what runs is what this file says. The
@@ -76,12 +91,19 @@ BIN="$DIR\\x64\\Release"
   printf 'cd /d "%s" || exit /b 2\r\n' "$DIR"
   printf 'tar -xzf rstudio-src.tgz || exit /b 2\r\n'
   printf 'del /q rstudio-src.tgz\r\n'
+  printf 'cd /d "%s" || exit /b 2\r\n' "$CC1I_DIR"
+  printf 'tar -xzf cc1i-src.tgz || exit /b 2\r\n'
+  printf 'del /q cc1i-src.tgz\r\n'
   printf 'cd /d "%s" || exit /b 2\r\n' "$CXX1_DIR"
   printf 'tar -xzf cxx1-src.tgz || exit /b 2\r\n'
   printf 'del /q cxx1-src.tgz\r\n'
+  printf 'cd /d "%s" || exit /b 2\r\n' "$EMU_DIR"
+  printf 'tar -xzf vm6747-src.tgz || exit /b 2\r\n'
+  printf 'del /q vm6747-src.tgz\r\n'
   printf 'cd /d "%s"\r\n' "$DIR"
-  printf 'set CC1=%s\\cc1.exe\r\n' "$BIN"
-  printf 'set CXX1=%s\\cxx1.exe\r\n' "$BIN"
+  printf 'set CC1=%s\\cc1i.exe\r\n' "$BIN"
+  printf 'set CXX1=%s\\cxx1i.exe\r\n' "$BIN"
+  printf 'set VM6747=%s\\vm6747.exe\r\n' "$BIN"
   printf 'set SHC=%s\\shc.exe\r\n' "$BIN"
   printf 'set C2S=%s\\c2s.exe\r\n' "$BIN"
   case "$WHAT" in

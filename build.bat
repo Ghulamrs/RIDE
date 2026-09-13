@@ -101,10 +101,11 @@ rem Run from here rather than by calling msbuild directly, because msbuild is
 rem on PATH only after vcvars64.bat - which the top of this file has already
 rem found. One place knows where Visual Studio is.
 rem
-rem RStudio.sln reaches ..\Compiler-C, ..\Compiler-Cpp, ..\Compiler-S and
-rem ..\Converter-C2S, so all five have to be checked out beside each other on
-rem this machine - and the C++ compiler's checkout under the repository's
-rem name, Compiler-Cpp, which is what the solution says.
+rem RStudio.sln reaches ..\VM6747\Compiler-Ci, ..\VM6747\Compiler-Cppi,
+rem ..\VM6747\Emulator, ..\Compiler-S and ..\Converter-C2S - since 3.5 the
+rem compilers are the VM6747 line, cc1i and cxx1i, with vm6747 the emulator
+rem that runs their fourth target - so all six are laid out beside each other
+rem on this machine, as tools/to-windows.sh lays them.
 msbuild RStudio.sln /p:Configuration=Release /p:Platform=x64 /v:minimal /m
 if errorlevel 1 goto :fail
 echo built the solution
@@ -131,7 +132,7 @@ rem configuration and links the other one, so checking a single archive would
 rem confirm exactly the half that was not about to be used.
 if "%BINDIR%"=="" set BINDIR=x64\Release
 set MISSING=0
-for %%f in (cc1.exe cxx1.exe shc.exe c2s.exe lib\shmrt-x86_64-windows.lib lib\shmrt-x86_64-windows-debug.lib) do (
+for %%f in (cc1i.exe cxx1i.exe vm6747.exe shc.exe c2s.exe lib\shmrt-x86_64-windows.lib lib\shmrt-x86_64-windows-debug.lib) do (
    if exist "%BINDIR%\%%f" (echo   ok       %%f) else (echo   MISSING  %%f& set MISSING=1)
 )
 if "%MISSING%"=="1" (

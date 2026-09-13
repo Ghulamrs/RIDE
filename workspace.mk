@@ -24,8 +24,6 @@
 CC1_DIR ?= ../VM6747/Compiler-Ci
 SHC_DIR ?= ../Compiler-S
 C2S_DIR ?= ../Converter-C2S
-# The C++ compiler's checkout is C++ beside this one, Compiler-Cpp on GitHub
-# and ~/cxx1 on the Linux box - so this one is the likeliest to need naming.
 CXX1_DIR ?= ../VM6747/Compiler-Cppi
 VM_DIR ?= ../VM6747/Emulator
 
@@ -116,6 +114,8 @@ ifeq ($(HOST),Darwin)
 else
 	$(MAKE) -C $(CC1_DIR) test
 endif
+	cd $(CC1_DIR) && CC1=$(OUT)/cc1i.exe VM=$(OUT)/vm6747.exe ./tests/tms6747.sh
+	cd $(CXX1_DIR) && CXX1=$(OUT)/cxx1i.exe VM=$(OUT)/vm6747.exe ./tests/tms6747.sh
 # LIBDIR too: Compiler-S's examples suite builds a C library from
 # Compiler-C/examples, and this is the only place that knows where Compiler-C
 # actually is on this machine - it is ~/ansicc on the Linux box. Without it

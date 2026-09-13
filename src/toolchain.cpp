@@ -201,6 +201,12 @@ std::string emulatorProgram() {
     return beside.empty() ? std::string("vm6747") : beside;
 }
 
+std::string emulatedProgram(const std::string& program) {
+    std::string name = program;
+    if (name.size() > 4 && name.compare(name.size() - 4, 4, ".exe") == 0) name.resize(name.size() - 4);
+    return name + ".vm";
+}
+
 std::string launchCommand(const std::string& program) {
     std::string leaf = path::filename(program);
     bool assembly = leaf.size() > 2 && leaf.compare(leaf.size() - 2, 2, ".s") == 0;
@@ -411,7 +417,7 @@ Recipe targetRecipe(const Toolchain& tool, ToolchainKind kind,
         // Nothing links: the program is a directory of one .s per source,
         // which vm6747 assembles together. Each source is its own command,
         // since -S with several inputs writes beside them.
-        std::string dir = program + ".vm";
+        std::string dir = emulatedProgram(program);
         path::removeTree(dir);
         path::makeDirectories(dir);
         recipe.assemblyPath = dir;
