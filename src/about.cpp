@@ -95,9 +95,12 @@ std::vector<std::string> lines() {
     // list replaced a sentence naming the compilers, which said less: this
     // says which ones are actually here, and which are not.
     said.push_back("the compilers it drives, as they answer for themselves:");
-    tool(said, "cc1.exe");
-    tool(said, "cxx1.exe");
-    tool(said, "shc.exe");
+    // The VM6747 line since 3.5 - what the editor actually looks for, so
+    // that a copy standing beside the sealed originals says so.
+    tool(said, "cc1i.exe");
+    tool(said, "cxx1i.exe");
+    tool(said, "shci.exe");
+    tool(said, "vm6747.exe");
     tool(said, "c2s.exe");
     said.push_back("");
     said.push_back("Copyright (c) 2026 G. R. Akhtar");

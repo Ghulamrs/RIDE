@@ -47,10 +47,11 @@ struct Toolchain {
     std::string cxx;
     std::string cxx1;
 
-    // cc1i and cxx1i since 3.5: the compilers that carry tms6747. The kinds
-    // keep their names, cc1 and cxx1, being the same compilers one target on.
+    // cc1i, cxx1i and shci since 3.5: the VM6747 line, the first two
+    // carrying tms6747. The kinds keep their names, cc1, cxx1 and shc, being
+    // the same compilers one target on.
     Toolchain()
-        : kind(ToolAuto), cc1("cc1i.exe"), cl("cl"), shc("shc.exe"),
+        : kind(ToolAuto), cc1("cc1i.exe"), cl("cl"), shc("shci.exe"),
           cxx(hostCxxName()), cxx1("cxx1i.exe") {}
 };
 

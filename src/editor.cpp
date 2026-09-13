@@ -276,7 +276,11 @@ Editor::Editor()
     if (shcFromEnv && *shcFromEnv) {
         tool_.shc = shcFromEnv;
     } else {
-        std::string beside = path::besideProgram("shc.exe");
+        // shci since 3.5, the VM6747 line; a shc beside the editor still
+        // serves, being the same compiler.
+        std::string beside = path::besideProgram("shci.exe");
+        if (beside.empty()) beside = path::besideProgram("shci");
+        if (beside.empty()) beside = path::besideProgram("shc.exe");
         if (beside.empty()) beside = path::besideProgram("shc");
         if (!beside.empty()) tool_.shc = beside;
     }

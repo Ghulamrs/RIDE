@@ -18,11 +18,12 @@
 # the same two repositories are ~/ansicc and ~/shalimar:
 #
 #   make -f workspace.mk CC1_DIR=$HOME/ansicc SHC_DIR=$HOME/shalimar
-# 3.5: the C and C++ compilers are the VM6747 line - cc1i and cxx1i, the
-# three host targets and the TMS320C6747 - and vm6747, the emulator that runs
-# the fourth, is built with them. Compiler-C and C++ stay sealed beside.
+# 3.5: the compilers are the VM6747 line - cc1i and cxx1i with the three
+# host targets and the TMS320C6747, shci with its three - and vm6747, the
+# emulator that runs the fourth, is built with them. Compiler-C, C++ and
+# Compiler-S stay sealed beside.
 CC1_DIR ?= ../VM6747/Compiler-Ci
-SHC_DIR ?= ../Compiler-S
+SHC_DIR ?= ../VM6747/Compiler-Si
 C2S_DIR ?= ../Converter-C2S
 CXX1_DIR ?= ../VM6747/Compiler-Cppi
 VM_DIR ?= ../VM6747/Emulator
@@ -120,13 +121,13 @@ endif
 # Compiler-C/examples, and this is the only place that knows where Compiler-C
 # actually is on this machine - it is ~/ansicc on the Linux box. Without it
 # that check found nothing and said nothing.
-	$(MAKE) -C $(SHC_DIR) SHC=$(OUT)/shc.exe CC1=$(OUT)/cc1i.exe \
+	$(MAKE) -C $(SHC_DIR) SHC=$(OUT)/shci.exe CC1=$(OUT)/cc1i.exe \
 	    LIBDIR=$(abspath $(CC1_DIR))/examples/shalimar-library test
 # The converter's suite is differential and needs both compilers as oracles.
 # It is given the two just built into $(OUT), for the same reason the editor's
 # is below: those are the ones this build produced, and they are the ones
 # whose behaviour the converter's output is being judged against.
-	$(MAKE) -C $(C2S_DIR) BINDIR=$(OUT) OBJDIR=$(OUT)/obj/c2s test CC1=$(OUT)/cc1i.exe SHC=$(OUT)/shc.exe
+	$(MAKE) -C $(C2S_DIR) BINDIR=$(OUT) OBJDIR=$(OUT)/obj/c2s test CC1=$(OUT)/cc1i.exe SHC=$(OUT)/shci.exe
 # cxx1's own suites, against the binary just built into $(OUT) - its Makefile
 # runs them on $(TARGET), which BINDIR names. The differential suites ask the
 # host's g++ or clang++ for the answers, so they run wherever the editor does.
@@ -141,7 +142,7 @@ endif
 # need a compiler and says so quietly - so the count fell from 792 and 232 to
 # 686 and 115 and everything still read as green. A suite that skips is not a
 # suite that passes.
-	$(MAKE) BINDIR=$(OUT) OBJDIR=$(OUT)/obj/editor check CC1=$(OUT)/cc1i.exe CXX1=$(OUT)/cxx1i.exe SHC=$(OUT)/shc.exe C2S=$(OUT)/c2s.exe
+	$(MAKE) BINDIR=$(OUT) OBJDIR=$(OUT)/obj/editor check CC1=$(OUT)/cc1i.exe CXX1=$(OUT)/cxx1i.exe SHC=$(OUT)/shci.exe C2S=$(OUT)/c2s.exe
 
 # The alternative destination, for anyone who would rather the checkout root
 # stayed as it was. Nothing is copied into it - see the `bin` rule below.

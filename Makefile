@@ -109,11 +109,11 @@ EDITOR := $(BINDIR)/RStudio.exe
 # still skips those cases with its own message rather than failing to find a
 # file - the behaviour before this, kept for the case it was right for. And
 # `?=`, so CC1 in the environment or on the command line still wins.
-# cc1i and cxx1i since 3.5: the VM6747 line, which carries tms6747 as well
-# as the three host targets.
+# cc1i, cxx1i and shci since 3.5: the VM6747 line, which carries tms6747
+# in the first two as well as the three host targets.
 CC1 ?= $(abspath $(wildcard $(BINDIR)/cc1i.exe))
 CXX1 ?= $(abspath $(wildcard $(BINDIR)/cxx1i.exe))
-SHC ?= $(abspath $(wildcard $(BINDIR)/shc.exe))
+SHC ?= $(abspath $(wildcard $(BINDIR)/shci.exe))
 C2S ?= $(abspath $(wildcard $(BINDIR)/c2s.exe))
 
 # Exported because the two suites read them differently: `session` is handed
@@ -234,9 +234,10 @@ check: test session
 # menu's two Convert items run it over the open file.
 # cxx1 joined in 3.0, found the same way and for the same reason. 3.5 docks
 # the VM6747 line instead - cc1i.exe and cxx1i.exe, the same compilers with
-# the TMS320C6747 as a fourth target - and vm6747.exe, the emulator that runs
-# that target's programs, found beside the editor like the compilers.
-DEPENDENCIES := cc1i.exe cxx1i.exe vm6747.exe shc.exe c2s.exe \
+# the TMS320C6747 as a fourth target, shci.exe the same Shalimar compiler with
+# its three - and vm6747.exe, the emulator that runs the fourth target's
+# programs, found beside the editor like the compilers.
+DEPENDENCIES := cc1i.exe cxx1i.exe vm6747.exe shci.exe c2s.exe \
        lib/shmrt-$(SHM_TARGET).a lib/shmrt-$(SHM_TARGET)-debug.a
 
 confirm: $(EDITOR)
@@ -273,7 +274,9 @@ PRODUCT ?= $(HOME)/cc1-studio
 # Where cxx1's headers are copied from for the product. The binary comes from
 # BINDIR like the others; the headers stay in the checkout - C++ beside this
 # one, Compiler-Cpp on GitHub and the Windows box, ~/cxx1 on the Linux box.
-CXX1_DIR ?= ../C++
+# Since 3.5 the binary is cxx1i from the VM6747 line, so its headers come
+# from there too.
+CXX1_DIR ?= ../VM6747/Compiler-Cppi
 
 # `confirm` and not `$(EDITOR)`, for the reason build.bat gives on its own
 # product rule: an editor without its compilers is not a product, it is half of
@@ -296,7 +299,7 @@ product: confirm
 	rm -rf "$(PRODUCT)/bin" "$(PRODUCT)/examples"
 	mkdir -p "$(PRODUCT)/bin/lib" "$(PRODUCT)/examples"
 	cp $(EDITOR) "$(PRODUCT)/bin/"
-	cp $(BINDIR)/cc1.exe $(BINDIR)/cxx1.exe $(BINDIR)/shc.exe $(BINDIR)/c2s.exe "$(PRODUCT)/bin/"
+	cp $(BINDIR)/cc1i.exe $(BINDIR)/cxx1i.exe $(BINDIR)/vm6747.exe $(BINDIR)/shci.exe $(BINDIR)/c2s.exe "$(PRODUCT)/bin/"
 # cxx1's headers go with it, since 3.0: it looks for include/ and lib/ beside
 # its binary and then one directory up, and falls back to the paths compiled
 # into it, which name the checkout it was built from - a product that outlives

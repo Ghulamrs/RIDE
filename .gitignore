@@ -62,6 +62,12 @@ cc1.exe
 cxx1.exe
 shc.exe
 c2s.exe
+# The VM6747 line, since 3.5: the same three compilers under their i-names,
+# and the emulator built with them.
+cc1i.exe
+cxx1i.exe
+shci.exe
+vm6747.exe
 lib/
 *.dSYM/
 

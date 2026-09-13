@@ -7,8 +7,8 @@
 Three machines, three shapes, one idea: open one thing and get all four
 programs, with the editor built after the three it drives.
 
-    macOS    RStudio.xcworkspace          RStudio.exe, cc1.exe, cxx1.exe, shc.exe, c2s.exe
-    Windows  RStudio.sln                  RStudioConsole, RStudioGui, cc1, cxx1, shc, c2s
+    macOS    RStudio.xcworkspace          RStudio.exe, cc1i.exe, cxx1i.exe, vm6747.exe, shci.exe, c2s.exe
+    Windows  RStudio.sln                  RStudioConsole, RStudioGui, cc1i, cxx1i, vm6747, shci, c2s
     Linux    workspace.mk                 make -f workspace.mk
 
 Was make-xcodeproj.py while Xcode was all it wrote.
@@ -19,6 +19,11 @@ Three command line tools, built by clang++, from three separate repositories:
     cc1      the C compiler      ../Compiler-C/cc1.xcodeproj
     cxx1     the C++ compiler    ../C++/cxx1.xcodeproj
     shc      the Shalimar one    ../Compiler-S/shc.xcodeproj
+
+Since 3.5 the compilers are the VM6747 line - ../VM6747/Compiler-Ci,
+Compiler-Cppi and Compiler-Si, building cc1i, cxx1i and shci - and the
+emulator beside them. The three originals stay sealed and are not opened by
+anything written here.
     c2s      the converter       ../Converter-C2S/c2s.xcodeproj
 
 cxx1 joined in 3.0. Its checkout is called C++ here and Compiler-Cpp on
@@ -78,6 +83,7 @@ SIBLINGS = os.path.dirname(HERE)
 CC1_REPO = os.path.join("VM6747", "Compiler-Ci")
 CXX1_REPO = os.path.join("VM6747", "Compiler-Cppi")
 VM_REPO = os.path.join("VM6747", "Emulator")
+SHC_REPO = os.path.join("VM6747", "Compiler-Si")
 
 
 def ident(product, *parts):
@@ -197,7 +203,7 @@ def projects():
             "depends": [("cc1i.exe", "../" + CC1_REPO + "/cc1.xcodeproj"),
                         ("cxx1i.exe", "../" + CXX1_REPO + "/cxx1.xcodeproj"),
                         ("vm6747.exe", "../" + VM_REPO + "/vm6747.xcodeproj"),
-                        ("shc.exe", "../Compiler-S/shc.xcodeproj"),
+                        ("shci.exe", "../" + SHC_REPO + "/shc.xcodeproj"),
                         ("c2s.exe", "../Converter-C2S/c2s.xcodeproj")],
         },
         {
@@ -215,17 +221,20 @@ def projects():
             "defines": [("CC1_INCLUDE_DIR", "$(SRCROOT)/lib")],
         },
         {
-            "product": "shc.exe",
-            "root": os.path.join(SIBLINGS, "Compiler-S"),
-            "out": os.path.join(SIBLINGS, "Compiler-S", "shc.xcodeproj"),
+            # shci since 3.5: the VM6747 clone of Compiler-S, whose Makefile
+            # builds shci.exe. The project file keeps its name; the product
+            # is what changed, and that is what the identifiers derive from.
+            "product": "shci.exe",
+            "root": os.path.join(SIBLINGS, SHC_REPO),
+            "out": os.path.join(SIBLINGS, SHC_REPO, "shc.xcodeproj"),
             # SOURCES names runtime/Shortest.cpp as well as src/, which is why
             # paths here are relative to the repository and not to src/.
-            "sources": sorted(set(from_makefile(os.path.join(SIBLINGS, "Compiler-S"),
+            "sources": sorted(set(from_makefile(os.path.join(SIBLINGS, SHC_REPO),
                                                 ("SOURCES",)))),
-            "headers": headers_under(os.path.join(SIBLINGS, "Compiler-S"),
+            "headers": headers_under(os.path.join(SIBLINGS, SHC_REPO),
                                      ("src", "runtime")),
             "include": "$(SRCROOT)/src $(SRCROOT)/runtime",
-            # `make` builds shc.exe and both runtime archives; a project that
+            # `make` builds shci.exe and both runtime archives; a project that
             # built only the first would be the smaller program this script
             # exists to prevent.
             "script": shc_runtime_script(),
@@ -660,7 +669,7 @@ def guid(product):
 # no .cpp of its own, so the two add up rather than overlapping.
 def shc_runtime_sources():
     """(release, debug) - the runtime's own sources, as bare names."""
-    root = os.path.join(SIBLINGS, "Compiler-S")
+    root = os.path.join(SIBLINGS, SHC_REPO)
     release = from_makefile(root, ("RUNTIME_SOURCES",))
     debug = release + from_makefile(root, ("DEBUG_RUNTIME_SOURCES",))
     for path in debug:
@@ -671,7 +680,7 @@ def shc_runtime_sources():
 
 
 def shc_runtime_step():
-    """The PostBuildEvent that puts shc's runtime in lib/ beside shc.exe."""
+    """The PostBuildEvent that puts shc's runtime in lib/ beside shci.exe."""
     def compiled(names, into):
         return " ".join('"$(ProjectDir)runtime\%s.cpp"' % n for n in names), \
                " ".join('"$(IntDir)%s\%s.obj"' % (into, n) for n in names)
@@ -684,7 +693,7 @@ def shc_runtime_step():
 
     return (
         '    <PostBuildEvent>\n'
-        '      <Message>building the Shalimar runtime beside shc.exe</Message>\n'
+        '      <Message>building the Shalimar runtime beside shci.exe</Message>\n'
         '      <Command>if not exist "$(OutDir)lib" mkdir "$(OutDir)lib"\n'
         'if not exist "$(IntDir)rt" mkdir "$(IntDir)rt"\n'
         'if not exist "$(IntDir)rtd" mkdir "$(IntDir)rtd"\n'
@@ -814,7 +823,7 @@ def shc_runtime_script():
     _, debug = shc_runtime_sources()
     headers = ("shmrt", "Internal", "Shortest", "Debug")
     return {
-        "name": "the Shalimar runtime, beside shc.exe",
+        "name": "the Shalimar runtime, beside shci.exe",
         "shell": shc_runtime_phase(),
         # Named so Xcode can tell the phase is up to date and skip it. With no
         # outputs it runs on every build and says so as a warning; with these
@@ -1031,11 +1040,12 @@ def workspace_mk_text():
 # the same two repositories are ~/ansicc and ~/shalimar:
 #
 #   make -f workspace.mk CC1_DIR=$HOME/ansicc SHC_DIR=$HOME/shalimar
-# 3.5: the C and C++ compilers are the VM6747 line - cc1i and cxx1i, the
-# three host targets and the TMS320C6747 - and vm6747, the emulator that runs
-# the fourth, is built with them. Compiler-C and C++ stay sealed beside.
+# 3.5: the compilers are the VM6747 line - cc1i and cxx1i with the three
+# host targets and the TMS320C6747, shci with its three - and vm6747, the
+# emulator that runs the fourth, is built with them. Compiler-C, C++ and
+# Compiler-S stay sealed beside.
 CC1_DIR ?= ../VM6747/Compiler-Ci
-SHC_DIR ?= ../Compiler-S
+SHC_DIR ?= ../VM6747/Compiler-Si
 C2S_DIR ?= ../Converter-C2S
 CXX1_DIR ?= ../VM6747/Compiler-Cppi
 VM_DIR ?= ../VM6747/Emulator
@@ -1133,13 +1143,13 @@ endif
 # Compiler-C/examples, and this is the only place that knows where Compiler-C
 # actually is on this machine - it is ~/ansicc on the Linux box. Without it
 # that check found nothing and said nothing.
-	$(MAKE) -C $(SHC_DIR) SHC=$(OUT)/shc.exe CC1=$(OUT)/cc1i.exe \
+	$(MAKE) -C $(SHC_DIR) SHC=$(OUT)/shci.exe CC1=$(OUT)/cc1i.exe \
 	    LIBDIR=$(abspath $(CC1_DIR))/examples/shalimar-library test
 # The converter's suite is differential and needs both compilers as oracles.
 # It is given the two just built into $(OUT), for the same reason the editor's
 # is below: those are the ones this build produced, and they are the ones
 # whose behaviour the converter's output is being judged against.
-	$(MAKE) -C $(C2S_DIR) BINDIR=$(OUT) OBJDIR=$(OUT)/obj/c2s test CC1=$(OUT)/cc1i.exe SHC=$(OUT)/shc.exe
+	$(MAKE) -C $(C2S_DIR) BINDIR=$(OUT) OBJDIR=$(OUT)/obj/c2s test CC1=$(OUT)/cc1i.exe SHC=$(OUT)/shci.exe
 # cxx1's own suites, against the binary just built into $(OUT) - its Makefile
 # runs them on $(TARGET), which BINDIR names. The differential suites ask the
 # host's g++ or clang++ for the answers, so they run wherever the editor does.
@@ -1154,7 +1164,7 @@ endif
 # need a compiler and says so quietly - so the count fell from 792 and 232 to
 # 686 and 115 and everything still read as green. A suite that skips is not a
 # suite that passes.
-	$(MAKE) BINDIR=$(OUT) OBJDIR=$(OUT)/obj/editor check CC1=$(OUT)/cc1i.exe CXX1=$(OUT)/cxx1i.exe SHC=$(OUT)/shc.exe C2S=$(OUT)/c2s.exe
+	$(MAKE) BINDIR=$(OUT) OBJDIR=$(OUT)/obj/editor check CC1=$(OUT)/cc1i.exe CXX1=$(OUT)/cxx1i.exe SHC=$(OUT)/shci.exe C2S=$(OUT)/c2s.exe
 
 # The alternative destination, for anyone who would rather the checkout root
 # stayed as it was. Nothing is copied into it - see the `bin` rule below.
@@ -1326,8 +1336,8 @@ def main():
                    vcxproj_text("RStudioConsole", sorted(set(windows_sources)),
                                 ["_CRT_SECURE_NO_WARNINGS"]),
                    "RStudioConsole.vcxproj"))
-    wanted.append((os.path.join(SIBLINGS, "Compiler-S", "shc.vcxproj"),
-                   vcxproj_text("shc", spec_of["shc.exe"]["sources"], ["_CRT_SECURE_NO_WARNINGS"],
+    wanted.append((os.path.join(SIBLINGS, SHC_REPO, "shc.vcxproj"),
+                   vcxproj_text("shci", spec_of["shci.exe"]["sources"], ["_CRT_SECURE_NO_WARNINGS"],
                                 shc_runtime_step()),
                    "shc.vcxproj"))
     # The converter's, which docs/ANALYSIS.md section 12 scheduled as part of
@@ -1372,14 +1382,14 @@ def main():
         ("cc1i", "../" + CC1_REPO.replace(os.sep, "/") + "/msvc/cc1.vcxproj", CC1_GUID, []),
         ("cxx1i", "../" + CXX1_REPO.replace(os.sep, "/") + "/cxx1.vcxproj", guid("cxx1i"), []),
         ("vm6747", "../" + VM_REPO.replace(os.sep, "/") + "/vm6747.vcxproj", guid("vm6747"), []),
-        ("shc", "../Compiler-S/shc.vcxproj", guid("shc"), []),
+        ("shci", "../" + SHC_REPO.replace(os.sep, "/") + "/shc.vcxproj", guid("shci"), []),
         # c2s is built with them and not by them: the editor runs it over the
         # open file from the Language menu, and finds it beside itself the
         # same way it finds the compilers.
         ("c2s", "../Converter-C2S/c2s.vcxproj", guid("c2s"), []),
         # the editor after both, which is the dependency this whole thing is
         # for - said in a .sln the way the workspace says it in a .xcodeproj.
-        ("RStudioConsole", "RStudioConsole.vcxproj", guid("RStudioConsole"), [CC1_GUID, guid("cxx1i"), guid("vm6747"), guid("shc"), guid("c2s")]),
+        ("RStudioConsole", "RStudioConsole.vcxproj", guid("RStudioConsole"), [CC1_GUID, guid("cxx1i"), guid("vm6747"), guid("shci"), guid("c2s")]),
         # The window, on the same footing as the console half. It is in the
         # solution for two reasons: so that one build makes all four, and
         # because being in a solution is what moves its output into the
@@ -1389,7 +1399,7 @@ def main():
         # version of it set OutDir, IntDir, BasicRuntimeChecks and a platform
         # version, and the binary died at startup with heap corruption before
         # main. Nothing in that file is touched to get this.
-        ("RStudioGui", "winforms/RStudioGui.vcxproj", GUI_GUID, [CC1_GUID, guid("cxx1i"), guid("vm6747"), guid("shc"), guid("c2s")]),
+        ("RStudioGui", "winforms/RStudioGui.vcxproj", GUI_GUID, [CC1_GUID, guid("cxx1i"), guid("vm6747"), guid("shci"), guid("c2s")]),
     ]
     wanted.append((os.path.join(HERE, "RStudio.sln"), solution_text(entries),
                    "RStudio.sln"))
