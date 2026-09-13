@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 #
-# Builds this editor on the Linux box and runs both suites there.
+# Copies this tree and what it drives to the Linux box, builds the workspace
+# there and runs every suite.
 #
 # Three reasons it is worth doing, and only the first is the obvious one.
 #
@@ -12,74 +13,140 @@
 # clang++ or cl, which is a routing this editor now makes and nowhere else can
 # check.
 #
-# A tarball rather than that box's own clone, which is a deliberate choice and
-# not an oversight. There *is* a clone there - ~/CC1StudioWorkbench, on the old
-# repository name - and it has git, unlike the Windows box. But a clone can only
-# ever have what has been pushed, and this script exists to check what is in the
-# working tree *before* it is committed. The clone also drifts: it was eight
-# commits behind on 2026-08-21 with a stale origin/main, which at a glance reads
-# like divergent work by somebody else.
+# A tarball rather than that box's own clones, which is a deliberate choice
+# and not an oversight. A clone can only ever have what has been pushed, and
+# this script exists to check what is in the working tree *before* it is
+# committed; and the VM6747 line has no remote at all, by its own rules.
 #
-# So: this relays and builds from clean, the clone stays as it is, and neither
-# pretends to be the other. If you want the clone up to date, push and pull it -
-# that is a different job from this one.
+# 3.5: the compilers are the VM6747 line, and they travel with the editor.
+# Before this the script handed the suites ~/build-ws/cc1.exe, a three-target
+# cc1 from 2026-08-26 that refuses `-arch tms6747` - so the session suite's
+# emulated-target case would have failed there, not skipped, and the emulator
+# had never been compiled by g++ at all. Now the four repositories are laid out
+# on the box exactly as they are here, ../VM6747/<name> beside the editor,
+# which is the one assumption workspace.mk makes, and it builds them the way it
+# builds them on the Mac. The converter goes the same way, since ~/converter
+# there is a clone and behind.
 #
-#   ./tools/to-linux.sh              build and run both suites
-#   ./tools/to-linux.sh build        build only
+# Laid over rather than wiped: the box is a t3.nano and every object it can
+# keep between runs is minutes it does not spend again. What is excluded by
+# name is what was built here - a Mach-O object or binary that travels over is
+# "newer" than its source there and reads as a broken toolchain, which is how
+# the first run of this script failed. The editor's own directory is emptied
+# of everything but obj/ for the same reason it always was: it is where the
+# binaries land, and a stale one beside a fresh one is a directory nobody can
+# read.
+#
+# Everything runs inside a memory cgroup, as Compiler-C's ./build does, because
+# this box has 419 MB and an uncapped build once took it down to a hypervisor
+# power cycle. A capped process dies alone.
+#
+#   ./tools/to-linux.sh              build the workspace and run every suite
+#   ./tools/to-linux.sh build        build and confirm only
 set -uo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
 
 KEY="${ED1_LINUX_KEY:-$HOME/Documents/Claude/myMorningWalk.pem}"
 BOX="${ED1_LINUX_BOX:-ec2-user@52.202.164.123}"
-# Its own directory, well away from ~/CC1StudioWorkbench: this is wiped and
-# rebuilt every run, and doing that to somebody's checkout would be unforgivable.
+# Its own directory, well away from ~/RStudio, that box's clone: this one is
+# this script's to empty.
 DIR="${ED1_LINUX_DIR:-rstudio}"
 WHAT="${1:-check}"
+TMP="${TMPDIR:-/tmp}"
+SSH=(ssh -n -i "$KEY" "$BOX")
 
-# The compilers live on that box too. Named here rather than found, so that
-# a suite reporting "no cc1" is reporting a fact about that machine and not
-# about this script - which is exactly what it said the first time, when it
-# looked in the wrong place.
-#
-# Where they are, as of 2026-09-11: ~/ansicc and ~/shalimar, the checkouts
-# these used to name, are gone from that box - it is an 8 GB nano and they
-# went for the room. What remains is ~/build-ws, a workspace build of
-# 2026-08-26 holding cc1.exe, shc.exe with its lib/, and c2s.exe; and cxx1,
-# whose own tools/verify-three re-extracts and rebuilds ~/cxx1-verify on every
-# run, so that one is the freshest compiler on the machine. `make check` is
-# given all four; the editor is built from this tree, and those are what it
-# drives there.
-CC1_THERE="${ED1_LINUX_CC1:-\$HOME/build-ws/cc1.exe}"
-CXX1_THERE="${ED1_LINUX_CXX1:-\$HOME/cxx1-verify/cxx1.exe}"
-SHC_THERE="${ED1_LINUX_SHC:-\$HOME/build-ws/shc.exe}"
-C2S_THERE="${ED1_LINUX_C2S:-\$HOME/build-ws/c2s.exe}"
+say() { printf '%s\n' "$*"; }
 
-# src/obj is excluded and that is not tidiness. The first run of this script
-# carried the Mac's own Mach-O objects over, make found them newer than the
-# sources it had just unpacked, and the link failed with "file format not
-# recognized" - which reads as a broken toolchain on that box and is nothing of
-# the kind. Everything is built from clean there for the same family of reason
-# Compiler-S's relay gives.
-# Built things are excluded by name as well as by suffix: tests/test and
-# tests/session have no extension, so a Mach-O one travelled over and make
-# found it newer than tests/test.cpp - "cannot execute binary file", which
-# reads as a broken box and is the Mac's own binary being run on Linux.
-tar --no-mac-metadata --exclude 'src/obj' --exclude '*.o' --exclude '*.d' \
-    --exclude 'tests/test' --exclude 'tests/session' --exclude 'RStudio.exe' \
-    -czf "${TMPDIR:-/tmp}/ed1-src.tgz" \
-    src tests winforms examples help Makefile workspace.mk README.md 2>/dev/null || exit 2
+# ---- the editor -----------------------------------------------------------
+# help/ goes because tests/test.cpp checks Help > Contents against it, and
+# tools/ because --check of the projects is one of the things `make check`
+# can ask for.
+tar --no-mac-metadata \
+    --exclude 'obj' --exclude '*.o' --exclude '*.d' --exclude '*.exe' \
+    --exclude 'tests/test' --exclude 'tests/session' --exclude '* 2.*' \
+    --exclude 'lib' --exclude 'x64' --exclude 'DerivedData' --exclude 'bin' \
+    -czf "$TMP/rstudio-src.tgz" \
+    src tests examples help tools docs Makefile workspace.mk README.md 2>/dev/null || exit 2
 
-ssh -n -i "$KEY" "$BOX" "rm -rf ~/$DIR && mkdir -p ~/$DIR" || exit 2
-scp -q -i "$KEY" "${TMPDIR:-/tmp}/ed1-src.tgz" "$BOX:~/$DIR/" || exit 2
+# ---- what it drives ---------------------------------------------------------
+# Each repository's sources, tests and Makefile, and nothing built here.
+# cc1i's lib/ is its C headers and travels; shci's lib/ is this machine's
+# runtime archives and does not. cxx1i's suites want tools/ (the mangling
+# oracle, the comment-line policy) and cc1i's the same.
+pack() {  # pack <name> <directory> <what...>
+    local name=$1 dir=$2; shift 2
+    ( cd "$dir" && tar --no-mac-metadata --exclude '* 2.*' --exclude 'obj' \
+        --exclude '*.exe' --exclude 'out-*' --exclude '*.o' --exclude '*.d' \
+        --exclude 'DerivedData' --exclude 'build' \
+        -czf "$TMP/$name-src.tgz" "$@" ) || exit 2
+}
+pack cc1i   ../VM6747/Compiler-Ci   src lib tools tests examples Makefile README.md
+pack cxx1i  ../VM6747/Compiler-Cppi src include lib tools tests Makefile README.md
+pack shci   ../VM6747/Compiler-Si   src runtime tests examples Makefile README.md
+pack vm6747 ../VM6747/Emulator      src tests Makefile README.md
+pack c2s    ../Converter-C2S        src tests Makefile README.md
 
-# g++ needs telling where its own headers' worth of parallelism is; -j is the
-# box's business rather than this script's, and that box is small.
-ssh -n -i "$KEY" "$BOX" "cd ~/$DIR && tar xzf ed1-src.tgz 2>/dev/null; find . -name '._*' -delete && \
-    make -j2 2>&1 | grep -E 'error|Error' ; \
-    [ -x ./RStudio.exe ] || { echo 'no RStudio.exe was built'; exit 2; } ; \
-    if [ \"$WHAT\" = build ]; then echo 'built RStudio.exe'; exit 0; fi ; \
-    if [ \"$WHAT\" = workspace ]; then \
-        make -f workspace.mk check CC1_DIR=\$HOME/ansicc CXX1_DIR=\$HOME/cxx1 SHC_DIR=\$HOME/shalimar C2S_DIR=\$HOME/converter ; \
-    else \
-        make check CC1=$CC1_THERE CXX1=$CXX1_THERE SHC=$SHC_THERE C2S=$C2S_THERE ; \
-    fi"
+# Where they land: the shape workspace.mk assumes, ../VM6747/<name> and
+# ../Converter-C2S beside the editor's directory. A function and not an
+# array, because the Mac's bash is 3.2 and has no associative arrays.
+there() {
+    case "$1" in
+        cc1i)   echo 'VM6747/Compiler-Ci' ;;
+        cxx1i)  echo 'VM6747/Compiler-Cppi' ;;
+        shci)   echo 'VM6747/Compiler-Si' ;;
+        vm6747) echo 'VM6747/Emulator' ;;
+        c2s)    echo 'Converter-C2S' ;;
+    esac
+}
+NAMES="cc1i cxx1i shci vm6747 c2s"
+
+say "copying to $BOX"
+dirs=""; for name in $NAMES; do dirs="$dirs ~/$(there $name)"; done
+"${SSH[@]}" "mkdir -p ~/$DIR $dirs && cd ~/$DIR && find . -mindepth 1 -maxdepth 1 ! -name obj -exec rm -rf {} +" || exit 2
+scp -q -i "$KEY" "$TMP/rstudio-src.tgz" "$BOX:~/$DIR/" || exit 2
+for name in $NAMES; do
+    scp -q -i "$KEY" "$TMP/$name-src.tgz" "$BOX:~/$(there $name)/" || exit 2
+done
+
+# ---- the script that does the work there -----------------------------------
+# One script, generated here so that what runs is what this file says. The
+# AppleDouble files are deleted after every extraction because a stray ._foo
+# is an untracked file to git and a source to a glob. The build's output goes
+# to a log and is shown with the compile lines taken out, so a failure is
+# read from make's own status and not from what a pipe let through.
+{
+    printf '#!/bin/sh\nset -u\n'
+    printf 'unpack() { cd "$1" && tar xzf "$2" && rm -f "$2" && find . -name "._*" -delete || exit 2; }\n'
+    printf 'unpack ~/%s rstudio-src.tgz\n' "$DIR"
+    for name in $NAMES; do
+        printf 'unpack ~/%s %s-src.tgz\n' "$(there $name)" "$name"
+    done
+    printf 'cd ~/%s\n' "$DIR"
+    printf 'WHAT=%s\n' "$WHAT"
+    cat <<'REMOTE'
+# The cap. --user works on this box; the fallback is the one Compiler-C's
+# ./build makes, and a plain make is said out loud rather than pretended.
+if systemd-run --user --scope -q -p MemoryMax=300M true 2>/dev/null; then
+    CAPPED="systemd-run --user --scope -q -p MemoryMax=300M"
+elif sudo -n true 2>/dev/null; then
+    CAPPED="sudo systemd-run --scope -q -p MemoryMax=300M --uid=$(id -u) --gid=$(id -g)"
+else
+    echo "warning: no cgroup cap available - building UNCAPPED" >&2; CAPPED=""
+fi
+run() {  # run <log> <make arguments...>
+    log=$1; shift
+    $CAPPED make -f workspace.mk C2S_DIR="$HOME/Converter-C2S" "$@" > "$log" 2>&1
+    rc=$?
+    grep -vE '^(clang|g)\+\+ |^ar |^/usr/bin/make|^make\[[0-9]+\]: (Entering|Leaving|Nothing)' "$log"
+    return $rc
+}
+run build.log || { echo "the workspace build failed - see ~/rstudio/build.log"; exit 2; }
+[ -x ./RStudio.exe ] || { echo "no RStudio.exe was built"; exit 2; }
+if [ "$WHAT" = build ]; then echo "built the workspace"; exit 0; fi
+run check.log check
+REMOTE
+} > "$TMP/rstudio-run.sh"
+scp -q -i "$KEY" "$TMP/rstudio-run.sh" "$BOX:~/$DIR/rstudio-run.sh" || exit 2
+
+say "running ~/$DIR/rstudio-run.sh ($WHAT)"
+"${SSH[@]}" "sh ~/$DIR/rstudio-run.sh"
