@@ -243,7 +243,7 @@ Editor::Editor()
       askChoice_(0) {
     frame_ = &kBoxFrame;
 
-    for (size_t i = 0; i < 3; ++i)
+    for (size_t i = 0; i < kArchCount; ++i)
         if (std::string(kArches[i]) == hostArch()) arch_ = i;
 
     const char* fromEnv = std::getenv("CC1");
@@ -251,7 +251,11 @@ Editor::Editor()
         tool_.cc1 = fromEnv;
     } else {
 
-        std::string beside = path::besideProgram("cc1.exe");
+        // cc1i since 3.5, the compiler that carries tms6747; a cc1 beside
+        // the editor still serves for the three host targets.
+        std::string beside = path::besideProgram("cc1i.exe");
+        if (beside.empty()) beside = path::besideProgram("cc1i");
+        if (beside.empty()) beside = path::besideProgram("cc1.exe");
         if (beside.empty()) beside = path::besideProgram("cc1");
         if (!beside.empty()) tool_.cc1 = beside;
     }
@@ -261,7 +265,9 @@ Editor::Editor()
     if (cxx1FromEnv && *cxx1FromEnv) {
         tool_.cxx1 = cxx1FromEnv;
     } else {
-        std::string beside = path::besideProgram("cxx1.exe");
+        std::string beside = path::besideProgram("cxx1i.exe");
+        if (beside.empty()) beside = path::besideProgram("cxx1i");
+        if (beside.empty()) beside = path::besideProgram("cxx1.exe");
         if (beside.empty()) beside = path::besideProgram("cxx1");
         if (!beside.empty()) tool_.cxx1 = beside;
     }
@@ -406,7 +412,7 @@ void Editor::applyProject() {
 
     style_ = project_.indent();
     tool_.kind = project_.toolchain();
-    for (size_t i = 0; i < 3; ++i)
+    for (size_t i = 0; i < kArchCount; ++i)
         if (project_.arch() == kArches[i]) arch_ = i;
 }
 
@@ -959,6 +965,7 @@ bool Editor::menuItemIsCurrent(Action action) const {
         case ActionArchWindows: return kArches[arch_] == std::string("x86_64-windows");
         case ActionArchLinux:   return kArches[arch_] == std::string("x86_64-linux");
         case ActionArchDarwin:  return kArches[arch_] == std::string("arm64-darwin");
+        case ActionArchTms6747: return kArches[arch_] == std::string("tms6747");
 
         case ActionConfigDebug:   return config_ == ConfigDebug;
         case ActionConfigRelease: return config_ == ConfigRelease;
@@ -2413,7 +2420,8 @@ void Editor::buildProject(bool andRun) {
             (count == 1 ? " source" : " sources"));
     } else {
         console_.push_back("");
-        Ran result = runBuilt(program, consoleSink, this);
+        // What was built, which for the emulated target is <program>.vm.
+        Ran result = runBuilt(made.program, consoleSink, this);
         console_.push_back("[program returned " + number(static_cast<size_t>(result.status)) + "]");
         say("ran " + project_.relative(program) + " - it returned " +
             number(static_cast<size_t>(result.status)));
@@ -2945,6 +2953,7 @@ void Editor::perform(Action action) {
         case ActionArchWindows:
         case ActionArchLinux:
         case ActionArchDarwin:
+        case ActionArchTms6747:
             arch_ = static_cast<size_t>(action - ActionArchWindows);
             resetDebug();
             say(usesArch(tool_.kind)
@@ -3175,7 +3184,7 @@ void Editor::processKey(int key) {
         case ctrl('w'): cycleFocus(); return;
 
         case ctrl('t'):
-            arch_ = (arch_ + 1) % 3;
+            arch_ = (arch_ + 1) % kArchCount;
             say(std::string("target: ") + kArches[arch_] + " - Ctrl-B to build it");
             return;
 

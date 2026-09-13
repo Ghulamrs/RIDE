@@ -109,8 +109,10 @@ EDITOR := $(BINDIR)/RStudio.exe
 # still skips those cases with its own message rather than failing to find a
 # file - the behaviour before this, kept for the case it was right for. And
 # `?=`, so CC1 in the environment or on the command line still wins.
-CC1 ?= $(abspath $(wildcard $(BINDIR)/cc1.exe))
-CXX1 ?= $(abspath $(wildcard $(BINDIR)/cxx1.exe))
+# cc1i and cxx1i since 3.5: the VM6747 line, which carries tms6747 as well
+# as the three host targets.
+CC1 ?= $(abspath $(wildcard $(BINDIR)/cc1i.exe))
+CXX1 ?= $(abspath $(wildcard $(BINDIR)/cxx1i.exe))
 SHC ?= $(abspath $(wildcard $(BINDIR)/shc.exe))
 C2S ?= $(abspath $(wildcard $(BINDIR)/c2s.exe))
 
@@ -230,8 +232,11 @@ check: test session
 # and finds it beside itself, so "built" and "usable" are two states and this
 # checks the second. It is not a compiler and nothing links it - the Language
 # menu's two Convert items run it over the open file.
-# cxx1 joined in 3.0, found the same way and for the same reason.
-DEPENDENCIES := cc1.exe cxx1.exe shc.exe c2s.exe \
+# cxx1 joined in 3.0, found the same way and for the same reason. 3.5 docks
+# the VM6747 line instead - cc1i.exe and cxx1i.exe, the same compilers with
+# the TMS320C6747 as a fourth target - and vm6747.exe, the emulator that runs
+# that target's programs, found beside the editor like the compilers.
+DEPENDENCIES := cc1i.exe cxx1i.exe vm6747.exe shc.exe c2s.exe \
        lib/shmrt-$(SHM_TARGET).a lib/shmrt-$(SHM_TARGET)-debug.a
 
 confirm: $(EDITOR)

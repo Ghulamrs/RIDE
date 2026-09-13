@@ -47,15 +47,28 @@ struct Toolchain {
     std::string cxx;
     std::string cxx1;
 
+    // cc1i and cxx1i since 3.5: the compilers that carry tms6747. The kinds
+    // keep their names, cc1 and cxx1, being the same compilers one target on.
     Toolchain()
-        : kind(ToolAuto), cc1("cc1.exe"), cl("cl"), shc("shc.exe"),
-          cxx(hostCxxName()), cxx1("cxx1.exe") {}
+        : kind(ToolAuto), cc1("cc1i.exe"), cl("cl"), shc("shc.exe"),
+          cxx(hostCxxName()), cxx1("cxx1i.exe") {}
 };
 
 ToolchainKind resolve(const Toolchain& tool, Language lang);
 
 const char* toolchainName(ToolchainKind kind);
 const char* programOf(const Toolchain& tool, ToolchainKind kind);
+
+// **The fourth target runs on an emulator.** tms6747 is the TI TMS320C6747;
+// the compilers docked with this editor since 3.5 are cc1i and cxx1i - the
+// VM6747 line, which know it along with the three host targets - and vm6747,
+// the VM6747 emulator, runs what they emit. There is nothing to assemble or
+// link: the program is the .s file, or a directory of them for a project.
+bool isEmulated(const std::string& arch);
+std::string emulatorProgram();
+// The command that runs a built program: the program itself, or the emulator
+// with it.
+std::string launchCommand(const std::string& program);
 
 std::string toolchainShown(const Toolchain& tool, ToolchainKind kind);
 

@@ -120,6 +120,7 @@ const char* rstudio_outcome_message(RStudioProject* project);
 const char* rstudio_outcome_path(RStudioProject* project);
 
 const char* rstudio_arch(int index);
+int rstudio_arch_count(void);
 const char* rstudio_toolchain_name(int kind);
 
 const char* rstudio_language_name(int language);

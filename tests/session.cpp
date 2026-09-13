@@ -1131,6 +1131,78 @@ void compilingCpp(const std::string& rstudio, const std::string& cxx1) {
     file::remove_all(dir);
 }
 
+// **The fourth target, tms6747, runs on the VM6747 emulator** - vm6747, found
+// beside the editor like the compilers. F5 on a file builds it with cc1i -S
+// and runs the assembly; F4 on a project writes one .s per source into
+// <target>.vm and Run project hands the directory to vm6747; and Debug is
+// turned away with the reason, since the emulator is not a debugger. The
+// project file names the target, which is how the editor opens on it.
+void emulatedTarget(const std::string& rstudio, const std::string& cc1,
+                    const std::string& cxx1) {
+    std::printf("the tms6747 target, run on the VM6747 emulator\n");
+
+    if (cc1.empty()) {
+        std::printf("  (no cc1 named, so those cases are not tried)\n");
+        return;
+    }
+
+    file::path dir = freshProject("tms6747");
+    writeFile(dir / "RStudio.json",
+              "{\n  \"name\": \"Trial\",\n  \"indent\": 4,\n  \"arch\": \"tms6747\",\n"
+              "  \"groups\": { \"Sources\": [] }\n}\n");
+    file::path file = dir / "src" / "three.c";
+    writeFile(file, "#include <stdio.h>\nint main(void)\n{\n    printf(\"counted to three\\n\");\n"
+                    "    return 3;\n}\n");
+    std::string withCc1 = "\"" + file.string() + "\" --project \"" + dir.string() +
+                          "\" --cc1 \"" + cc1 + "\"";
+
+    Screen ran = drive(rstudio, withCc1, kF5 + ctrl('q'), dir);
+    check(rowsSaying(ran, "counted to three") == 2,
+          "F5 on the C6000 target builds with cc1i and runs on vm6747, and the output reaches the console");
+    check(wasShown(ran, "[program returned 3]"), "and what it returned is said as a number");
+    check(message(ran).find("tms6747") != std::string::npos || onScreen(ran, "tms6747"),
+          "and the target is named");
+
+    // Debug is refused, with the emulator named as the reason.
+    Screen debug = drive(rstudio, withCc1, kF8 + ctrl('q'), dir);
+    check(wasShown(debug, "not a debugger"), "F8 is turned away: vm6747 is not a debugger yet");
+
+    if (!cxx1.empty()) {
+        file::path cpp = dir / "src" / "throws.cpp";
+        writeFile(cpp, "#include <cstdio>\nstruct E { int code; E(int c) : code(c) {} };\n"
+                       "int risky(int x) { if (x > 1) throw E(x); return x; }\n"
+                       "int main()\n{\n    try { risky(3); } catch (const E &e) { std::printf(\"caught %d\\n\", e.code); }\n"
+                       "    return 5;\n}\n");
+        Screen threw = drive(rstudio, "\"" + cpp.string() + "\" --project \"" + dir.string() +
+                                      "\" --cxx1 \"" + cxx1 + "\"",
+                             kF5 + ctrl('q'), dir);
+        check(wasShown(threw, "caught 3"), "C++ with an exception runs on the emulator too");
+        check(wasShown(threw, "[program returned 5]"), "and returns what it returned");
+    }
+
+    // A project of two sources: built into a directory of assembly, then run.
+    writeFile(dir / "src" / "sum.c", "#include \"sum.h\"\n\nint addUp(int a, int b) { return a + b; }\n");
+    writeFile(dir / "src" / "sum.h", "int addUp(int a, int b);\n");
+    writeFile(dir / "src" / "main.c",
+              "#include <stdio.h>\n\n#include \"sum.h\"\n\n"
+              "int main(void)\n{\n    printf(\"answer %d\\n\", addUp(2, 40));\n    return 0;\n}\n");
+    writeFile(dir / "RStudio.json",
+              "{\n  \"name\": \"sums\",\n  \"indent\": 4,\n  \"arch\": \"tms6747\",\n"
+              "  \"groups\": {\n"
+              "    \"Sources\": [\"src/sum.c\", \"src/main.c\"],\n"
+              "    \"Headers\": [\"src/sum.h\"]\n  },\n"
+              "  \"build\": { \"target\": \"sums\", \"groups\": [\"Sources\"] }\n}\n");
+    std::string arguments = "--project \"" + dir.string() + "\" --cc1 \"" + cc1 + "\"";
+    Screen built = drive(rstudio, arguments, kF4 + ctrl('q'), dir);
+    check(onScreen(built, "2 sources"), "F4 builds the project's two sources for the C6000");
+    check(editor::path::isDirectory((dir / "sums.vm").string()), "into a directory of assembly beside the project");
+    Screen ran2 = drive(rstudio, arguments,
+                        kF10 + times(kRight, 3) + times(kDown, 3) + kEnter + ctrl('q'), dir);
+    check(wasShown(ran2, "answer 42"), "and Run project hands it to vm6747, which runs it");
+
+    file::remove_all(dir);
+}
+
 // The project's own build, as against the file in front of you. Two sources
 // that only work together, so that a program coming out at all is proof they
 // were linked and not merely compiled one at a time.
@@ -1811,7 +1883,7 @@ void aDirectoryWithNoProject(const std::string& rstudio) {
     // that walks them.
     Screen about = drive(rstudio, "--project \"" + dir.string() + "\"",
                          kF10 + times(kRight, 8) + times(kDown, 2) + kEnter + ctrl('q'), dir);
-    check(onScreen(about, "RStudio 3.0"), "About names the product and version");
+    check(onScreen(about, "RStudio 3.5"), "About names the product and version");
     check(onScreen(about, "cxx1"), "and the fourth compiler is on its list");
     check(onScreen(about, "G. R. Akhtar"), "and who it belongs to");
     check(onScreen(about, "Islamabad"), "and where they are, which the last line must not lose");
@@ -2622,6 +2694,7 @@ int main(int argc, char** argv) {
     compiling(rstudio, cc1);
     compilingCpp(rstudio, cxx1);
     buildingTheProject(rstudio, cc1, cxx1);
+    emulatedTarget(rstudio, cc1, cxx1);
     buildingWithCl(rstudio);
     configurations(rstudio, cc1);
     debugPanelPerTarget(rstudio);

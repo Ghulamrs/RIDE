@@ -373,6 +373,9 @@ std::string dbg_whyNot(ToolchainKind kind, const std::string& arch) {
 
     if (dbg_stopsItself(kind))
         return "a Shalimar program stops itself - it needs no debugger at all";
+    if (isEmulated(arch))
+        return arch + " runs on vm6747, the VM6747 emulator, which is not a debugger "
+               "yet - F5 runs it, and vm6747 -t traces every instruction";
     if (kind == ToolMsvc)
         return "cl writes a .pdb and cdb reads one, but cdb is not installed - "
                "add Debugging Tools for Windows";

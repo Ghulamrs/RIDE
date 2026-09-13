@@ -25,7 +25,10 @@ struct Build {
     std::vector<std::string> asmLines;
 };
 
-extern const char* const kArches[3];
+// The four targets, in the order the Target menu lists them. The fourth is
+// the TI TMS320C6747, which the VM6747 emulator runs (toolchain.h).
+const size_t kArchCount = 4;
+extern const char* const kArches[kArchCount];
 
 typedef void (*LineSink)(void* context, const std::string& line);
 

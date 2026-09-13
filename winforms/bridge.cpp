@@ -560,9 +560,11 @@ int rstudio_save_project(RStudioProject* project) {
 }
 
 const char* rstudio_arch(int index) {
-    if (index < 0 || index > 2) index = 0;
+    if (index < 0 || index >= static_cast<int>(editor::kArchCount)) index = 0;
     return editor::kArches[index];
 }
+
+int rstudio_arch_count(void) { return static_cast<int>(editor::kArchCount); }
 
 const char* rstudio_toolchain_name(int kind) {
     return editor::toolchainName(static_cast<editor::ToolchainKind>(kind));

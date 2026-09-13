@@ -191,6 +191,24 @@ bool usesArch(ToolchainKind kind) {
     return kind == ToolCc1 || kind == ToolShc || kind == ToolCxx1;
 }
 
+bool isEmulated(const std::string& arch) { return arch == "tms6747"; }
+
+std::string emulatorProgram() {
+    const char* fromEnv = std::getenv("VM6747");
+    if (fromEnv && *fromEnv) return fromEnv;
+    std::string beside = path::besideProgram("vm6747.exe");
+    if (beside.empty()) beside = path::besideProgram("vm6747");
+    return beside.empty() ? std::string("vm6747") : beside;
+}
+
+std::string launchCommand(const std::string& program) {
+    std::string leaf = path::filename(program);
+    bool assembly = leaf.size() > 2 && leaf.compare(leaf.size() - 2, 2, ".s") == 0;
+    bool directory = leaf.size() > 3 && leaf.compare(leaf.size() - 3, 3, ".vm") == 0;
+    if (assembly || directory) return quote(emulatorProgram()) + " " + quote(program);
+    return quote(program);
+}
+
 const char* configName(Configuration config) {
     return config == ConfigRelease ? "release" : "debug";
 }
@@ -203,7 +221,8 @@ bool emitsDebugInfo(ToolchainKind kind, const std::string& arch) {
 
     if (kind == ToolCxx) return true;
 
-    // cc1 and cxx1 alike: DWARF on the two GNU targets, MASM on the third.
+    // cc1 and cxx1 alike: DWARF on the two GNU targets, MASM on the third,
+    // and nothing for the C6000 - the emulator runs it, no debugger reads it.
     if (kind != ToolCc1 && kind != ToolCxx1) return false;
     return arch == "x86_64-linux" || arch == "arm64-darwin";
 }
@@ -247,6 +266,12 @@ std::vector<std::string> debugNote(ToolchainKind kind, const std::string& arch) 
         said.push_back("F8 stops on. So there is a debugger here and no debug format. What");
         said.push_back("it cannot do is read a variable. This is the assembly the build");
         said.push_back("produced, read back out of itself.");
+    } else if ((kind == ToolCc1 || kind == ToolCxx1) && isEmulated(arch)) {
+        said.push_back(std::string(toolchainName(kind)) + "i writes no debug information for " +
+                       arch + ": what it emits runs on");
+        said.push_back("vm6747, the VM6747 emulator, which is not a debugger - it can trace");
+        said.push_back("every instruction (-t) but stops nowhere. This is what the build");
+        said.push_back("produced, read back out of its own assembly.");
     } else if (kind == ToolCc1 || kind == ToolCxx1) {
         said.push_back(std::string(toolchainName(kind)) + " writes no debug information for " +
                        arch + ": it generates MASM");
@@ -299,11 +324,15 @@ const char* hostArch() {
 bool runsHere(ToolchainKind kind, const std::string& arch) {
 
     if (kind == ToolMsvc || kind == ToolCxx) return true;
+    // The C6000 runs anywhere the emulator is; shc has no such target.
+    if (isEmulated(arch)) return kind == ToolCc1 || kind == ToolCxx1;
     return arch == hostArch();
 }
 
 std::string whyNotRun(ToolchainKind kind, const std::string& arch) {
     if (runsHere(kind, arch)) return std::string();
+    if (isEmulated(arch))
+        return std::string(toolchainName(kind)) + " has no " + arch + " target - it is cc1's and cxx1's";
     return arch + " only reaches -S here - switch to " + hostArch() + " to run it";
 }
 
@@ -325,6 +354,14 @@ std::string programPath() {
     path += ".exe";
 #endif
     return path;
+}
+
+std::string objectFor(const std::string& dir, const std::string& source,
+                      const char* suffix) {
+    std::string leaf = path::filename(source);
+    size_t dot = leaf.find_last_of('.');
+    if (dot != std::string::npos) leaf.resize(dot);
+    return dir.empty() ? leaf + suffix : path::join(dir, leaf + suffix);
 }
 }
 
@@ -370,20 +407,30 @@ Recipe targetRecipe(const Toolchain& tool, ToolchainKind kind,
         return recipe;
     }
 
+    if (isEmulated(arch)) {
+        // Nothing links: the program is a directory of one .s per source,
+        // which vm6747 assembles together. Each source is its own command,
+        // since -S with several inputs writes beside them.
+        std::string dir = program + ".vm";
+        path::removeTree(dir);
+        path::makeDirectories(dir);
+        recipe.assemblyPath = dir;
+        for (size_t i = 0; i < sources.size(); ++i) {
+            if (i > 0) recipe.command += " && ";
+            recipe.command += quote(programOf(tool, kind)) + " -S -arch " + arch +
+                              " " + quote(sources[i]) + " -o " +
+                              quote(path::join(dir, objectFor(std::string(), sources[i], ".s"))) +
+                              configFlags(kind, config, arch);
+        }
+        return recipe;
+    }
+
     recipe.command = quote(programOf(tool, kind)) + languageFlag(kind, lang) +
                      named + " -o " + quote(program) + configFlags(kind, config, arch);
     return recipe;
 }
 
 namespace {
-
-std::string objectFor(const std::string& dir, const std::string& source,
-                      const char* suffix) {
-    std::string leaf = path::filename(source);
-    size_t dot = leaf.find_last_of('.');
-    if (dot != std::string::npos) leaf.resize(dot);
-    return path::join(dir, leaf + suffix);
-}
 
 const char* hostDriver() {
     const char* named = std::getenv("CC1_CC");
@@ -444,6 +491,19 @@ Recipe objectRecipe(const Toolchain& tool, ToolchainKind kind,
         return recipe;
     }
 
+    if (isEmulated(arch)) {
+        for (size_t i = 0; i < sources.size(); ++i) {
+            std::string out = objectFor(objectDir, sources[i], ".s");
+            if (i > 0) recipe.command += " && ";
+            recipe.command += quote(programOf(tool, kind)) + " -S -arch " + arch +
+                              " " + quote(sources[i]) + " -o " + quote(out) +
+                              configFlags(kind, config, arch);
+            objects.push_back(out);
+        }
+        recipe.leftovers = objects;
+        return recipe;
+    }
+
     recipe.command = "cd " + quote(objectDir) + " && " +
                      quote(programOf(tool, kind)) + " -c" +
                      languageFlag(kind, lang) + named +
@@ -493,6 +553,15 @@ Recipe programRecipe(const Toolchain& tool, ToolchainKind kind,
     std::string program = programOf(tool, kind);
     recipe.assemblyPath = programPath();
 
+    if (isEmulated(arch) && usesArch(kind)) {
+        // The program to run is the assembly: vm6747 runs it as it is.
+        recipe.assemblyPath = mine("rstudio-run") + ".s";
+        recipe.command = quote(programOf(tool, kind)) + " -S -arch " + arch + " " +
+                         quote(source) + " -o " + quote(recipe.assemblyPath) +
+                         configFlags(kind, config, arch);
+        return recipe;
+    }
+
     if (kind == ToolMsvc) {
 
         std::string obj = mine("rstudio-run") + ".obj";
@@ -522,6 +591,9 @@ std::string shownProgramCommand(const Toolchain& tool, ToolchainKind kind,
                                 const std::string& source, Language lang,
                                 const std::string& arch, Configuration config) {
     std::string program = programOf(tool, kind);
+    if (isEmulated(arch) && usesArch(kind))
+        return program + " -S -arch " + arch + " " + source + " -o rstudio-run.s" +
+               configFlags(kind, config, arch) + " && vm6747 rstudio-run.s";
     if (kind == ToolMsvc)
         return program + " /diagnostics:column" +
                ((lang == LangCpp) ? " /TP /EHsc /std:c++14" : " /TC") +
@@ -558,7 +630,7 @@ Recipe assemblyRecipe(const Toolchain& tool, ToolchainKind kind,
     }
 
     recipe.assemblyPath = stem + ".s";
-    recipe.command = quote(program) + " -S" + languageFlag(kind, lang) + " " +
+    recipe.command = quote(programOf(tool, kind)) + " -S" + languageFlag(kind, lang) + " " +
                      quote(source) + " -o " + quote(recipe.assemblyPath) +
                      (usesArch(kind) ? " -arch " + arch : std::string()) +
                      configFlags(kind, config, arch);

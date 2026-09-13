@@ -469,7 +469,7 @@ private:
 
         ToolStripMenuItem^ target = gcnew ToolStripMenuItem("&Target");
         targetItems_ = gcnew System::Collections::Generic::List<ToolStripMenuItem^>();
-        for (int i = 0; i < 3; ++i) {
+        for (int i = 0; i < rstudio_arch_count(); ++i) {
             ToolStripMenuItem^ one = gcnew ToolStripMenuItem(
                 FromUtf8(rstudio_arch(i)), nullptr, gcnew EventHandler(this, &MainForm::OnTarget));
             one->ShortcutKeyDisplayString = "Ctrl+T";

@@ -17,7 +17,7 @@ namespace about {
 
 const char* name() { return "RStudio"; }
 
-const char* version() { return "3.0"; }
+const char* version() { return "3.5"; }
 
 namespace {
 

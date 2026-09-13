@@ -111,6 +111,7 @@ Menu::Menu() : active_(false), dropped_(false), column_(0), item_(0) {
     target.items.push_back({"x86_64-windows", "", ActionArchWindows});
     target.items.push_back({"x86_64-linux", "", ActionArchLinux});
     target.items.push_back({"arm64-darwin", "", ActionArchDarwin});
+    target.items.push_back({"tms6747", "", ActionArchTms6747});
     columns_.push_back(target);
 
     MenuColumn help;

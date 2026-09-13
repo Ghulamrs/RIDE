@@ -18,7 +18,7 @@
 
 namespace editor {
 
-const char* const kArches[3] = {"x86_64-windows", "x86_64-linux", "arm64-darwin"};
+const char* const kArches[kArchCount] = {"x86_64-windows", "x86_64-linux", "arm64-darwin", "tms6747"};
 
 namespace {
 
@@ -400,7 +400,11 @@ Built buildParts(const Toolchain& tool, const std::vector<Part>& parts,
         if (parts[i].lang == LangCpp) withCpp = true;
     }
 
-    std::string objects = temporaryDirectory("rstudio-parts");
+    // For the emulated target the parts' assembly is the program: each part
+    // writes its .s files straight into <program>.vm, and there is no link.
+    const bool emulated = isEmulated(arch);
+    std::string objects = emulated ? program + ".vm" : temporaryDirectory("rstudio-parts");
+    if (emulated) path::removeTree(objects);
     path::makeDirectories(objects);
 
     std::vector<std::string> made;
@@ -429,6 +433,12 @@ Built buildParts(const Toolchain& tool, const std::vector<Part>& parts,
             return result;
         }
         for (size_t o = 0; o < theirs.size(); ++o) made.push_back(theirs[o]);
+    }
+
+    if (emulated) {
+        result.program = objects;
+        result.ok = true;
+        return result;
     }
 
     if (sink) sink(context, "$ linking with " + linkerName(withCpp));
@@ -476,12 +486,15 @@ Ran runBuilt(const std::string& program, LineSink sink, void* context) {
 
     result.built = true;
     result.ran = true;
-    result.status = runCaptured("\"" + program + "\"", result.output, sink, context);
+    result.status = runCaptured(launchCommand(program), result.output, sink, context);
     return result;
 }
 
 void removeProgram(const Built& built) {
-    if (!built.program.empty()) std::remove(built.program.c_str());
+    // A program for the emulated target is a .s file or a .vm directory.
+    if (!built.program.empty() && path::isDirectory(built.program))
+        path::removeTree(built.program);
+    else if (!built.program.empty()) std::remove(built.program.c_str());
     for (size_t i = 0; i < built.leftovers.size(); ++i)
         std::remove(built.leftovers[i].c_str());
 #ifdef __APPLE__
@@ -512,7 +525,7 @@ Ran runProgram(const Toolchain& tool, ToolchainKind kind, const std::string& sou
         const char* noInput = " < /dev/null";
 #endif
         result.ran = true;
-        result.status = runCaptured("\"" + made.program + "\"" + noInput,
+        result.status = runCaptured(launchCommand(made.program) + noInput,
                                     result.output, sink, context);
     }
 
