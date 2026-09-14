@@ -60,8 +60,11 @@ all: confirm
 cc1:
 	$(MAKE) -C $(CC1_DIR) BINDIR=$(OUT) OBJDIR=$(OUT)/obj/cc1
 
+# `tms6747` as well as `all`: the Shalimar runtime for the C6000 is cxx1i's
+# output, a directory of .s files the emulator takes beside a program, so
+# shci's build needs cxx1i - which the editor rule builds first.
 shc:
-	$(MAKE) -C $(SHC_DIR) BINDIR=$(OUT) BUILD=$(OUT)/obj/shc
+	$(MAKE) -C $(SHC_DIR) BINDIR=$(OUT) BUILD=$(OUT)/obj/shc all tms6747 CXX1=$(OUT)/cxx1i.exe
 
 # The converter. Not a compiler and nothing links it - the editor runs it over
 # the open file from the Language menu - but it is found the same way the
@@ -123,6 +126,8 @@ endif
 # that check found nothing and said nothing.
 	$(MAKE) -C $(SHC_DIR) SHC=$(OUT)/shci.exe CC1=$(OUT)/cc1i.exe \
 	    LIBDIR=$(abspath $(CC1_DIR))/examples/shalimar-library test
+# The Shalimar corpus on the emulator, with the runtime cxx1i built.
+	$(MAKE) -C $(SHC_DIR) BINDIR=$(OUT) BUILD=$(OUT)/obj/shc CXX1=$(OUT)/cxx1i.exe test-tms6747
 # The converter's suite is differential and needs both compilers as oracles.
 # It is given the two just built into $(OUT), for the same reason the editor's
 # is below: those are the ones this build produced, and they are the ones

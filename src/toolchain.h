@@ -69,7 +69,9 @@ bool isEmulated(const std::string& arch);
 std::string emulatorProgram();
 // The command that runs a built program: the program itself, or the emulator
 // with it.
-std::string launchCommand(const std::string& program);
+std::string launchCommand(const std::string& program, bool shalimar = false);
+// The directory of runtime assembly a Shalimar program needs on the emulator.
+std::string shalimarRuntimeDir();
 // Where a project's program goes for the emulated target: <program>.vm, a
 // directory of assembly, the .exe a Windows program name carries dropped.
 std::string emulatedProgram(const std::string& program);

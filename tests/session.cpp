@@ -1203,6 +1203,39 @@ void emulatedTarget(const std::string& rstudio, const std::string& cc1,
     file::remove_all(dir);
 }
 
+// **Shalimar on the fourth target**: shci has it since 2026-09-14, and a
+// program runs on vm6747 beside the runtime cxx1i compiled - lib/shmrt-tms6747
+// beside the editor, which the launch adds and the compilers know nothing of.
+void emulatedShalimar(const std::string& rstudio, const std::string& shc) {
+    std::printf("Shalimar on the tms6747 target, run on the VM6747 emulator\n");
+
+    if (shc.empty()) {
+        std::printf("  (no shc named, so those cases are not tried)\n");
+        return;
+    }
+    const std::string runtime = editor::path::parent(rstudio) + "/lib/shmrt-tms6747";
+    if (!editor::path::isDirectory(runtime)) {
+        std::printf("  (no lib/shmrt-tms6747 beside the editor, so those cases are not tried)\n");
+        return;
+    }
+
+    file::path dir = freshProject("tms6747-shalimar");
+    writeFile(dir / "RStudio.json",
+              "{\n  \"name\": \"Trial\",\n  \"indent\": 4,\n  \"arch\": \"tms6747\",\n"
+              "  \"groups\": { \"Sources\": [] }\n}\n");
+    file::path file = dir / "src" / "gcd.shl";
+    writeFile(file, "fun <> = main() {\n  a : 48\n  b : 18\n  while b != 0 {\n    r : a % b\n"
+                    "    a : b\n    b : r\n  }\n  ? \"gcd is\" a\n}\n");
+    std::string arguments = "\"" + file.string() + "\" --project \"" + dir.string() +
+                            "\" --shc \"" + shc + "\"";
+    Screen ran = drive(rstudio, arguments, kF5 + ctrl('q'), dir);
+    check(wasShown(ran, "gcd is 6"),
+          "F5 on a Shalimar file for the C6000 builds with shci --target=tms6747 and runs on vm6747 with the runtime");
+    check(wasShown(ran, "[program returned 0]"), "and what it returned is said as a number");
+
+    file::remove_all(dir);
+}
+
 // The project's own build, as against the file in front of you. Two sources
 // that only work together, so that a program coming out at all is proof they
 // were linked and not merely compiled one at a time.
@@ -2695,6 +2728,7 @@ int main(int argc, char** argv) {
     compilingCpp(rstudio, cxx1);
     buildingTheProject(rstudio, cc1, cxx1);
     emulatedTarget(rstudio, cc1, cxx1);
+    emulatedShalimar(rstudio, shc);
     buildingWithCl(rstudio);
     configurations(rstudio, cc1);
     debugPanelPerTarget(rstudio);

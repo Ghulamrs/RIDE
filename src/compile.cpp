@@ -312,6 +312,7 @@ Built buildProgram(const Toolchain& tool, ToolchainKind kind, const std::string&
     Recipe recipe = programRecipe(tool, kind, sourcePath, lang, arch, config);
     result.program = recipe.assemblyPath;
     result.leftovers = recipe.leftovers;
+    result.shalimar = kind == ToolShc;
 
     int made = runCaptured(recipe.command, result.output, sink, context);
     if (made < 0) {
@@ -350,6 +351,7 @@ Built buildTarget(const Toolchain& tool, ToolchainKind kind,
 
     Recipe recipe = targetRecipe(tool, kind, sources, lang, arch, config, program);
     result.program = recipe.assemblyPath;
+    result.shalimar = kind == ToolShc;
     result.leftovers = recipe.leftovers;
 
     int made = runCaptured(recipe.command, result.output, sink, context);
@@ -438,6 +440,8 @@ Built buildParts(const Toolchain& tool, const std::vector<Part>& parts,
     if (emulated) {
         result.program = objects;
         result.ok = true;
+        for (size_t i = 0; i < parts.size(); ++i)
+            if (toolchainOf(tool, parts[i]) == ToolShc) result.shalimar = true;
         return result;
     }
 
@@ -480,13 +484,13 @@ Built buildParts(const Toolchain& tool, const std::vector<Part>& parts,
     return result;
 }
 
-Ran runBuilt(const std::string& program, LineSink sink, void* context) {
+Ran runBuilt(const std::string& program, LineSink sink, void* context, bool shalimar) {
     Ran result;
     if (program.empty()) return result;
 
     result.built = true;
     result.ran = true;
-    result.status = runCaptured(launchCommand(program), result.output, sink, context);
+    result.status = runCaptured(launchCommand(program, shalimar), result.output, sink, context);
     return result;
 }
 
@@ -525,7 +529,7 @@ Ran runProgram(const Toolchain& tool, ToolchainKind kind, const std::string& sou
         const char* noInput = " < /dev/null";
 #endif
         result.ran = true;
-        result.status = runCaptured(launchCommand(made.program) + noInput,
+        result.status = runCaptured(launchCommand(made.program, kind == ToolShc) + noInput,
                                     result.output, sink, context);
     }
 

@@ -2425,7 +2425,7 @@ void Editor::buildProject(bool andRun) {
     } else {
         console_.push_back("");
         // What was built, which for the emulated target is <program>.vm.
-        Ran result = runBuilt(made.program, consoleSink, this);
+        Ran result = runBuilt(made.program, consoleSink, this, made.shalimar);
         console_.push_back("[program returned " + number(static_cast<size_t>(result.status)) + "]");
         say("ran " + project_.relative(program) + " - it returned " +
             number(static_cast<size_t>(result.status)));

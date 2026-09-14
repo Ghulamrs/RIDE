@@ -191,6 +191,11 @@ bool usesArch(ToolchainKind kind) {
     return kind == ToolCc1 || kind == ToolShc || kind == ToolCxx1;
 }
 
+// The target as each compiler spells it: `-arch x` to cc1 and cxx1, `--target=x` to shc.
+std::string archFlag(ToolchainKind kind, const std::string& arch) {
+    return kind == ToolShc ? " --target=" + arch : " -arch " + arch;
+}
+
 bool isEmulated(const std::string& arch) { return arch == "tms6747"; }
 
 std::string emulatorProgram() {
@@ -207,11 +212,30 @@ std::string emulatedProgram(const std::string& program) {
     return name + ".vm";
 }
 
-std::string launchCommand(const std::string& program) {
+// The Shalimar runtime for the emulator: a directory of the .s cxx1i wrote
+// from it, beside the editor in lib/, which vm6747 assembles with the program.
+std::string shalimarRuntimeDir() {
+    const char* fromEnv = std::getenv("SHMRT6747");
+    if (fromEnv && *fromEnv) return fromEnv;
+    // A directory, which besideProgram does not answer for: it names files.
+    std::string where = path::programDirectory();
+    if (where.empty()) return std::string();
+    std::string dir = path::join(path::join(where, "lib"), "shmrt-tms6747");
+    return path::isDirectory(dir) ? dir : std::string();
+}
+
+std::string launchCommand(const std::string& program, bool shalimar) {
     std::string leaf = path::filename(program);
     bool assembly = leaf.size() > 2 && leaf.compare(leaf.size() - 2, 2, ".s") == 0;
     bool directory = leaf.size() > 3 && leaf.compare(leaf.size() - 3, 3, ".vm") == 0;
-    if (assembly || directory) return quote(emulatorProgram()) + " " + quote(program);
+    if (assembly || directory) {
+        std::string command = quote(emulatorProgram()) + " " + quote(program);
+        if (shalimar) {
+            std::string runtime = shalimarRuntimeDir();
+            if (!runtime.empty()) command += " " + quote(runtime);
+        }
+        return command;
+    }
     return quote(program);
 }
 
@@ -236,8 +260,10 @@ bool emitsDebugInfo(ToolchainKind kind, const std::string& arch) {
 std::string configFlags(ToolchainKind kind, Configuration config,
                         const std::string& arch) {
 
+    // No --debug on the emulator: it is not a debugger, the runtime beside
+    // it is the release one, and the debug runtime's names would be undefined.
     if (kind == ToolShc)
-        return config == ConfigDebug ? std::string(" --debug") : std::string();
+        return config == ConfigDebug && !isEmulated(arch) ? std::string(" --debug") : std::string();
 
     if (kind == ToolCxx)
         return config == ConfigRelease ? " -O2 -DNDEBUG=1" : " -g -D_DEBUG=1";
@@ -330,15 +356,15 @@ const char* hostArch() {
 bool runsHere(ToolchainKind kind, const std::string& arch) {
 
     if (kind == ToolMsvc || kind == ToolCxx) return true;
-    // The C6000 runs anywhere the emulator is; shc has no such target.
-    if (isEmulated(arch)) return kind == ToolCc1 || kind == ToolCxx1;
+    // The C6000 runs anywhere the emulator is, for the three docked compilers.
+    if (isEmulated(arch)) return kind == ToolCc1 || kind == ToolCxx1 || kind == ToolShc;
     return arch == hostArch();
 }
 
 std::string whyNotRun(ToolchainKind kind, const std::string& arch) {
     if (runsHere(kind, arch)) return std::string();
     if (isEmulated(arch))
-        return std::string(toolchainName(kind)) + " has no " + arch + " target - it is cc1's and cxx1's";
+        return std::string(toolchainName(kind)) + " has no " + arch + " target - it is cc1's, cxx1's and shc's";
     return arch + " only reaches -S here - switch to " + hostArch() + " to run it";
 }
 
@@ -406,7 +432,7 @@ Recipe targetRecipe(const Toolchain& tool, ToolchainKind kind,
         return recipe;
     }
 
-    if (kind == ToolShc) {
+    if (kind == ToolShc && !isEmulated(arch)) {
 
         recipe.command = quote(programOf(tool, kind)) + named + " -o " + quote(program) +
                          configFlags(kind, config, arch);
@@ -423,7 +449,7 @@ Recipe targetRecipe(const Toolchain& tool, ToolchainKind kind,
         recipe.assemblyPath = dir;
         for (size_t i = 0; i < sources.size(); ++i) {
             if (i > 0) recipe.command += " && ";
-            recipe.command += quote(programOf(tool, kind)) + " -S -arch " + arch +
+            recipe.command += quote(programOf(tool, kind)) + " -S" + archFlag(kind, arch) +
                               " " + quote(sources[i]) + " -o " +
                               quote(path::join(dir, objectFor(std::string(), sources[i], ".s"))) +
                               configFlags(kind, config, arch);
@@ -501,7 +527,7 @@ Recipe objectRecipe(const Toolchain& tool, ToolchainKind kind,
         for (size_t i = 0; i < sources.size(); ++i) {
             std::string out = objectFor(objectDir, sources[i], ".s");
             if (i > 0) recipe.command += " && ";
-            recipe.command += quote(programOf(tool, kind)) + " -S -arch " + arch +
+            recipe.command += quote(programOf(tool, kind)) + " -S" + archFlag(kind, arch) +
                               " " + quote(sources[i]) + " -o " + quote(out) +
                               configFlags(kind, config, arch);
             objects.push_back(out);
@@ -560,9 +586,10 @@ Recipe programRecipe(const Toolchain& tool, ToolchainKind kind,
     recipe.assemblyPath = programPath();
 
     if (isEmulated(arch) && usesArch(kind)) {
-        // The program to run is the assembly: vm6747 runs it as it is.
+        // The program to run is the assembly: vm6747 runs it as it is - a
+        // Shalimar one beside the runtime, which the launch adds.
         recipe.assemblyPath = mine("rstudio-run") + ".s";
-        recipe.command = quote(programOf(tool, kind)) + " -S -arch " + arch + " " +
+        recipe.command = quote(programOf(tool, kind)) + " -S" + archFlag(kind, arch) + " " +
                          quote(source) + " -o " + quote(recipe.assemblyPath) +
                          configFlags(kind, config, arch);
         return recipe;
@@ -598,8 +625,9 @@ std::string shownProgramCommand(const Toolchain& tool, ToolchainKind kind,
                                 const std::string& arch, Configuration config) {
     std::string program = programOf(tool, kind);
     if (isEmulated(arch) && usesArch(kind))
-        return program + " -S -arch " + arch + " " + source + " -o rstudio-run.s" +
-               configFlags(kind, config, arch) + " && vm6747 rstudio-run.s";
+        return program + " -S" + archFlag(kind, arch) + " " + source + " -o rstudio-run.s" +
+               configFlags(kind, config, arch) + " && vm6747 rstudio-run.s" +
+               (kind == ToolShc ? " lib/shmrt-tms6747" : "");
     if (kind == ToolMsvc)
         return program + " /diagnostics:column" +
                ((lang == LangCpp) ? " /TP /EHsc /std:c++14" : " /TC") +

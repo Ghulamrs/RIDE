@@ -53,8 +53,10 @@ struct Built {
     std::string output;
     std::string program;
     std::vector<std::string> leftovers;
+    // A Shalimar program, which the emulator runs beside its runtime.
+    bool shalimar;
 
-    Built() : ok(false) {}
+    Built() : ok(false), shalimar(false) {}
 };
 
 Built buildProgram(const Toolchain& tool, ToolchainKind kind, const std::string& sourcePath,
@@ -70,7 +72,8 @@ Built buildParts(const Toolchain& tool, const std::vector<Part>& parts,
                  const std::string& arch, Configuration config,
                  const std::string& program, LineSink sink = 0, void* context = 0);
 
-Ran runBuilt(const std::string& program, LineSink sink = 0, void* context = 0);
+Ran runBuilt(const std::string& program, LineSink sink = 0, void* context = 0,
+             bool shalimar = false);
 
 void removeProgram(const Built& built);
 
