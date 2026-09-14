@@ -116,7 +116,9 @@ done
 # read from make's own status and not from what a pipe let through.
 {
     printf '#!/bin/sh\nset -u\n'
-    printf 'unpack() { cd "$1" && tar xzf "$2" && rm -f "$2" && find . -name "._*" -delete || exit 2; }\n'
+    # tests/ is emptied before the archive lands: a case retired here would
+    # otherwise stay there and fail as "compiled, and should not have".
+    printf 'unpack() { cd "$1" && rm -rf tests && tar xzf "$2" && rm -f "$2" && find . -name "._*" -delete || exit 2; }\n'
     printf 'unpack ~/%s rstudio-src.tgz\n' "$DIR"
     for name in $NAMES; do
         printf 'unpack ~/%s %s-src.tgz\n' "$(there $name)" "$name"
