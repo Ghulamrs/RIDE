@@ -16,6 +16,10 @@
    - 3.5: `tools/to-windows.sh` (into `C:\Users\GRA\source\RStudio\bin`).
    - 3.0: a worktree at `8be81ca`, `ED1_WINDOWS_ROOT=...\source30 tools/to-windows.sh`
      (into `...\source30\RStudio\x64\Release`), with the four originals relayed.
+     `8be81ca` predates the 15-part manual, so copy `help/manual/` from `main`
+     into `...\source30\RStudio\help\manual\` before staging — otherwise the 3.0
+     package silently drops the manual and its Start-menu "Manual" shortcut (and
+     the Express Help's "full manual" note) point at files that are not there.
 2. Stage the install tree:
    - `stage.cmd   <RStudio> <Compiler-Cppi> <stage35>`  (3.5, sources from `bin\`)
    - `stage30.cmd <RStudio> <Compiler-Cpp>  <stage30>`  (3.0, sources from `x64\Release`)
