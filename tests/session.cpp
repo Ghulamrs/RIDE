@@ -2427,9 +2427,15 @@ void aCompilerPerGroup(const std::string& rstudio, const std::string& cc1,
     std::string arguments = "--project \"" + dir.string() + "\" --cc1 \"" + cc1 + "\"";
 
     Screen built = drive(rstudio, arguments, kF4 + ctrl('q'), dir);
-    check(onScreen(built, "Sources (cc1)"), "each group is compiled under its own name");
-    check(onScreen(built, "Library (cc1)"), "including the one that named its compiler");
-    check(onScreen(built, "linking with"), "and the editor says what it linked with");
+    // wasShown, not onScreen: each compile now opens with the compiler's
+    // banner (cc1, cxx1 and shc all print one, and -nologo is not passed for a
+    // project build), so the nine-row console has scrolled past the first
+    // group's header by the time the build is over - the same reason the mixed
+    // target below reads its headers with wasShown. "built two" is the last
+    // line and is still on screen.
+    check(wasShown(built, "Sources (cc1)"), "each group is compiled under its own name");
+    check(wasShown(built, "Library (cc1)"), "including the one that named its compiler");
+    check(wasShown(built, "linking with"), "and the editor says what it linked with");
     check(onScreen(built, "built two"), "the program comes out");
     check(file::exists(dir / "two") || file::exists(dir / "two.exe"),
           "and is beside the project where it can be found again");
