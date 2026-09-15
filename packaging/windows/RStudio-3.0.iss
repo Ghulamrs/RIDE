@@ -30,6 +30,7 @@ Source: "{#Stage}\*"; DestDir: "{app}"; Flags: recursesubdirs createallsubdirs i
 Name: "{group}\RStudio 3.0"; Filename: "{app}\bin\RStudio.exe"; WorkingDir: "{app}\examples"
 Name: "{group}\RStudio 3.0 (console)"; Filename: "{app}\bin\RStudioConsole.exe"; WorkingDir: "{app}\examples"
 Name: "{group}\Express Help"; Filename: "{app}\bin\RStudio.exe"; Parameters: """{app}\EXPRESS-HELP.md"""; WorkingDir: "{app}"
+Name: "{group}\Manual"; Filename: "{app}\bin\RStudio.exe"; Parameters: """{app}\help\manual\01-part1-model.md"""; WorkingDir: "{app}"
 Name: "{group}\Uninstall RStudio 3.0"; Filename: "{uninstallexe}"
 Name: "{autodesktop}\RStudio 3.0"; Filename: "{app}\bin\RStudio.exe"; WorkingDir: "{app}\examples"; Tasks: desktopicon
 
