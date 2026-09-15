@@ -62,7 +62,7 @@ protected:
                 static_cast<int>(System::Windows::Forms::TextFormatFlags::VerticalCenter) |
                 static_cast<int>(System::Windows::Forms::TextFormatFlags::EndEllipsis)));
         System::Windows::Forms::TextRenderer::DrawText(
-            e->Graphics, "×", this->Font, CloseRect(r),
+            e->Graphics, gcnew System::String(static_cast<wchar_t>(0x00D7), 1), this->Font, CloseRect(r),
             System::Drawing::Color::FromArgb(110, 110, 110),
             static_cast<System::Windows::Forms::TextFormatFlags>(
                 static_cast<int>(System::Windows::Forms::TextFormatFlags::HorizontalCenter) |
@@ -269,6 +269,7 @@ private:
     // The compiler in use, shown at the right end of the menu bar, plain text,
     // changing with the file, the Language menu and the Tools menu.
     ToolStripLabel^ compilerHint_;
+    System::Windows::Forms::Timer^ recolourTimer_;
 
     static array<Byte>^ Utf8Of(String^ text) {
         array<Byte>^ raw = System::Text::Encoding::UTF8->GetBytes(text == nullptr ? "" : text);
@@ -623,7 +624,16 @@ private:
         compilerHint_ = gcnew ToolStripLabel();
         compilerHint_->Alignment = ToolStripItemAlignment::Right;
         compilerHint_->ForeColor = System::Drawing::Color::FromArgb(90, 90, 90);
+        compilerHint_->Font = gcnew System::Drawing::Font(compilerHint_->Font,
+                                                          System::Drawing::FontStyle::Bold);
         bar->Items->Add(compilerHint_);
+
+        // Re-highlighting is deferred a beat after the last scroll so the mouse
+        // wheel does not fight the highlighter (which selects text as it colours
+        // and made the view tremble when it ran on every wheel tick).
+        recolourTimer_ = gcnew System::Windows::Forms::Timer();
+        recolourTimer_->Interval = 70;
+        recolourTimer_->Tick += gcnew EventHandler(this, &MainForm::OnRecolourTick);
 
         MainMenuStrip = bar;
         Controls->Add(bar);
@@ -1081,8 +1091,16 @@ private:
         Sheet^ sheet = Current();
         if (sheet == nullptr) return;
 
+        sheet->gutter->Invalidate();   // line numbers keep up while scrolling
+        recolourTimer_->Stop();        // recolour once the wheel settles, so it
+        recolourTimer_->Start();       // does not fight the scroll and tremble
+    }
+
+    void OnRecolourTick(Object^, EventArgs^) {
+        recolourTimer_->Stop();
         Recolour();
-        sheet->gutter->Invalidate();
+        Sheet^ sheet = Current();
+        if (sheet != nullptr) sheet->gutter->Invalidate();
     }
 
     void OnGutterPaint(Object^ sender, PaintEventArgs^ e) {
@@ -1202,6 +1220,7 @@ private:
     int DialectNow() { return rstudio_dialect_for(LanguageNow()); }
 
     void OnLayOut(Object^, EventArgs^) {
+        if (text_ == nullptr) { what_->Text = "no file is open"; return; }
         array<Byte>^ bytes = Utf8Of(text_->Text->Replace("\r\n", "\n"));
         pin_ptr<Byte> pinned = &bytes[0];
 
@@ -1536,17 +1555,20 @@ private:
     }
 
     void OnUndo(Object^, EventArgs^) {
+        if (text_ == nullptr) { what_->Text = "no file is open"; return; }
 
         if (!text_->CanUndo) { what_->Text = "nothing to undo"; return; }
         text_->Undo();
     }
     void OnRedo(Object^, EventArgs^) {
+        if (text_ == nullptr) { what_->Text = "no file is open"; return; }
         if (!text_->CanRedo) { what_->Text = "nothing to redo"; return; }
         text_->Redo();
     }
-    void OnCut(Object^, EventArgs^) { text_->Cut(); }
-    void OnCopy(Object^, EventArgs^) { text_->Copy(); }
+    void OnCut(Object^, EventArgs^) { if (text_ != nullptr) text_->Cut(); }
+    void OnCopy(Object^, EventArgs^) { if (text_ != nullptr) text_->Copy(); }
     void OnPaste(Object^, EventArgs^) {
+        if (text_ == nullptr) { what_->Text = "no file is open"; return; }
 
         if (!text_->CanPaste(DataFormats::GetFormat(DataFormats::Text))) {
             what_->Text = "there is nothing to paste";
@@ -1555,7 +1577,7 @@ private:
         text_->Paste();
         Recolour();
     }
-    void OnSelectAll(Object^, EventArgs^) { text_->SelectAll(); }
+    void OnSelectAll(Object^, EventArgs^) { if (text_ != nullptr) text_->SelectAll(); }
 
     void OnFind(Object^, EventArgs^) {
         String^ want = Ask("Find", needle_);
@@ -1579,6 +1601,7 @@ private:
     }
 
     void Seek(int row, int column, bool forwards) {
+        if (text_ == nullptr) return;
         array<Byte>^ text = WholeText();
         pin_ptr<Byte> textPin = &text[0];
         array<Byte>^ needle = Utf8Of(needle_);
@@ -2324,11 +2347,20 @@ private:
 
         sheets_->Remove(sheet);
         files_->TabPages->Remove(sheet->page);
-        if (sheets_->Count == 0) {
-            MakeSheet(nullptr, "");
-            OnSheetChanged(nullptr, nullptr);
-        }
         PaneFollowsTabs();
+
+        if (sheets_->Count == 0) {
+            // Leave a genuinely empty environment - no untitled buffer, and no
+            // entry in the pane - until the next New or Open.
+            text_ = nullptr;
+            path_ = nullptr;
+            RefreshTitle();
+            FillTree();
+            SayBuild();
+            console_->Text = "";
+            what_->Text = "no file open";
+            return;
+        }
 
         console_->Text = "";
         what_->Text = "closed";
@@ -2348,6 +2380,7 @@ private:
     }
 
     void OnSave(Object^, EventArgs^) {
+        if (text_ == nullptr) { what_->Text = "no file is open"; return; }
         if (path_ == nullptr) {
             OnSaveAs(nullptr, nullptr);
             return;
@@ -2366,6 +2399,7 @@ private:
     }
 
     void OnSaveAs(Object^, EventArgs^) {
+        if (text_ == nullptr) { what_->Text = "no file is open"; return; }
         Sheet^ sheet = Current();
         if (sheet == nullptr) return;
 
@@ -2489,6 +2523,7 @@ private:
     }
 
     void OnCompile(Object^, EventArgs^) {
+        if (text_ == nullptr) { what_->Text = "no file is open"; return; }
         if (busy_) { what_->Text = "still working - give it a moment"; return; }
         ForgetError();
         if (path_ == nullptr) {
@@ -2569,6 +2604,7 @@ private:
     }
 
     void OnRun(Object^, EventArgs^) {
+        if (text_ == nullptr) { what_->Text = "no file is open"; return; }
         if (busy_) { what_->Text = "still working - give it a moment"; return; }
         ForgetError();
         if (path_ == nullptr) {
@@ -3502,21 +3538,28 @@ private:
         int kind = rstudio_resolve(toolKind_, language);
         String^ said = FromUtf8(rstudio_language_name(language)) + "  " +
                        FromUtf8(rstudio_config_name(config_)) + "  " +
-                       FromUtf8(rstudio_toolchain_name(kind));
+                       PrettyCompiler(FromUtf8(rstudio_toolchain_name(kind)));
 
         if (toolKind_ == RSTUDIO_TOOL_AUTO) said += "*";
 
         if (rstudio_uses_arch(kind) != 0) said += "  " + arch_;
         build_->Text = said;
 
-        // The menu-bar hint: just the compiler, in plain words, with the same
-        // star the status bar uses when the file chose it rather than the Tools
-        // menu. It changes whenever the resolved compiler does.
+        // The menu-bar hint: just the compiler, in plain words and bold so it
+        // stands out. It changes whenever the resolved compiler does. (The
+        // status bar still marks an auto-chosen compiler with a star.)
         if (compilerHint_ != nullptr) {
-            String^ hint = FromUtf8(rstudio_toolchain_name(kind));
-            if (toolKind_ == RSTUDIO_TOOL_AUTO) hint += "*";
-            compilerHint_->Text = hint;
+            compilerHint_->Text = PrettyCompiler(FromUtf8(rstudio_toolchain_name(kind)));
         }
+    }
+
+    // Friendlier compiler names for what the user sees (the driver binaries stay
+    // cc1/cxx1/shc). Display only - the core and its tests are untouched.
+    String^ PrettyCompiler(String^ name) {
+        if (name == "cc1") return "cc";
+        if (name == "cxx1" || name == "c++") return "c++";
+        if (name == "shc") return "shalimar";
+        return name;
     }
 
     void ShowChoices() {
@@ -3625,6 +3668,7 @@ private:
         ChooseLanguage(-1, "language: chosen by the name");
     }
     void OnConvert(Object^, EventArgs^) {
+        if (text_ == nullptr) { what_->Text = "no file is open"; return; }
         if (busy_) { what_->Text = "still working - give it a moment"; return; }
         ForgetError();
         if (path_ == nullptr) { what_->Text = "open a file first"; return; }
