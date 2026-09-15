@@ -626,6 +626,8 @@ private:
         compilerHint_->ForeColor = System::Drawing::Color::FromArgb(90, 90, 90);
         compilerHint_->Font = gcnew System::Drawing::Font(compilerHint_->Font,
                                                           System::Drawing::FontStyle::Bold);
+        // Keep it off the right edge - a little breathing room.
+        compilerHint_->Margin = System::Windows::Forms::Padding(0, 1, 16, 2);
         bar->Items->Add(compilerHint_);
 
         // Re-highlighting is deferred a beat after the last scroll so the mouse
