@@ -727,6 +727,27 @@ private:
         return root;
     }
 
+    // {app} is the folder above bin\, where RStudio.exe lives. New projects
+    // default under {app}\projects and single programs under {app}\programs, so
+    // they land in a known place beside the install instead of on the Desktop or
+    // in the read-only directory the shortcut starts in. Made on demand (the
+    // installer also creates them, user-writable).
+    String^ AppDir() {
+        try {
+            System::IO::DirectoryInfo^ above =
+                System::IO::Directory::GetParent(Application::StartupPath);
+            if (above != nullptr) return above->FullName;
+        } catch (Exception^) { }
+        return Application::StartupPath;
+    }
+    String^ MadeUnderApp(String^ leaf) {
+        String^ d = System::IO::Path::Combine(AppDir(), leaf);
+        try { System::IO::Directory::CreateDirectory(d); } catch (Exception^) { }
+        return d;
+    }
+    String^ ProjectsDir() { return MadeUnderApp("projects"); }
+    String^ ProgramsDir() { return MadeUnderApp("programs"); }
+
     void SayWhere() {
         String^ root = RootNow();
         root_->Text = root == nullptr || root->Length == 0 ? "no project" : root;
@@ -1784,10 +1805,33 @@ private:
 
     void OnNewFile(Object^, EventArgs^) {
         String^ root = RootNow();
+
+        // No project open: a single program is made under {app}\programs rather
+        // than in the read-only directory the shortcut started the editor in.
+        if (root == nullptr || root->Length == 0) {
+            String^ programs = ProgramsDir();
+            String^ only = Ask("New program (name, or one directory and a name)",
+                               "It will be made in " + programs, "");
+            if (only == nullptr || only->Length == 0) { what_->Text = "nothing made"; return; }
+            String^ target = System::IO::Path::Combine(programs, only);
+            if (System::IO::File::Exists(target)) {
+                what_->Text = only + " is already there"; return;
+            }
+            try {
+                String^ parent = System::IO::Path::GetDirectoryName(target);
+                if (parent != nullptr && parent->Length > 0)
+                    System::IO::Directory::CreateDirectory(parent);
+                System::IO::File::Create(target)->Close();
+            } catch (Exception^ ex) {
+                what_->Text = "could not make " + only + " - " + ex->Message; return;
+            }
+            OpenPath(target);
+            what_->Text = only + " made in " + programs;
+            return;
+        }
+
         String^ name = Ask("New file (name, or one directory and a name)",
-                           root == nullptr || root->Length == 0
-                               ? "There is no project, so this goes where the editor was started."
-                               : "It will be made in " + root,
+                           "It will be made in " + root,
                            "");
         if (name == nullptr || name->Length == 0) { what_->Text = "nothing made"; return; }
 
@@ -2028,6 +2072,7 @@ private:
         pick->Description = "Where to put the project";
         pick->ShowNewFolderButton = true;
         String^ start = RootNow();
+        if (start == nullptr || start->Length == 0) start = ProjectsDir();
         if (start != nullptr && start->Length > 0) pick->SelectedPath = start;
         if (pick->ShowDialog(this) != System::Windows::Forms::DialogResult::OK) {
             what_->Text = "no project made";

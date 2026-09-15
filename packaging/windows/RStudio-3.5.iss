@@ -31,6 +31,12 @@ LicenseFile={#Stage}\README.md
 [Files]
 Source: "{#Stage}\*"; DestDir: "{app}"; Flags: recursesubdirs createallsubdirs ignoreversion
 
+[Dirs]
+; New projects default to {app}\projects and single programs to {app}\programs;
+; make them so a normal user can write there even under Program Files.
+Name: "{app}\projects"; Permissions: users-modify
+Name: "{app}\programs"; Permissions: users-modify
+
 [Icons]
 Name: "{group}\RIDE 3.5"; Filename: "{app}\bin\RStudio.exe"; WorkingDir: "{app}\examples"
 Name: "{group}\RIDE 3.5 (console)"; Filename: "{app}\bin\RStudioConsole.exe"; WorkingDir: "{app}\examples"
