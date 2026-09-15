@@ -103,7 +103,7 @@ std::vector<std::string> lines() {
     tool(said, "vm6747.exe");
     tool(said, "c2s.exe");
     said.push_back("");
-    said.push_back("Copyright (c) 2026 G. R. Akhtar");
+    said.push_back("Copyright \xC2\xA9 2026 G. R. Akhtar");
     said.push_back("Islamabad, Pakistan");
     return said;
 }
