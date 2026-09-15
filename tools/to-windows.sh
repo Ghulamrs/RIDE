@@ -91,9 +91,10 @@ scp -q "$TMP/shci-src.tgz" "$BOX:$SHCI_DIR\\shci-src.tgz" || exit 2
 # ---- the script that does the work there -----------------------------------
 # One .cmd, generated here so that what runs is what this file says. The
 # compilers are named by full path for the suites - the same four make names
-# on Unix - and they are the ones the solution just built into x64\Release,
-# beside the editor, which is where the editor would find them on its own.
-BIN="$DIR\\x64\\Release"
+# on Unix - and they are the ones the solution just built into bin (via
+# /p:OutDir), beside the editor, which is where the editor would find them on
+# its own.
+BIN="$DIR\\bin"
 {
   printf '@echo off\r\n'
   printf 'cd /d "%s" || exit /b 2\r\n' "$DIR"

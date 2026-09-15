@@ -131,8 +131,12 @@ if ($Editor -eq "") {
     $here = Split-Path -Parent $MyInvocation.MyCommand.Path
     $repo = Split-Path -Parent $here
     $guesses = @()
+    # bin\ first since 3.5: the solution and the standalone gui build write
+    # RStudio.exe there now (/p:OutDir=...\bin\). The old x64\ places are kept
+    # for a tree built before that, newest of them found first.
+    $guesses += "$repo\bin\RStudio.exe"                 # the one place, since 3.5
     foreach ($what in @("Release", "Debug")) {
-        $guesses += "$repo\x64\$what\RStudio.exe"      # the solution's
+        $guesses += "$repo\x64\$what\RStudio.exe"      # the solution's, before bin
         $guesses += "$here\x64\$what\RStudio.exe"      # the project's own
     }
     # And the name it had before 2026-08-22, because a machine that has built

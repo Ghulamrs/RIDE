@@ -48,7 +48,13 @@ VM_DIR ?= ../VM6747/Emulator
 #
 # Absolute, because each sub-make runs in its own directory and a relative path
 # would mean three different places.
-BINDIR ?= $(CURDIR)
+#
+# **bin/ by default, since the binaries are one directory now.** They used to
+# land in the checkout root, scattered among the sources; a build that put five
+# programs and a runtime there is hard to tell from the tree they were built
+# from. One place, named bin, is where they go - and .gitignore has listed it
+# for exactly this. Pass BINDIR= to override, as the product step does.
+BINDIR ?= $(CURDIR)/bin
 OUT := $(abspath $(BINDIR))
 
 .PHONY: all cc1 cxx1 vm6747 shc c2s editor confirm bin check clean
@@ -149,22 +155,12 @@ endif
 # suite that passes.
 	$(MAKE) BINDIR=$(OUT) OBJDIR=$(OUT)/obj/editor check CC1=$(OUT)/cc1i.exe CXX1=$(OUT)/cxx1i.exe SHC=$(OUT)/shci.exe C2S=$(OUT)/c2s.exe
 
-# The alternative destination, for anyone who would rather the checkout root
-# stayed as it was. Nothing is copied into it - see the `bin` rule below.
+# bin/ is where BINDIR points by default now, so `bin` is just an explicit
+# name for the ordinary build - kept so a script or a habit that says `make -f
+# workspace.mk bin` still works and lands in the same place.
 BIN := bin
 
-# Emptied first. A binary that was renamed leaves its old self here otherwise,
-# and a directory holding both cc1 and cc1.exe is one where nobody can say
-# which was run.
-# The same build, into bin/ instead of into the root - for anyone who would
-# rather the checkout stayed clean. It is one line now because the three
-# already take a BINDIR: this names a different one and gets out of the way.
-#
-# It used to be a second collector with a second destination, which is what
-# made it possible for it to collect the wrong set. There is nothing here to
-# get wrong any more.
-bin:
-	$(MAKE) -f workspace.mk BINDIR=$(CURDIR)/$(BIN)
+bin: all
 
 clean:
 	rm -rf $(BIN)

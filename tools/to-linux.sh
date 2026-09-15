@@ -143,7 +143,7 @@ run() {  # run <log> <make arguments...>
     return $rc
 }
 run build.log || { echo "the workspace build failed - see ~/rstudio/build.log"; exit 2; }
-[ -x ./RStudio.exe ] || { echo "no RStudio.exe was built"; exit 2; }
+[ -x ./bin/RStudio.exe ] || { echo "no bin/RStudio.exe was built"; exit 2; }
 if [ "$WHAT" = build ]; then echo "built the workspace"; exit 0; fi
 run check.log check
 REMOTE
