@@ -15,18 +15,15 @@ std::string fileName() {
     return path::join(path::join(home, ".rstudio"), "config.json");
 }
 
-const char* const kFormerNames[2] = {".rstudioconfig.json", ".ed1config.json"};
+// The one name the settings file had before it became ~/.rstudio/config.json,
+// kept so a machine that still holds it is read once and migrated forward.
+const char* const kFormerName = ".rstudioconfig.json";
 
 std::string formerFileName() {
     std::string home = path::homeDir();
     if (home.empty()) return std::string();
 
-    for (size_t i = 0; i < 2; ++i) {
-        std::string old = path::join(home, kFormerNames[i]);
-        if (path::exists(old)) return old;
-    }
-
-    return path::join(home, kFormerNames[0]);
+    return path::join(home, kFormerName);
 }
 
 namespace {
@@ -38,10 +35,8 @@ std::string toRead() {
     std::string home = path::homeDir();
     if (home.empty()) return std::string();
 
-    for (size_t i = 0; i < 2; ++i) {
-        std::string old = path::join(home, kFormerNames[i]);
-        if (path::exists(old)) return old;
-    }
+    std::string old = path::join(home, kFormerName);
+    if (path::exists(old)) return old;
     return std::string();
 }
 
@@ -100,8 +95,8 @@ bool writeAll(const Json& root) {
     std::fclose(out);
 
     std::string home = path::homeDir();
-    for (size_t i = 0; !home.empty() && i < 2; ++i) {
-        std::string old = path::join(home, kFormerNames[i]);
+    if (!home.empty()) {
+        std::string old = path::join(home, kFormerName);
         if (old != where && path::exists(old)) path::remove(old);
     }
     return true;

@@ -19,10 +19,10 @@
     this has to be run in the logged-on session, which a scheduled task with
     /IT will do:
 
-        schtasks /create /tn ed1shot /f /sc once /st 23:59 /it ^
+        schtasks /create /tn rstudioshot /f /sc once /st 23:59 /it ^
                  /tr "powershell -NoProfile -ExecutionPolicy Bypass -File C:\path\show.ps1"
-        schtasks /run /tn ed1shot
-        schtasks /delete /tn ed1shot /f
+        schtasks /run /tn rstudioshot
+        schtasks /delete /tn rstudioshot /f
 
     Run from the machine itself, it just works.
 
@@ -115,7 +115,7 @@ public class RStudioWindow {
 }
 "@
 
-# The window is RStudio.exe since 2026-08-22, and was ed1gui.exe before that.
+# The window is RStudio.exe since 2026-08-22, and was RStudioGui.exe before that.
 # Both names are looked for and the new one first, because a machine that has
 # built this before still has the old binary sitting beside the new one - and a
 # script that names only the old one photographs yesterday's editor and reports
@@ -144,7 +144,7 @@ if ($Editor -eq "") {
     # script that finds that one photographs yesterday's editor and reports it
     # as today's. That is the harness fault this project has had most often.
     foreach ($what in @("Release", "Debug")) {
-        $guesses += "$here\x64\$what\ed1gui.exe"
+        $guesses += "$here\x64\$what\RStudioGui.exe"
     }
     foreach ($guess in $guesses) {
         if (Test-Path $guess) { $Editor = $guess; break }
