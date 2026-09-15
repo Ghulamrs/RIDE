@@ -27,6 +27,21 @@
    (3.5 only) `ti-build.cmd`+`ti-link.cmd`+`TI-BUILD.txt` into `stage35\bin\ti\`.
 3. `mkinstaller.cmd RStudio-3.5.iss` (and `RStudio-3.0.iss`) → `RIDE-<ver>-setup.exe`.
 
+## One-shot build scripts
+
+`build-installer.bat` (Windows) and `build-installer.sh` (Linux/macOS) do the
+whole job in one command: compile every compiler project and the RIDE editor,
+regenerate the HTML docs, stage the tree, and produce the installer.
+
+    build-installer.bat 3.5        REM -> dist\RIDE-3.5-setup.exe (Inno Setup)
+    ./build-installer.sh 3.5       #   -> dist/RIDE-3.5-<os>.tar.gz (no Inno on Unix)
+
+Both take the version as `%1`/`$1` (default 3.5) and honour `CPP` (the C++ clone
+with `include/` and `lib/`) and `OUT` (output dir) as overrides. The `.iss` take
+`/DStage=` and `/DOutDir=` so the stage/output paths are not hard-coded. HTML is
+regenerated with `docs2html.py` when Python is present; otherwise the committed
+`help/manual.html`, `help/guide.html` and `EXPRESS-HELP-<ver>.html` are used.
+
 The `.iss` files name box-local stage paths (`C:\Users\GRA\rstudio-pkg\...`);
 adjust the `Stage` define for another machine.
 

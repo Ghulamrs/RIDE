@@ -1,0 +1,23 @@
+Real TMS320C674x build (.out and .hex)
+======================================
+
+RIDE runs tms6747 programs on the built-in vm6747 emulator - no TI tools
+needed. To instead produce a REAL linked .out and Intel .hex for the silicon,
+use ti-build, which uses a Texas Instruments Code Generation Tools install
+already on this machine (none of TI's tools are shipped with RIDE):
+
+    bin\ti\ti-build.cmd  path\to\program.c        (or .cpp, or .shl)
+
+It finds the CGT via, in order:
+  1. the RSTUDIO_TI_CGT environment variable (the CGT folder),
+  2. cl6x on PATH,
+  3. C:\ti\ccs*\tools\compiler\ti-cgt-c6000_*.
+
+If none is present, install the free "C6000 Code Generation Tools" from TI.
+The first run builds the exception-handling runtime once, into
+%LOCALAPPDATA%\RStudio\tilib (via the CGT's own mklib; needs a POSIX sh such
+as the one Git for Windows provides, on PATH).
+
+Output: program.out (ELF for the C674x) and program.hex (Intel hex), beside the
+source. Our compilers' codegen differs from cl6x's, but the objects are ABI-
+compatible with cl6x and TI's runtime (verified word-for-word).

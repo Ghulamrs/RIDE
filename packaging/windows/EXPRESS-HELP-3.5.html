@@ -1,0 +1,111 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>RIDE 3.5 — Express Help</title><style>
+:root{--bg:#fff;--fg:#1a1a1a;--muted:#5a5a5a;--rule:#e2e2e2;--accent:#6a4a2a;
+--codebg:#f5f3ef;--codefg:#3a2a1a;--tableh:#f0ece6;--link:#8a5a2a}
+@media (prefers-color-scheme:dark){:root{--bg:#1b1b1b;--fg:#e6e6e6;--muted:#a5a5a5;
+--rule:#333;--accent:#d8b48a;--codebg:#242220;--codefg:#e6d8c8;--tableh:#2a2724;--link:#e0b487}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);
+font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+.wrap{max-width:52rem;margin:0 auto;padding:2.5rem 1.25rem 6rem}
+h1,h2,h3,h4,h5,h6{line-height:1.25;font-weight:650;scroll-margin-top:1rem}
+h1{font-size:2rem;margin:2.2rem 0 .6rem;padding-bottom:.3rem;border-bottom:2px solid var(--rule)}
+h2{font-size:1.5rem;margin:2rem 0 .5rem;color:var(--accent)}
+h3{font-size:1.2rem;margin:1.5rem 0 .4rem}
+h4{font-size:1.02rem;margin:1.2rem 0 .3rem}
+p{margin:.6rem 0}
+a{color:var(--link);text-decoration:none}a:hover{text-decoration:underline}
+code{background:var(--codebg);color:var(--codefg);padding:.1rem .3rem;border-radius:4px;
+font:0.85em ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+pre{background:var(--codebg);color:var(--codefg);padding:1rem;border-radius:8px;
+overflow-x:auto;border:1px solid var(--rule)}
+pre code{background:none;padding:0;font-size:.82rem;line-height:1.45}
+blockquote{margin:.8rem 0;padding:.3rem 1rem;border-left:3px solid var(--accent);color:var(--muted)}
+hr{border:none;border-top:1px solid var(--rule);margin:2rem 0}
+table{border-collapse:collapse;width:100%;margin:1rem 0;font-size:.92rem;display:block;overflow-x:auto}
+th,td{border:1px solid var(--rule);padding:.45rem .6rem;text-align:left;vertical-align:top}
+th{background:var(--tableh);font-weight:650}
+ul,ol{margin:.5rem 0;padding-left:1.5rem}li{margin:.25rem 0}
+.masthead{margin:0 0 1rem}.masthead .sub{color:var(--muted);font-size:.95rem}
+nav.toc{background:var(--codebg);border:1px solid var(--rule);border-radius:8px;
+padding:1rem 1.25rem;margin:1.5rem 0 2.5rem}
+nav.toc .t{font-weight:650;margin-bottom:.4rem}
+nav.toc ul{list-style:none;margin:0;padding:0}
+nav.toc li{margin:.15rem 0}
+nav.toc .l2{padding-left:1rem}nav.toc .l3{padding-left:2rem;font-size:.9rem}
+nav.toc a{color:var(--fg)}
+@media print{body{font-size:11pt}.wrap{max-width:none;padding:0}
+nav.toc{break-after:page}h1,h2{break-after:avoid}pre,table,blockquote{break-inside:avoid}
+a{color:inherit;text-decoration:none}}
+</style></head><body><div class="wrap"><div class="masthead"><h1 style="border:none;margin-top:0">RIDE 3.5 — Express Help</h1><div class="sub">Quick reference</div></div><nav class="toc"><div class="t">Contents</div><ul>
+<li class="l2"><a href="#1-languages-versions-and-scope">1. Languages, versions and scope</a></li>
+<li class="l2"><a href="#2-making-and-updating-a-project">2. Making and updating a project</a></li>
+<li class="l2"><a href="#3-the-project-file-pro-architecture">3. The project file (<code>.pro</code>) architecture</a></li>
+<li class="l2"><a href="#4-compiling-and-building-running-a-project">4. Compiling, and building/running a project</a></li>
+<li class="l2"><a href="#where-things-are">Where things are</a></li>
+<li class="l2"><a href="#the-full-manual">The full manual</a></li>
+</ul></nav><p>Three languages, four targets, one editor. This is the quick reference; the full pages are under <code>help\</code>.</p>
+<hr>
+<h2 id="1-languages-versions-and-scope">1. Languages, versions and scope</h2>
+<table><thead><tr><th>Language</th><th>Files</th><th>Compiler</th><th>Standard / version</th><th>Debug info</th></tr></thead><tbody><tr><td>C</td><td><code>.c</code> <code>.h</code></td><td><code>cc1i</code></td><td>ISO C 90</td><td>DWARF (2 of 4)</td></tr><tr><td>C++</td><td><code>.cpp</code> <code>.hpp</code></td><td><code>cxx1i</code></td><td>ISO C++ 11</td><td>DWARF (2 of 4)</td></tr><tr><td>Shalimar</td><td><code>.shl</code></td><td><code>shci</code></td><td>Shalimar 1.2</td><td>none, by design</td></tr></tbody></table>
+<p>The suffix picks the language; <strong>Language</strong> menu overrides it for a file whose name says otherwise. Each compiler announces itself at the start of a compile (e.g. <code>©2026 G. R. Akhtar - ISO C++ 11</code>).</p>
+<p><strong>The four targets</strong> (Target menu, or Ctrl-T to cycle):</p>
+<table><thead><tr><th>Target</th><th>Runs here?</th></tr></thead><tbody><tr><td><code>x86_64-windows</code></td><td>yes, on this machine (host)</td></tr><tr><td><code>x86_64-linux</code></td><td>assembly only (<code>-S</code>) on Windows</td></tr><tr><td><code>arm64-darwin</code></td><td>assembly only (<code>-S</code>) on Windows</td></tr><tr><td><code>tms6747</code></td><td>yes, on the <strong>vm6747 emulator</strong></td></tr></tbody></table>
+<p>Scope of a compiler: <code>cc1i</code> compiles C only (a <code>.cpp</code> is refused with a message, not a cryptic error); <code>cxx1i</code> compiles C++ only (a <code>.c</code> is refused); <code>shci</code> compiles Shalimar only. The host compiler (<code>cl</code>) is still reachable per group.</p>
+<hr>
+<h2 id="2-making-and-updating-a-project">2. Making and updating a project</h2>
+<p>All on the <strong>Project</strong> menu:</p>
+<ul>
+<li><strong>New…</strong> — pick a folder and a name; writes <code>&lt;name&gt;.pro</code> and opens it.</li>
+<li><strong>New File</strong> (Ctrl-N) — names a new file, creates it, adds it to the project.</li>
+<li><strong>Add File</strong> — adds the file in front of you to a group you name.</li>
+<li><strong>Remove File</strong> — takes the open file out of the project (leaves it on disk).</li>
+<li><strong>Save</strong> — writes the <code>.pro</code> back. (New/Add/Remove save it for you.)</li>
+</ul>
+<p>The title bar shows where you are: <code>RStudio 3.5 - &lt;project&gt; - &lt;file&gt;</code>. The top-right of the menu bar shows the compiler in use (a <code>*</code> means the file chose it). Every add and remove is reflected immediately in the <code>.pro</code> file.</p>
+<hr>
+<h2 id="3-the-project-file-pro-architecture">3. The project file (<code>.pro</code>) architecture</h2>
+<p>A <code>.pro</code> is one JSON object:</p>
+<pre><code>{
+  &quot;name&quot;: &quot;demo&quot;,
+  &quot;toolchain&quot;: &quot;auto&quot;,           // auto | cc1 | cxx1 | shc | msvc
+  &quot;arch&quot;: &quot;x86_64-windows&quot;,      // one of the four targets
+  &quot;indent&quot;: 4,
+  &quot;groups&quot;: {
+    &quot;Sources&quot;: [&quot;greet.c&quot;, &quot;main.c&quot;],
+    &quot;Headers&quot;: [&quot;greet.h&quot;]
+  },
+  &quot;build&quot;: { &quot;target&quot;: &quot;demo&quot;, &quot;groups&quot;: [&quot;Sources&quot;] }
+}</code></pre>
+<ul>
+<li><strong>groups</strong> name the files, in headings shown in the left pane. A group may set its own <code>&quot;toolchain&quot;</code>.</li>
+<li><strong>build</strong> names the program (<code>target</code>) and which groups compile into it; headers and un-named groups are passed over. A group holding C <em>and</em> C++ is split — the C to <code>cc1i</code>, the C++ to <code>cxx1i</code> — and the objects are linked.</li>
+<li>Say no <code>build</code> and nothing is built (Ctrl-B still compiles the open file).</li>
+</ul>
+<hr>
+<h2 id="4-compiling-and-building-running-a-project">4. Compiling, and building/running a project</h2>
+<ul>
+<li><strong>Ctrl-B</strong> — compile the file in front of you.</li>
+<li><strong>F5</strong> — compile and run that file.</li>
+<li><strong>F4</strong> — build the project's program (from <code>build</code>).</li>
+<li><strong>Run project</strong> (Build menu) — build it and run it.</li>
+<li><strong>Ctrl-T</strong> / <strong>Target</strong> — choose the target; <strong>Ctrl-D</strong> — debug/release.</li>
+<li>The bottom panel has <strong>Console</strong>, <strong>Debug</strong> and <strong>Assembly</strong> (Ctrl-1/2/3). The Assembly tab shows the compiler's output for any target.</li>
+</ul>
+<p><strong>tms6747:</strong> F5 / Run project builds with <code>-S</code> and runs on the <strong>vm6747</strong> emulator (<code>counted to three</code>, <code>[program returned 3]</code>). Foreign targets (<code>x86_64-linux</code>, <code>arm64-darwin</code>) reach assembly only and say so.</p>
+<p><strong>Real C674x silicon (.out / .hex):</strong> the emulator is enough to run and test. To produce a genuine linked <code>.out</code> and Intel <code>.hex</code>, use:</p>
+<pre><code>bin\ti\ti-build.cmd  &lt;program.c|.cpp|.shl&gt;</code></pre>
+<p>It uses a Texas Instruments Code Generation Tools install already on the machine (none of TI's tools ship here); see <code>bin\ti\TI-BUILD.txt</code>.</p>
+<hr>
+<h2 id="where-things-are">Where things are</h2>
+<pre><code>bin\      the editor (RStudio.exe), the console editor, and the compilers
+          cc1i cxx1i shci, the vm6747 emulator, the c2s converter
+bin\lib\  the Shalimar runtime (shmrt-x86_64-windows[-debug].lib) and the
+          C6000 runtime (shmrt-tms6747\*.s)
+bin\ti\   ti-build.cmd — the real-silicon TI build path
+include\  the C++ standard headers (&lt;vector&gt;, &lt;new&gt;, &lt;typeinfo&gt;, …)
+lib\      the C standard headers (&lt;stdio.h&gt;, &lt;string.h&gt;, …)
+examples\ worked programs and a demo project (demo.pro)
+help\     the full help pages</code></pre>
+<hr>
+<h2 id="the-full-manual">The full manual</h2>
+<p>This is the quick reference. The complete manual — the compilation model, every language feature and non-feature, the project-file architecture, the full command-line reference, the targets and the native tools, and troubleshooting — is in <code>help\manual\</code> (Part I begins in <code>01-part1-model.md</code>), with the full Shalimar language spec in <code>help\appendix-a-shalimar-language.md</code>.</p></div></body></html>

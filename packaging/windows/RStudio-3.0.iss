@@ -3,7 +3,12 @@
 ; VM6747 C6000 emulator and the C<->Shalimar converter.
 #define MyName "RIDE 3.0"
 #define MyVer  "3.0"
-#define Stage  "C:\Users\GRA\rstudio-pkg\stage30"
+#ifndef Stage
+#define Stage "C:\Users\GRA\rstudio-pkg\stage30"
+#endif
+#ifndef OutDir
+#define OutDir "C:\Users\GRA\rstudio-pkg"
+#endif
 
 [Setup]
 AppId={{6B2D8F04-30C0-4A19-8D22-1E4C7A5B0C30}
@@ -14,7 +19,7 @@ DefaultDirName={autopf}\{#MyName}
 DefaultGroupName={#MyName}
 DisableProgramGroupPage=yes
 UninstallDisplayIcon={app}\bin\RStudio.exe
-OutputDir=C:\Users\GRA\rstudio-pkg
+OutputDir={#OutDir}
 OutputBaseFilename=RIDE-3.0-setup
 Compression=lzma2/max
 SolidCompression=yes
@@ -29,8 +34,9 @@ Source: "{#Stage}\*"; DestDir: "{app}"; Flags: recursesubdirs createallsubdirs i
 [Icons]
 Name: "{group}\RIDE 3.0"; Filename: "{app}\bin\RStudio.exe"; WorkingDir: "{app}\examples"
 Name: "{group}\RIDE 3.0 (console)"; Filename: "{app}\bin\RStudioConsole.exe"; WorkingDir: "{app}\examples"
-Name: "{group}\Express Help"; Filename: "{app}\bin\RStudio.exe"; Parameters: """{app}\EXPRESS-HELP.md"""; WorkingDir: "{app}"
-Name: "{group}\Manual"; Filename: "{app}\bin\RStudio.exe"; Parameters: """{app}\help\manual\01-part1-model.md"""; WorkingDir: "{app}"
+Name: "{group}\Express Help"; Filename: "{app}\EXPRESS-HELP.html"; WorkingDir: "{app}"
+Name: "{group}\Manual"; Filename: "{app}\help\manual.html"; WorkingDir: "{app}"
+Name: "{group}\User Guide"; Filename: "{app}\help\guide.html"; WorkingDir: "{app}"
 Name: "{group}\Uninstall RIDE 3.0"; Filename: "{uninstallexe}"
 Name: "{autodesktop}\RIDE 3.0"; Filename: "{app}\bin\RStudio.exe"; WorkingDir: "{app}\examples"; Tasks: desktopicon
 
