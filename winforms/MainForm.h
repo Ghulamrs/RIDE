@@ -1670,6 +1670,7 @@ private:
                 rstudio_remember_project(reinterpret_cast<const char*>(pinned));
                 what_->Text = FromUtf8(rstudio_outcome_message(project_));
                 SayWhere();
+                RefreshTitle();
                 return;
             }
 
@@ -1698,6 +1699,7 @@ private:
                                      FromUtf8(rstudio_project_name(project_)),
                                      rstudio_project_groups(project_));
         SayWhere();
+        RefreshTitle();
     }
 
     void PaneFollowsTabs() {
@@ -2052,6 +2054,7 @@ private:
             projectDirectory_ = pick->SelectedPath;
             FillTree();
             SayWhere();
+            RefreshTitle();
         }
     }
 
@@ -2119,6 +2122,7 @@ private:
 
         paneMode_ = PaneMode::PaneFiles;
         FillTree();
+        RefreshTitle();
         console_->Text = "";
         what_->Text = was + " closed - the files it held are still open";
     }
