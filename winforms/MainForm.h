@@ -74,11 +74,11 @@ protected:
         }
     }
 
-    static String^ ProductName() { return "RStudio"; }
+    static String^ ProductName() { return "RIDE"; }
 
     // The window title: the product and its version, then the project it is in,
-    // then the file in front - "RStudio 3.5 - demo - main.c". With no project it
-    // is "RStudio 3.5 - main.c"; with neither, just "RStudio 3.5". One place, so
+    // then the file in front - "RIDE 3.5 - demo - main.c". With no project it
+    // is "RIDE 3.5 - main.c"; with neither, just "RIDE 3.5". One place, so
     // opening a file, loading or closing a project and saving-as all say it the
     // same way.
     void RefreshTitle() {
@@ -2062,7 +2062,7 @@ private:
 
         OpenFileDialog^ pick = gcnew OpenFileDialog();
         pick->Title = "Open project file";
-        pick->Filter = "RStudio projects (*" + suffix + ")|*" + suffix +
+        pick->Filter = "RIDE projects (*" + suffix + ")|*" + suffix +
                        "|All files (*.*)|*.*";
         if (projectDirectory_ != nullptr) pick->InitialDirectory = projectDirectory_;
         if (pick->ShowDialog() != System::Windows::Forms::DialogResult::OK) {
@@ -2085,7 +2085,7 @@ private:
         SaveFileDialog^ pick = gcnew SaveFileDialog();
         pick->Title = "Save as project file";
         pick->FileName = offered;
-        pick->Filter = "RStudio projects (*" + suffix + ")|*" + suffix;
+        pick->Filter = "RIDE projects (*" + suffix + ")|*" + suffix;
         pick->InitialDirectory = FromUtf8(rstudio_project_root(project_));
         if (pick->ShowDialog() != System::Windows::Forms::DialogResult::OK) {
             what_->Text = "not saved";

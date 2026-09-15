@@ -1,6 +1,6 @@
 # 1. What it is
 
-RStudio is an editor for three languages of our own: **C** through
+RIDE is an editor for three languages of our own: **C** through
 [cc1](../../Compiler-C), **C++** through [cxx1](../../C++), and **Shalimar**
 through [shc](../../Compiler-S) — with the machine's own C and C++ compiler,
 `cl` on Windows and `c++` elsewhere, reachable by name for the first two. It
@@ -30,7 +30,7 @@ are worse than one editor with two windows: the "nearly" is where the bugs
 live. When something is asked for in one, the answer is to lift it into the
 core and rewire the other.
 
-The names `RStudio` and `RStudioGui` belong to the binaries. **RStudio** is what the
+The names `RStudio` and `RStudioGui` belong to the binaries. **RIDE** is what the
 pair is called, and it is what `Help ▸ About` prints.
 
 > Called *CC1 Studio Workbench* until 2026-08-22, when Shalimar became the

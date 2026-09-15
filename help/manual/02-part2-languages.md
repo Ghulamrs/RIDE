@@ -1,6 +1,6 @@
 # Part II — The three languages: what each supports, and what it does not
 
-RStudio compiles three languages with three compilers. This part says, for each,
+RIDE compiles three languages with three compilers. This part says, for each,
 what it accepts and — with the same care — what it refuses. The refusals matter
 as much as the features: each compiler here **refuses by name and never accepts
 quietly**, so a construct it does not support stops the build with a message

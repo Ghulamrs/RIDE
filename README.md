@@ -1,4 +1,4 @@
-# RStudio
+# RIDE
 
 An editor for three languages of our own: **C** through [cc1](../Compiler-C),
 **C++** through [cxx1](../C++), and **Shalimar** through [shc](../Compiler-S)
@@ -413,7 +413,7 @@ Each compiler is also *told* which language it is being handed - `/TC` or
 because that is what this arena holds itself to: cc1 is written in it, so the
 editor is built in it, and C++ compiled here is compiled as it.
 
-**cl is found without a Developer Command Prompt.** RStudio asks Visual Studio 2022
+**cl is found without a Developer Command Prompt.** RIDE asks Visual Studio 2022
 where it lives, runs `vcvars64` once, and keeps the environment for the rest of
 the session. Started from an ordinary console with `cl` nowhere on PATH, it
 still builds C++. With `cl` in use the target chooser goes quiet, because cl
@@ -1163,7 +1163,7 @@ read out of the Makefile. A hand-kept project drifts - someone adds a file to
 the Makefile, forgets the other one, and Xcode quietly builds yesterday's
 editor. There is one source list and it is the Makefile's.
 
-One thing to know before reaching for the Run button: RStudio is a terminal
+One thing to know before reaching for the Run button: RIDE is a terminal
 program, and Xcode's console is a pipe rather than a terminal. Started from
 there it cannot put the terminal into raw mode and will print escape sequences
 instead of drawing. Build and debug it in Xcode; run it in Terminal, and attach

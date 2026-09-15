@@ -2,7 +2,7 @@
 
 ## Laying out as you type
 
-RStudio indents while you type rather than reformatting afterwards. Press
+RIDE indents while you type rather than reformatting afterwards. Press
 enter and the next line starts where it belongs; type `}` and the line pulls
 back to match its `{`.
 
@@ -50,7 +50,7 @@ Hold shift with the arrows, `Home`, `End`, `PageUp` or `PageDown` to select.
 the file.
 
 The clipboard is the editor's own. It is not the system clipboard, and text
-does not travel between RStudio and other applications through it — use the
+does not travel between RIDE and other applications through it — use the
 terminal's own copy and paste for that.
 
 ## Files

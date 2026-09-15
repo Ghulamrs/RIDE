@@ -82,7 +82,7 @@ command line is applied after and wins.**
 
 ## The three machines
 
-RStudio is built and checked on three, and each says something the others
+RIDE is built and checked on three, and each says something the others
 cannot.
 
 | | |
@@ -96,7 +96,7 @@ other two and build it from clean. Neither uses the checkout that may already
 be on those machines: a clone only has what has been pushed, and those scripts
 exist to check what is in front of you before it is committed.
 
-## Building RStudio itself
+## Building RIDE itself
 
 ```
 make                                     the terminal editor

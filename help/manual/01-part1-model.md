@@ -1,4 +1,4 @@
-# RStudio 3.5 — The Complete Manual
+# RIDE 3.5 — The Complete Manual
 
 **Part I — What the compilers are, what they eat, and what they make**
 
@@ -20,9 +20,9 @@
 - Part VII — Reference: keys, diagnostics, troubleshooting, the glossary.
 
 --------------------------------------------------------------------------------
-## 1. What RStudio is
+## 1. What RIDE is
 
-RStudio is one editor over three separate command-line compilers and a small
+RIDE is one editor over three separate command-line compilers and a small
 set of tools. Nothing about the editor is a compiler; nothing about a compiler
 is the editor. The editor's whole job is to find the right compiler for a file,
 run it with the right arguments, show you what it said, and — when the target
@@ -49,7 +49,7 @@ what it did on its standard streams.
 
 The "i" in `cc1i`/`cxx1i`/`shci` is the *i-line* — the same three compilers, one
 target on (the fourth, tms6747), built beside the originals under distinct
-names. RStudio 3.5 drives the i-line; RStudio 3.0 drove the originals
+names. RIDE 3.5 drives the i-line; RIDE 3.0 drove the originals
 (`cc1`/`cxx1`/`shc`), which are frozen and three-target. Everything in this
 manual is about 3.5 and the i-line unless it says otherwise.
 

@@ -1,6 +1,6 @@
-# Part XII — Building RStudio and its compilers from source
+# Part XII — Building RIDE and its compilers from source
 
-You do not need this to *use* RStudio — the installer gives you built binaries.
+You do not need this to *use* RIDE — the installer gives you built binaries.
 This part is for building the editor and the compilers yourself, understanding the
 workspace, and the verification discipline the project holds itself to.
 
@@ -16,9 +16,9 @@ RStudio is one repository; the compilers are their own repositories beside it:
     Converter-C2S (c2s) the converter
     Emulator    (vm6747) the C6000 emulator (i-line only)
 
-The *i-line* (the `…i` binaries) is what RStudio 3.5 drives — the same compilers
+The *i-line* (the `…i` binaries) is what RIDE 3.5 drives — the same compilers
 with the fourth target (tms6747) added, built beside the originals so the
-originals stay sealed. RStudio 3.0 drove the originals.
+originals stay sealed. RIDE 3.0 drove the originals.
 
 --------------------------------------------------------------------------------
 ## 61. One command per platform

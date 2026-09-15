@@ -1,4 +1,4 @@
-# RStudio 3.5 — Express Help
+# RIDE 3.5 — Express Help
 
 Three languages, four targets, one editor. This is the quick reference; the
 full pages are under `help\`.

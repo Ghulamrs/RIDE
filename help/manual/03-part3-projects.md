@@ -26,7 +26,7 @@ project's directory. Here is a complete one:
 
 Field by field:
 
-- **`name`** — the project's name. Shown in the title bar (3.5: `RStudio 3.5 -
+- **`name`** — the project's name. Shown in the title bar (3.5: `RIDE 3.5 -
   <name> - <file>`).
 - **`toolchain`** — the project-wide compiler choice: `auto` (the file's suffix
   decides), or a named one: `cc1`, `cxx1`, `shc`, or `msvc` (the host's `cl`).
@@ -96,7 +96,7 @@ set writes the `.pro` back immediately (you do not have to Save after each):
 - **Save** / **Save as…** — write the `.pro` (Save as… under a new name).
 - **Open…** / **Close** — open an existing `.pro`, or close the current project.
 
-Each of these is present and identical in both RStudio 3.0 and 3.5. A worked,
+Each of these is present and identical in both RIDE 3.0 and 3.5. A worked,
 step-by-step lifecycle — new project, add an empty file, give it content, add a
 second file, build, add an existing file, build and run, remove the file, change
 the call, run again — is the fastest way to learn them; the `demo` project in

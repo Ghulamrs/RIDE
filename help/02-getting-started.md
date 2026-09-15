@@ -18,7 +18,7 @@ looking at code rather than at an empty buffer.
 
 ## The first run
 
-If there is no project to return to, RStudio writes `~/cc1-demo` — one C
+If there is no project to return to, RIDE writes `~/cc1-demo` — one C
 program with a loop and a call in it, which is enough to set a breakpoint and
 stop inside. The demo is projectile motion, and it is deliberately small: it
 exists so that `F8` does something on a machine where nothing has been written
@@ -57,7 +57,7 @@ single file's is a scratch thing the editor made in order to run it.
   you were in, whether you are building debug or release, the font the window
   draws code in, and whatever else earns a place. In your own directory rather than beside the program, because the
   program's directory is build output — it is deleted and rebuilt — and there
-  is more than one copy of RStudio on a machine. It was `~/.rstudioconfig.json`
+  is more than one copy of RIDE on a machine. It was `~/.rstudioconfig.json`
   and `~/.ed1config.json` before; either is still read when it is the only one
   there, and retired the first time anything is written.
 

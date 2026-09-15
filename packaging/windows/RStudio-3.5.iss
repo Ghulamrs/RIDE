@@ -1,7 +1,7 @@
-; Inno Setup script for RStudio 3.5 - three languages (C, C++, Shalimar),
+; Inno Setup script for RIDE 3.5 - three languages (C, C++, Shalimar),
 ; four targets (x86_64-windows, x86_64-linux, arm64-darwin, tms6747), the
 ; VM6747 C6000 emulator and the C<->Shalimar converter.
-#define MyName "RStudio 3.5"
+#define MyName "RIDE 3.5"
 #define MyVer  "3.5"
 #define Stage  "C:\Users\GRA\rstudio-pkg\stage35"
 
@@ -15,7 +15,7 @@ DefaultGroupName={#MyName}
 DisableProgramGroupPage=yes
 UninstallDisplayIcon={app}\bin\RStudio.exe
 OutputDir=C:\Users\GRA\rstudio-pkg
-OutputBaseFilename=RStudio-3.5-setup
+OutputBaseFilename=RIDE-3.5-setup
 Compression=lzma2/max
 SolidCompression=yes
 ArchitecturesInstallIn64BitMode=x64compatible
@@ -27,12 +27,12 @@ LicenseFile={#Stage}\README.md
 Source: "{#Stage}\*"; DestDir: "{app}"; Flags: recursesubdirs createallsubdirs ignoreversion
 
 [Icons]
-Name: "{group}\RStudio 3.5"; Filename: "{app}\bin\RStudio.exe"; WorkingDir: "{app}\examples"
-Name: "{group}\RStudio 3.5 (console)"; Filename: "{app}\bin\RStudioConsole.exe"; WorkingDir: "{app}\examples"
+Name: "{group}\RIDE 3.5"; Filename: "{app}\bin\RStudio.exe"; WorkingDir: "{app}\examples"
+Name: "{group}\RIDE 3.5 (console)"; Filename: "{app}\bin\RStudioConsole.exe"; WorkingDir: "{app}\examples"
 Name: "{group}\Express Help"; Filename: "{app}\bin\RStudio.exe"; Parameters: """{app}\EXPRESS-HELP.md"""; WorkingDir: "{app}"
 Name: "{group}\Manual"; Filename: "{app}\bin\RStudio.exe"; Parameters: """{app}\help\manual\01-part1-model.md"""; WorkingDir: "{app}"
-Name: "{group}\Uninstall RStudio 3.5"; Filename: "{uninstallexe}"
-Name: "{autodesktop}\RStudio 3.5"; Filename: "{app}\bin\RStudio.exe"; WorkingDir: "{app}\examples"; Tasks: desktopicon
+Name: "{group}\Uninstall RIDE 3.5"; Filename: "{uninstallexe}"
+Name: "{autodesktop}\RIDE 3.5"; Filename: "{app}\bin\RStudio.exe"; WorkingDir: "{app}\examples"; Tasks: desktopicon
 
 [Tasks]
 Name: "desktopicon"; Description: "Create a desktop shortcut"; Flags: unchecked
@@ -43,7 +43,7 @@ Root: HKA; Subkey: "Environment"; ValueType: expandsz; ValueName: "Path"; ValueD
     Tasks: addtopath; Check: NeedsAddPath(ExpandConstant('{app}\bin'))
 
 [Run]
-Filename: "{app}\bin\RStudio.exe"; Description: "Launch RStudio 3.5"; Flags: nowait postinstall skipifsilent
+Filename: "{app}\bin\RStudio.exe"; Description: "Launch RIDE 3.5"; Flags: nowait postinstall skipifsilent
 
 [Code]
 function NeedsAddPath(Param: string): boolean;

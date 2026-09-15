@@ -7,7 +7,7 @@ app's own repository as `SHALIMAR_LANGUAGE.md`, and that copy is the one that
 wins: where this page and that one disagree, that one is right and this one is
 stale.
 
-It is carried here because RStudio is a separate repository. A reader of this
+It is carried here because RIDE is a separate repository. A reader of this
 manual has no `../Shalimar` to follow, and a language reference you cannot
 reach is not a reference.
 

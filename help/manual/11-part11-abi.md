@@ -1,7 +1,7 @@
 # Part XI — The ABIs: how each target passes arguments and lays out types
 
 An ABI is the contract between compiled pieces: which registers carry arguments,
-how a result comes back, how wide each type is, how names are decorated. RStudio's
+how a result comes back, how wide each type is, how names are decorated. RIDE's
 compilers implement each target's real ABI so their output links against the
 platform's own tools and libraries. This part is that contract, target by target
 — useful when a program crosses a boundary (a call into a system library, or a

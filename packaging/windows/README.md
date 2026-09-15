@@ -1,13 +1,13 @@
 # Windows installers (Inno Setup)
 
-`setup.exe` installers for RStudio, built on the Windows box with Inno Setup 6
+`setup.exe` installers for RIDE, built on the Windows box with Inno Setup 6
 (`winget install JRSoftware.InnoSetup`). Two versions:
 
-- **RStudio 3.5** — three languages, **four** targets (incl. `tms6747` with the
+- **RIDE 3.5** — three languages, **four** targets (incl. `tms6747` with the
   `vm6747` emulator), the C↔Shalimar converter, and a **license-safe TI build
   path** (`bin\ti\ti-build.cmd`) that produces a real C674x `.out`/`.hex` using
   a TI CGT install found on the machine (no TI binaries are shipped).
-- **RStudio 3.0** — three languages, **three** targets, no emulator (the frozen
+- **RIDE 3.0** — three languages, **three** targets, no emulator (the frozen
   originals cc1/cxx1/shc).
 
 ## How to build (on the box)
@@ -25,7 +25,7 @@
    - `stage30.cmd <RStudio> <Compiler-Cpp>  <stage30>`  (3.0, sources from `x64\Release`)
    then copy `EXPRESS-HELP-<ver>.md` to the stage root as `EXPRESS-HELP.md`, and
    (3.5 only) `ti-build.cmd`+`ti-link.cmd`+`TI-BUILD.txt` into `stage35\bin\ti\`.
-3. `mkinstaller.cmd RStudio-3.5.iss` (and `RStudio-3.0.iss`) → `RStudio-<ver>-setup.exe`.
+3. `mkinstaller.cmd RStudio-3.5.iss` (and `RStudio-3.0.iss`) → `RIDE-<ver>-setup.exe`.
 
 The `.iss` files name box-local stage paths (`C:\Users\GRA\rstudio-pkg\...`);
 adjust the `Stage` define for another machine.

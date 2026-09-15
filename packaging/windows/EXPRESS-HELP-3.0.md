@@ -1,4 +1,4 @@
-# RStudio 3.0 — Express Help
+# RIDE 3.0 — Express Help
 
 Three languages, three targets, one editor. This is the quick reference; the
 full pages are under `help\`.
@@ -87,7 +87,7 @@ A `.pro` is one JSON object:
     help\     the full help pages
 
 --------------------------------------------------------------------------
-Note: RStudio 3.5 adds a fourth target (TMS320C6747 / tms6747) with an emulator
+Note: RIDE 3.5 adds a fourth target (TMS320C6747 / tms6747) with an emulator
 and a real-silicon TI build path, and per-file language guards. This is 3.0.
 
 --------------------------------------------------------------------------

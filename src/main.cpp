@@ -10,7 +10,7 @@
 #include "workspace.h"
 
 static std::string calledIt(const char* argv0) {
-    std::string name = (argv0 == 0 || *argv0 == 0) ? "RStudio" : argv0;
+    std::string name = (argv0 == 0 || *argv0 == 0) ? "RIDE" : argv0;
     size_t slash = name.find_last_of("/\\");
     if (slash != std::string::npos) name = name.substr(slash + 1);
     if (name.size() > 4 && name.compare(name.size() - 4, 4, ".exe") == 0)

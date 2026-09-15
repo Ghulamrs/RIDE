@@ -15,7 +15,7 @@
 namespace editor {
 namespace about {
 
-const char* name() { return "RStudio"; }
+const char* name() { return "RIDE"; }
 
 const char* version() { return "3.5"; }
 

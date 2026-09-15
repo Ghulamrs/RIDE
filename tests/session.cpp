@@ -1916,7 +1916,7 @@ void aDirectoryWithNoProject(const std::string& rstudio) {
     // that walks them.
     Screen about = drive(rstudio, "--project \"" + dir.string() + "\"",
                          kF10 + times(kRight, 8) + times(kDown, 2) + kEnter + ctrl('q'), dir);
-    check(onScreen(about, "RStudio 3.5"), "About names the product and version");
+    check(onScreen(about, "RIDE 3.5"), "About names the product and version");
     check(onScreen(about, "cxx1"), "and the fourth compiler is on its list");
     check(onScreen(about, "G. R. Akhtar"), "and who it belongs to");
     check(onScreen(about, "Islamabad"), "and where they are, which the last line must not lose");
@@ -2640,7 +2640,7 @@ void theHelpMenu(const std::string& rstudio) {
     // year.
     Screen about = drive(rstudio, arguments, kF10 + times(kRight, 8) + times(kDown, 2) + kEnter +
                                              ctrl('q'), dir);
-    check(onScreen(about, "RStudio"), "Help > About still names the product");
+    check(onScreen(about, "RIDE"), "Help > About still names the product");
 
     // F1 is the keys and is not the same thing as the contents.
     // The keys are longer than the seven rows the panel shows and it opens at

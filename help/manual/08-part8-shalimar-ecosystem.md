@@ -2,34 +2,34 @@
 
 Shalimar is more than the `shci` compiler inside RStudio. It is a small family of
 projects that share one language, and the C↔Shalimar converter (`c2s`) that
-RStudio ships is the bridge between the C world and the Shalimar one. This part
+RIDE ships is the bridge between the C world and the Shalimar one. This part
 maps the family, then documents `c2s` in full — because `c2s.exe` is in your
 install and its Language-menu items are one keystroke away.
 
 --------------------------------------------------------------------------------
-## 31. The map: what is inside RStudio, and what is beside it
+## 31. The map: what is inside RIDE, and what is beside it
 
-It is worth being exact about which Shalimar things RStudio *is*, and which are
+It is worth being exact about which Shalimar things RIDE *is*, and which are
 separate projects that share the language:
 
-**Inside RStudio (what you install):**
+**Inside RIDE (what you install):**
 
 - **`shci`** — the Shalimar compiler (the i-line of Compiler-S), four targets.
   This is what F5/F4/Run project use for a `.shl` file.
 - **`shmrt-*`** — the Shalimar runtime, in `bin\lib\` beside `shci`.
 - **`c2s`** — the C89↔Shalimar source converter, driven from the Language menu.
 
-**Beside RStudio (separate projects that share the language):**
+**Beside RIDE (separate projects that share the language):**
 
 - **Compiler-S** — the upstream Shalimar native compiler that `shci` is built
-  from. C++14, three host targets; RStudio 3.5's `shci` adds `tms6747`.
+  from. C++14, three host targets; RIDE 3.5's `shci` adds `tms6747`.
 - **The Shalimar app family** — the iOS apps whose Swift interpreter *runs*
-  Shalimar on a phone. These are not compilers and are not part of RStudio; they
-  are where the language's own specification lives, and RStudio's Shalimar help
+  Shalimar on a phone. These are not compilers and are not part of RIDE; they
+  are where the language's own specification lives, and RIDE's Shalimar help
   is a checked copy of it. Three of them:
   - **Shalimar** — the original iOS app: a Swift/UIKit editor and interpreter.
     It is the authority for the language (`SHALIMAR_LANGUAGE.md`), and it is
-    sealed — RStudio never opens or changes it.
+    sealed — RIDE never opens or changes it.
   - **Shalimar-2** — a newer iOS app that runs **C** on a phone by converting it
     with `c2s` to Shalimar and interpreting the result: `C source → c2s →
     Shalimar → the interpreter already in the app`. iOS only, no code generation
@@ -43,7 +43,7 @@ The relationships that make them look like one project but do not make them one:
 Compiler-S records its expected output *from* the app's interpreter (the
 interpreter is the oracle, the document is the authority); `c2s` *vendors*
 Compiler-S's Shalimar front end so the two agree on what Shalimar accepts; and
-`shci` is Compiler-S one target on. RStudio ships `shci` and `c2s`; everything
+`shci` is Compiler-S one target on. RIDE ships `shci` and `c2s`; everything
 else in this list is upstream or a sibling.
 
 --------------------------------------------------------------------------------
@@ -51,7 +51,7 @@ else in this list is upstream or a sibling.
 
 **Compiler-S** is the native Shalimar compiler. It compiles `.shm`/`.shl`
 programs to native assembly for `arm64-darwin`, `x86_64-linux` and
-`x86_64-windows`; RStudio 3.5's **`shci`** is the same compiler with `tms6747`
+`x86_64-windows`; RIDE 3.5's **`shci`** is the same compiler with `tms6747`
 added. It is C++14, held to the same `-Wall -Wextra -Werror -pedantic`
 discipline as the C and C++ compilers.
 

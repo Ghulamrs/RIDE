@@ -109,7 +109,7 @@ Two diagnostics worth recognising:
 - **Target** — the machine the code is generated for (`x86_64-windows`,
   `x86_64-linux`, `arm64-darwin`, `tms6747`). Distinct from the host.
 - **Host** — the machine you are compiling on.
-- **i-line** — `cc1i`/`cxx1i`/`shci`, the compilers RStudio 3.5 drives; the same
+- **i-line** — `cc1i`/`cxx1i`/`shci`, the compilers RIDE 3.5 drives; the same
   three compilers as 3.0's originals, one target on (tms6747).
 - **`-S` / `-c`** — stop at assembly / stop at an object. No flag: build a
   program.
@@ -127,7 +127,7 @@ Two diagnostics worth recognising:
   CodeView only via `cl`.
 
 --------------------------------------------------------------------------------
-*This manual describes RStudio 3.5. RStudio 3.0 is the same editor with three
+*This manual describes RIDE 3.5. RIDE 3.0 is the same editor with three
 languages and three targets — no tms6747, no emulator, no TI build path, and the
 frozen original compilers. Where a chapter is target-specific, 3.0 has the first
 three targets only.*
