@@ -9,6 +9,9 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "vm6747", "..\VM6747\Emulator\vm6747.vcxproj", "{D5DA3DC4-A351-76DB-AFBA-C05657A7ED4D}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "shci", "..\VM6747\Compiler-Si\shc.vcxproj", "{39F445EC-2E3B-CB68-9D8C-B98B85AC2258}"
+	ProjectSection(ProjectDependencies) = postProject
+		{5F32672A-8EBA-84FB-FFC7-501FA81FD6A3} = {5F32672A-8EBA-84FB-FFC7-501FA81FD6A3}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "c2s", "..\Converter-C2S\c2s.vcxproj", "{A4FC64B4-14A5-3103-5CD2-A17F9F320FE2}"
 EndProject

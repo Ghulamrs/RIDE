@@ -236,14 +236,28 @@ def projects():
             "include": "$(SRCROOT)/src $(SRCROOT)/runtime",
             # `make` builds shci.exe and both runtime archives; a project that
             # built only the first would be the smaller program this script
-            # exists to prevent.
+            # exists to prevent. Since 3.5 the phase also writes the C6000
+            # runtime, which is cxx1i's output - so cxx1i.exe is built first,
+            # the ordering workspace.mk states as `make ... all tms6747
+            # CXX1=$(OUT)/cxx1i.exe` and RStudio.sln as a project dependency.
+            # The path is from *this* project's directory, not the editor's:
+            # "../VM6747/Compiler-Cppi" from here would be VM6747/VM6747/...,
+            # and Xcode drops a reference it cannot follow without a word -
+            # the dependency graph then says "shci.exe (no dependencies)".
+            "depends": [("cxx1i.exe",
+                         os.path.relpath(os.path.join(SIBLINGS, CXX1_REPO, "cxx1.xcodeproj"),
+                                         os.path.join(SIBLINGS, SHC_REPO)))],
             "script": shc_runtime_script(),
             # The archives go with it, for the reason they were built beside it
             # in the first place: shc looks for lib/ next to its own binary, so
             # a copy that took the compiler and left the runtime would be the
-            # incomplete copy step this whole arrangement exists to avoid.
+            # incomplete copy step this whole arrangement exists to avoid. The
+            # C6000 runtime directory the same, and rm first: cp -R onto a
+            # directory that exists copies into it.
             "install_extra": ('mkdir -p "$dest/lib"\n'
-                              'cp -f "$BUILT_PRODUCTS_DIR"/lib/*.a "$dest/lib/"\n'),
+                              'cp -f "$BUILT_PRODUCTS_DIR"/lib/*.a "$dest/lib/"\n'
+                              'rm -rf "$dest/lib/shmrt-tms6747"\n'
+                              'cp -R "$BUILT_PRODUCTS_DIR/lib/shmrt-tms6747" "$dest/lib/"\n'),
         },
         {
             "product": "cxx1i.exe",
@@ -691,6 +705,24 @@ def shc_runtime_step():
     flags = ("/nologo /std:c++14 /W4 /WX /EHsc /permissive- /O2 "
              "/D_CRT_SECURE_NO_WARNINGS")
 
+    # **And the C6000 runtime, which is cxx1i's output.** Compiler-S's
+    # Makefile keeps it under its own `tms6747` rule because `make` alone
+    # must not need the C++ clone; here the solution builds cxx1i.exe first
+    # (shci depends on it in RStudio.sln, below) and this step wants it beside
+    # the output. Wanted, not hoped for: a missing cxx1i.exe stops the build
+    # and says so, since the alternative is an editor whose Shalimar cases
+    # for the emulator are "not tried" and nothing says why. The Windows box
+    # found it that way on 2026-09-15 - both archives built, no directory,
+    # and F5 on a Shalimar file for tms6747 had nothing to run beside.
+    #
+    # One command per source, written whole every build: six small files,
+    # and a stale .s left from a runtime source that was renamed would be
+    # assembled beside the program with everything else.
+    c6000 = "".join(
+        '"$(OutDir)cxx1i.exe" -S -arch tms6747 -nologo "$(ProjectDir)runtime\\%s.cpp" '
+        '-o "$(OutDir)lib\\shmrt-tms6747\\%s.s"\n'
+        'if errorlevel 1 exit /b 1\n' % (n, n) for n in release)
+
     return (
         '    <PostBuildEvent>\n'
         '      <Message>building the Shalimar runtime beside shci.exe</Message>\n'
@@ -704,9 +736,14 @@ def shc_runtime_step():
         'cl %s /DSHM_DEBUG=1 /Fo"$(IntDir)rtd\\\\" /c %s\n'
         'if errorlevel 1 exit /b 1\n'
         'lib /nologo /out:"$(OutDir)lib\shmrt-x86_64-windows-debug.lib" %s\n'
-        'if errorlevel 1 exit /b 1</Command>\n'
+        'if errorlevel 1 exit /b 1\n'
+        'if not exist "$(OutDir)cxx1i.exe" echo shc.vcxproj: no cxx1i.exe in $(OutDir) - '
+        'the C6000 runtime is its output; build RStudio.sln, which builds it first\n'
+        'if not exist "$(OutDir)cxx1i.exe" exit /b 1\n'
+        'if not exist "$(OutDir)lib\\shmrt-tms6747" mkdir "$(OutDir)lib\\shmrt-tms6747"\n'
+        '%s</Command>\n'
         '    </PostBuildEvent>\n'
-        % (flags, release_src, release_obj, flags, debug_src, debug_obj))
+        % (flags, release_src, release_obj, flags, debug_src, debug_obj, c6000.rstrip("\n")))
 
 
 # The same job on the Mac, and it has to be done twice on the same principle:
@@ -804,6 +841,18 @@ def shc_runtime_phase():
                 'rm -f "$lib/%s"\n' % leaf +
                 '"$ar" rcs "$lib/%s" "%s"/*.o\n' % (leaf, objects))
 
+    # The C6000 runtime is a directory of assembly, one .s per release
+    # source, written by the cxx1i.exe this workspace just built (a target
+    # dependency, so it is there); the emulator takes the directory whole
+    # beside a Shalimar program. rm first for the reason ar gets it below.
+    c6000 = ('cxx1i="$BUILT_PRODUCTS_DIR/cxx1i.exe"\n'
+             'test -x "$cxx1i" || { echo "shc.xcodeproj: no cxx1i.exe beside the output - '
+             'the C6000 runtime is its output" >&2; exit 1; }\n'
+             'rm -rf "$lib/shmrt-tms6747"\n'
+             'mkdir -p "$lib/shmrt-tms6747"\n' +
+             "".join('"$cxx1i" -S -arch tms6747 -nologo "$SRCROOT/runtime/%s.cpp" '
+                     '-o "$lib/shmrt-tms6747/%s.s"\n' % (name, name) for name in release))
+
     # rm before ar: `ar rcs` replaces members in an archive that is already
     # there, so a source deleted from the Makefile would live on inside it.
     return ("set -e\n"
@@ -815,12 +864,13 @@ def shc_runtime_phase():
             archive(release, "$DERIVED_FILE_DIR/runtime", "runtime", "",
                     "shmrt-%s.a" % SHC_RUNTIME_TARGET) +
             archive(debug, "$DERIVED_FILE_DIR/runtime-debug", "runtime-debug",
-                    "-DSHM_DEBUG=1 ", "shmrt-%s-debug.a" % SHC_RUNTIME_TARGET))
+                    "-DSHM_DEBUG=1 ", "shmrt-%s-debug.a" % SHC_RUNTIME_TARGET) +
+            c6000)
 
 
 def shc_runtime_script():
     """The phase as project_text wants it: a name, a script, and its files."""
-    _, debug = shc_runtime_sources()
+    release, debug = shc_runtime_sources()
     headers = ("shmrt", "Internal", "Shortest", "Debug")
     return {
         "name": "the Shalimar runtime, beside shci.exe",
@@ -829,10 +879,13 @@ def shc_runtime_script():
         # outputs it runs on every build and says so as a warning; with these
         # it runs when a runtime source or header changes, which is the same
         # rule make follows.
+        # cxx1i.exe is an input too: a new compiler means new C6000 runtime.
         "inputs": (["$(SRCROOT)/runtime/%s.cpp" % n for n in debug] +
-                   ["$(SRCROOT)/runtime/%s.h" % n for n in headers]),
-        "outputs": ["$(BUILT_PRODUCTS_DIR)/lib/shmrt-%s.a" % SHC_RUNTIME_TARGET,
-                    "$(BUILT_PRODUCTS_DIR)/lib/shmrt-%s-debug.a" % SHC_RUNTIME_TARGET],
+                   ["$(SRCROOT)/runtime/%s.h" % n for n in headers] +
+                   ["$(BUILT_PRODUCTS_DIR)/cxx1i.exe"]),
+        "outputs": (["$(BUILT_PRODUCTS_DIR)/lib/shmrt-%s.a" % SHC_RUNTIME_TARGET,
+                     "$(BUILT_PRODUCTS_DIR)/lib/shmrt-%s-debug.a" % SHC_RUNTIME_TARGET] +
+                    ["$(BUILT_PRODUCTS_DIR)/lib/shmrt-tms6747/%s.s" % n for n in release]),
     }
 
 
@@ -1387,7 +1440,9 @@ def main():
         ("cc1i", "../" + CC1_REPO.replace(os.sep, "/") + "/msvc/cc1.vcxproj", CC1_GUID, []),
         ("cxx1i", "../" + CXX1_REPO.replace(os.sep, "/") + "/cxx1.vcxproj", guid("cxx1i"), []),
         ("vm6747", "../" + VM_REPO.replace(os.sep, "/") + "/vm6747.vcxproj", guid("vm6747"), []),
-        ("shci", "../" + SHC_REPO.replace(os.sep, "/") + "/shc.vcxproj", guid("shci"), []),
+        # shci after cxx1i: its post-build step compiles the Shalimar runtime
+        # for the C6000 with the cxx1i.exe beside it (shc_runtime_step).
+        ("shci", "../" + SHC_REPO.replace(os.sep, "/") + "/shc.vcxproj", guid("shci"), [guid("cxx1i")]),
         # c2s is built with them and not by them: the editor runs it over the
         # open file from the Language menu, and finds it beside itself the
         # same way it finds the compilers.

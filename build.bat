@@ -129,10 +129,14 @@ rem of the four that nothing links and only the Language menu runs.
 rem
 rem Both runtime archives are named. Debug is the editor's default
 rem configuration and links the other one, so checking a single archive would
-rem confirm exactly the half that was not about to be used.
+rem confirm exactly the half that was not about to be used. And the C6000
+rem runtime, a directory of assembly cxx1i writes for shci's post-build step:
+rem the Makefile's DEPENDENCIES has named it since 3.5 and this did not, so a
+rem box with both archives and no directory confirmed clean while a Shalimar
+rem program for the emulator had nothing to run beside.
 if "%BINDIR%"=="" set BINDIR=x64\Release
 set MISSING=0
-for %%f in (cc1i.exe cxx1i.exe vm6747.exe shci.exe c2s.exe lib\shmrt-x86_64-windows.lib lib\shmrt-x86_64-windows-debug.lib) do (
+for %%f in (cc1i.exe cxx1i.exe vm6747.exe shci.exe c2s.exe lib\shmrt-x86_64-windows.lib lib\shmrt-x86_64-windows-debug.lib lib\shmrt-tms6747\Runtime.s) do (
    if exist "%BINDIR%\%%f" (echo   ok       %%f) else (echo   MISSING  %%f& set MISSING=1)
 )
 if "%MISSING%"=="1" (
@@ -192,6 +196,9 @@ if exist "%BINDIR%\lib\*.lib" (
    if not exist "%PRODUCT%\bin\lib" mkdir "%PRODUCT%\bin\lib"
    copy /y "%BINDIR%\lib\*.lib" "%PRODUCT%\bin\lib\" >nul
 )
+rem And the C6000 runtime directory, which the emulator takes beside a
+rem Shalimar program; the editor looks for it in lib/ beside itself.
+if exist "%BINDIR%\lib\shmrt-tms6747" xcopy /e /i /q "%BINDIR%\lib\shmrt-tms6747" "%PRODUCT%\bin\lib\shmrt-tms6747" >nul
 copy /y README.md "%PRODUCT%\" >nul
 rem All three languages, and the headers. This copied only *.c and *.cpp until
 rem 2026-08-24, which shipped table.cpp and vector3.cpp without the headers they

@@ -313,6 +313,7 @@ product: confirm
 # beside its own binary. Both archives, debug included - see DEPENDENCIES.
 	cp $(BINDIR)/lib/shmrt-$(SHM_TARGET).a \
 	   $(BINDIR)/lib/shmrt-$(SHM_TARGET)-debug.a "$(PRODUCT)/bin/lib/"
+	cp -R $(BINDIR)/lib/shmrt-tms6747 "$(PRODUCT)/bin/lib/"
 	cp README.md "$(PRODUCT)/"
 # All three languages, and the headers. Copying only *.c and *.cpp shipped
 # table.cpp and vector3.cpp without the headers they include, so neither would
