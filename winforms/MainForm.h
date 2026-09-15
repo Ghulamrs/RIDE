@@ -196,6 +196,9 @@ private:
     ToolStripStatusLabel^ where_;
     ToolStripStatusLabel^ what_;
     ToolStripStatusLabel^ root_;
+    // The compiler in use, shown at the right end of the menu bar, plain text,
+    // changing with the file, the Language menu and the Tools menu.
+    ToolStripLabel^ compilerHint_;
 
     static array<Byte>^ Utf8Of(String^ text) {
         array<Byte>^ raw = System::Text::Encoding::UTF8->GetBytes(text == nullptr ? "" : text);
@@ -226,10 +229,16 @@ private:
         project_ = rstudio_project_new();
         arch_ = "x86_64-windows";
 
-        cc1_ = Named("CC1", "cc1");
+        // The i-line names, since 3.5: the compilers docked beside the editor
+        // are cc1i, cxx1i and shci (the Toolchain struct defaults to the same).
+        // Named looks for "<name>.exe" beside the editor, so the plain names
+        // used to find a stale cc1.exe / cxx1.exe left over from a 3.0 build in
+        // the same directory - an old cc1 then read a project's .cpp as C and
+        // said "expected a type". cl stays the host compiler, found on PATH.
+        cc1_ = Named("CC1", "cc1i");
         cl_ = Named("CL", "cl");
-        shc_ = Named("SHC", "shc");
-        cxx1_ = Named("CXX1", "cxx1");
+        shc_ = Named("SHC", "shci");
+        cxx1_ = Named("CXX1", "cxx1i");
         toolKind_ = RSTUDIO_TOOL_AUTO;
         languageChoice_ = -1;
         config_ = RSTUDIO_CONFIG_DEBUG;
@@ -537,6 +546,14 @@ private:
         help->DropDownItems->Add("About " + ProductName(), nullptr,
                                  gcnew EventHandler(this, &MainForm::OnAbout));
         bar->Items->Add(help);
+
+        // The compiler in use, at the right end of the menu bar: plain text,
+        // no box, changing as the file, the Language menu or the Tools menu
+        // change it. SayBuild fills it in beside the status bar's fuller line.
+        compilerHint_ = gcnew ToolStripLabel();
+        compilerHint_->Alignment = ToolStripItemAlignment::Right;
+        compilerHint_->ForeColor = System::Drawing::Color::FromArgb(90, 90, 90);
+        bar->Items->Add(compilerHint_);
 
         MainMenuStrip = bar;
         Controls->Add(bar);
@@ -2520,33 +2537,8 @@ private:
 
         SaveEveryDirty();
 
-        int language = rstudio_project_target_language(project_);
-        int kind = rstudio_resolve(toolKind_, language);
-        if (rstudio_can_compile(kind, language) == 0) {
-            what_->Text = FromUtf8(rstudio_refusal(kind, language));
-            return;
-        }
-
-        array<Byte>^ archBytes = Utf8Of(arch_);
-        pin_ptr<Byte> arch = &archBytes[0];
-        if (andRun && rstudio_runs_here(kind, reinterpret_cast<const char*>(arch)) == 0) {
-            what_->Text = FromUtf8(rstudio_why_not_run(kind, reinterpret_cast<const char*>(arch)));
-            return;
-        }
-
-        String^ program = FromUtf8(rstudio_project_target_program(project_));
-        int howMany = rstudio_project_target_sources(project_);
-
-        System::Text::StringBuilder^ said = gcnew System::Text::StringBuilder();
-        said->Append("$ " + FromUtf8(rstudio_toolchain_name(kind)) + " " + howMany +
-                     (howMany == 1 ? " source -o " : " sources -o ") + program + "\r\n");
-        for (int i = 0; i < howMany; ++i)
-            said->Append("    " + FromUtf8(rstudio_project_target_source(project_, i)) + "\r\n");
-        console_->Text = said->ToString();
-        panel_->SelectedIndex = 0;
-        what_->Text = "building " + System::IO::Path::GetFileName(program) + " ...";
-        Application::DoEvents();
-
+        // The compilers, pinned before the checks: naming each part's compiler
+        // needs them, and the build below does too.
         array<Byte>^ cc1Bytes = Utf8Of(cc1_);
         pin_ptr<Byte> cc1 = &cc1Bytes[0];
         array<Byte>^ clBytes = Utf8Of(cl_);
@@ -2555,11 +2547,57 @@ private:
         pin_ptr<Byte> shc = &shcBytes[0];
         array<Byte>^ cxx1Bytes = Utf8Of(cxx1_);
         pin_ptr<Byte> cxx1 = &cxx1Bytes[0];
+        array<Byte>^ archBytes = Utf8Of(arch_);
+        pin_ptr<Byte> arch = &archBytes[0];
+
+        // **Every part, not the target as a whole.** A group of C and C++ is
+        // split into a part each, and the build sends each to its own compiler
+        // through toolKind_ (Auto for an auto project) - so the build call must
+        // pass toolKind_, not a single kind resolved from the first part's
+        // language. Resolving the whole target to that one kind forced every
+        // part to the first language's compiler: a .cpp went to cc1, which read
+        // `virtual` as C and said "expected a type" while the status bar,
+        // resolving the open file on its own, still showed cxx1. The check and
+        // the header ask the same question of each part that buildParts will.
+        int parts = rstudio_project_target_parts(project_);
+        System::Collections::Generic::List<String^>^ compilers =
+            gcnew System::Collections::Generic::List<String^>();
+        for (int i = 0; i < parts; ++i) {
+            int partLang = rstudio_project_part_language(project_, i);
+            int partKind = rstudio_project_part_toolchain(
+                project_, i, reinterpret_cast<const char*>(cc1),
+                reinterpret_cast<const char*>(cl), reinterpret_cast<const char*>(shc),
+                reinterpret_cast<const char*>(cxx1), toolKind_);
+            if (rstudio_can_compile(partKind, partLang) == 0) {
+                what_->Text = FromUtf8(rstudio_refusal(partKind, partLang));
+                return;
+            }
+            if (andRun && rstudio_runs_here(partKind, reinterpret_cast<const char*>(arch)) == 0) {
+                what_->Text =
+                    FromUtf8(rstudio_why_not_run(partKind, reinterpret_cast<const char*>(arch)));
+                return;
+            }
+            String^ word = FromUtf8(rstudio_toolchain_name(partKind));
+            if (!compilers->Contains(word)) compilers->Add(word);
+        }
+
+        String^ program = FromUtf8(rstudio_project_target_program(project_));
+        int howMany = rstudio_project_target_sources(project_);
+
+        System::Text::StringBuilder^ said = gcnew System::Text::StringBuilder();
+        said->Append("$ " + String::Join(", ", compilers->ToArray()) + " " + howMany +
+                     (howMany == 1 ? " source -o " : " sources -o ") + program + "\r\n");
+        for (int i = 0; i < howMany; ++i)
+            said->Append("    " + FromUtf8(rstudio_project_target_source(project_, i)) + "\r\n");
+        console_->Text = said->ToString();
+        panel_->SelectedIndex = 0;
+        what_->Text = "building " + System::IO::Path::GetFileName(program) + " ...";
+        Application::DoEvents();
 
         RStudioBuild* made = rstudio_build_target(project_, reinterpret_cast<const char*>(cc1),
                                           reinterpret_cast<const char*>(cl),
                                        reinterpret_cast<const char*>(shc),
-                                       reinterpret_cast<const char*>(cxx1), kind,
+                                       reinterpret_cast<const char*>(cxx1), toolKind_,
                                           reinterpret_cast<const char*>(arch), config_);
         if (made == nullptr) {
             what_->Text = FromUtf8(rstudio_project_target_why(project_));
@@ -2599,7 +2637,8 @@ private:
         rstudio_build_free(made);
 
         if (!ok) {
-            what_->Text = FromUtf8(rstudio_toolchain_name(kind)) + " did not build it - see the console";
+            what_->Text = String::Join(", ", compilers->ToArray()) +
+                          " did not build it - see the console";
             return;
         }
 
@@ -3336,6 +3375,15 @@ private:
 
         if (rstudio_uses_arch(kind) != 0) said += "  " + arch_;
         build_->Text = said;
+
+        // The menu-bar hint: just the compiler, in plain words, with the same
+        // star the status bar uses when the file chose it rather than the Tools
+        // menu. It changes whenever the resolved compiler does.
+        if (compilerHint_ != nullptr) {
+            String^ hint = FromUtf8(rstudio_toolchain_name(kind));
+            if (toolKind_ == RSTUDIO_TOOL_AUTO) hint += "*";
+            compilerHint_->Text = hint;
+        }
     }
 
     void ShowChoices() {
