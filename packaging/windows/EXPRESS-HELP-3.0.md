@@ -89,3 +89,12 @@ A `.pro` is one JSON object:
 --------------------------------------------------------------------------
 Note: RStudio 3.5 adds a fourth target (TMS320C6747 / tms6747) with an emulator
 and a real-silicon TI build path, and per-file language guards. This is 3.0.
+
+--------------------------------------------------------------------------
+## The full manual
+
+This is the quick reference. The complete manual — the compilation model, every
+language feature and non-feature, the project-file architecture, the full
+command-line reference, the targets and the native tools, and troubleshooting —
+is in `help\manual\` (Part I begins in `01-part1-model.md`), with the full
+Shalimar language spec in `help\appendix-a-shalimar-language.md`.

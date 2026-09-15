@@ -103,3 +103,12 @@ machine (none of TI's tools ship here); see `bin\ti\TI-BUILD.txt`.
     lib\      the C standard headers (<stdio.h>, <string.h>, …)
     examples\ worked programs and a demo project (demo.pro)
     help\     the full help pages
+
+--------------------------------------------------------------------------
+## The full manual
+
+This is the quick reference. The complete manual — the compilation model, every
+language feature and non-feature, the project-file architecture, the full
+command-line reference, the targets and the native tools, and troubleshooting —
+is in `help\manual\` (Part I begins in `01-part1-model.md`), with the full
+Shalimar language spec in `help\appendix-a-shalimar-language.md`.
