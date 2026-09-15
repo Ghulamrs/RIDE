@@ -482,6 +482,8 @@ void rstudio_project_close(RStudioProject* project) { project->project.close(); 
 
 const char* rstudio_project_suffix(void) { return editor::Project::suffix(); }
 
+const char* rstudio_version(void) { return editor::about::version(); }
+
 int rstudio_project_save_as(RStudioProject* project, const char* file,
                             char* why, int whySize) {
     std::string error;

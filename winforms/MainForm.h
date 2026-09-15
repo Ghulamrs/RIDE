@@ -76,6 +76,21 @@ protected:
 
     static String^ ProductName() { return "RStudio"; }
 
+    // The window title: the product and its version, then the project it is in,
+    // then the file in front - "RStudio 3.5 - demo - main.c". With no project it
+    // is "RStudio 3.5 - main.c"; with neither, just "RStudio 3.5". One place, so
+    // opening a file, loading or closing a project and saving-as all say it the
+    // same way.
+    void RefreshTitle() {
+        String^ title = ProductName() + " " + FromUtf8(rstudio_version());
+        String^ project = project_ == nullptr ? nullptr
+                                              : FromUtf8(rstudio_project_name(project_));
+        if (project != nullptr && project->Length > 0) title += " - " + project;
+        if (path_ != nullptr && path_->Length > 0)
+            title += " - " + System::IO::Path::GetFileName(path_);
+        Text = title;
+    }
+
     ~MainForm() { this->!MainForm(); }
     !MainForm() {
         if (project_ != nullptr) {
@@ -290,7 +305,7 @@ private:
     }
 
     void Lay() {
-        Text = ProductName();
+        RefreshTitle();
         Width = 1100;
         Height = 760;
         MinimumSize = System::Drawing::Size(840, 560);
@@ -931,8 +946,7 @@ private:
 
         text_ = sheet->box;
         path_ = sheet->path;
-        Text = path_ == nullptr ? "ed1"
-                                : String::Format("{0} - {1}", ProductName(), System::IO::Path::GetFileName(path_));
+        RefreshTitle();
         what_->Text = path_ == nullptr
                           ? "untitled"
                           : System::IO::Path::GetFileName(path_) + "  " +
@@ -1897,7 +1911,7 @@ private:
         }
         if (SamePath(path_, target)) {
             path_ = now;
-            Text = String::Format("{0} - {1}", ProductName(), System::IO::Path::GetFileName(now));
+            RefreshTitle();
             SayBuild();
         }
 
@@ -2185,7 +2199,7 @@ private:
         }
         text_ = sheet->box;
         path_ = path;
-        Text = String::Format("{0} - {1}", ProductName(), System::IO::Path::GetFileName(path));
+        RefreshTitle();
         SayBuild();
         Recolour();
         OnTextChanged(nullptr, nullptr);
@@ -2251,8 +2265,7 @@ private:
 
         sheet->path = pick->FileName;
         path_ = pick->FileName;
-        Text = String::Format("{0} - {1}", ProductName(),
-                              System::IO::Path::GetFileName(path_));
+        RefreshTitle();
         SayBuild();
         OnSave(nullptr, nullptr);
         FillTree();

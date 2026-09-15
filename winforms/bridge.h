@@ -87,6 +87,7 @@ int rstudio_project_allows(const char* relative, char* why, int whySize);
 const char* rstudio_group_for_file(const char* name);
 
 const char* rstudio_project_suffix(void);
+const char* rstudio_version(void);
 
 int rstudio_project_save_as(RStudioProject* project, const char* file,
                             char* why, int whySize);
