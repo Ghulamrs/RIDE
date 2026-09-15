@@ -27,7 +27,7 @@ STAGE="$OUT/RIDE-$VER"
 
 # Locate the C++ clone that carries the shipped headers.
 if [ -z "${CPP:-}" ]; then
-  for c in "$ROOT/../Compiler-Cppi" "$ROOT/../C++" "$ROOT/../Compiler-Cpp"; do
+  for c in "$ROOT/../VM6747/Compiler-Cppi" "$ROOT/../Compiler-Cppi" "$ROOT/../C++" "$ROOT/../Compiler-Cpp"; do
     [ -d "$c/include" ] && CPP="$c" && break
   done
 fi
@@ -63,9 +63,13 @@ fi
 echo "[3/6] Staging the install tree ..."
 rm -rf "$STAGE"
 mkdir -p "$STAGE/bin/lib" "$STAGE/examples"
-cp -f "$ROOT"/bin/RStudio "$STAGE/bin/" 2>/dev/null || true
-for b in cc1i cxx1i shci vm6747 c2s; do
-  [ -f "$ROOT/bin/$b" ] && cp -f "$ROOT/bin/$b" "$STAGE/bin/"
+# The editor and the compilers, whatever the platform named them (this tree
+# builds them with a .exe suffix on every OS); everything in bin/ except the
+# build scratch and the runtime subdir.
+for f in "$ROOT"/bin/*; do
+  b="$(basename "$f")"
+  case "$b" in obj|lib) continue ;; esac
+  [ -f "$f" ] && cp -f "$f" "$STAGE/bin/"
 done
 cp -f "$ROOT"/bin/lib/*.a "$STAGE/bin/lib/" 2>/dev/null || true
 [ -d "$ROOT/bin/lib/shmrt-tms6747" ] && cp -rf "$ROOT/bin/lib/shmrt-tms6747" "$STAGE/bin/lib/"
