@@ -25,6 +25,61 @@ value struct Spot {
     int y;
 };
 
+// The file tabs, with a close × built into the tab view itself. It owner-draws
+// each tab (name, then a × at the right) and hit-tests clicks on the ×, raising
+// TabCloseRequested(index) - so the close button is part of the control rather
+// than something painted over it from outside.
+public delegate void TabCloseHandler(int index);
+
+public ref class ClosableTabControl : public System::Windows::Forms::TabControl {
+public:
+    event TabCloseHandler^ TabCloseRequested;
+
+    ClosableTabControl() {
+        this->DrawMode = System::Windows::Forms::TabDrawMode::OwnerDrawFixed;
+        this->Padding = System::Drawing::Point(16, 3);
+    }
+
+protected:
+    System::Drawing::Rectangle CloseRect(System::Drawing::Rectangle tab) {
+        int s = 14;
+        return System::Drawing::Rectangle(tab.Right - s - 4,
+                                          tab.Y + (tab.Height - s) / 2, s, s);
+    }
+
+    virtual void OnDrawItem(System::Windows::Forms::DrawItemEventArgs^ e) override {
+        if (e->Index < 0 || e->Index >= this->TabCount) return;
+        System::Drawing::Rectangle r = this->GetTabRect(e->Index);
+        bool selected = (e->Index == this->SelectedIndex);
+        e->Graphics->FillRectangle(selected ? System::Drawing::SystemBrushes::Window
+                                            : System::Drawing::SystemBrushes::Control, r);
+        System::Drawing::Rectangle textRect(r.X + 6, r.Y, r.Width - 26, r.Height);
+        System::Windows::Forms::TextRenderer::DrawText(
+            e->Graphics, this->TabPages[e->Index]->Text, this->Font, textRect,
+            System::Drawing::SystemColors::ControlText,
+            static_cast<System::Windows::Forms::TextFormatFlags>(
+                static_cast<int>(System::Windows::Forms::TextFormatFlags::Left) |
+                static_cast<int>(System::Windows::Forms::TextFormatFlags::VerticalCenter) |
+                static_cast<int>(System::Windows::Forms::TextFormatFlags::EndEllipsis)));
+        System::Windows::Forms::TextRenderer::DrawText(
+            e->Graphics, "×", this->Font, CloseRect(r),
+            System::Drawing::Color::FromArgb(110, 110, 110),
+            static_cast<System::Windows::Forms::TextFormatFlags>(
+                static_cast<int>(System::Windows::Forms::TextFormatFlags::HorizontalCenter) |
+                static_cast<int>(System::Windows::Forms::TextFormatFlags::VerticalCenter)));
+    }
+
+    virtual void OnMouseDown(System::Windows::Forms::MouseEventArgs^ e) override {
+        for (int i = 0; i < this->TabCount; ++i) {
+            if (CloseRect(this->GetTabRect(i)).Contains(e->Location)) {
+                TabCloseRequested(i);
+                return;
+            }
+        }
+        System::Windows::Forms::TabControl::OnMouseDown(e);
+    }
+};
+
 public ref class MainForm : public Form {
 public:
     MainForm() { Start(nullptr, nullptr); }
@@ -177,7 +232,7 @@ private:
     SplitContainer^ upper_;
 
     TreeView^ tree_;
-    TabControl^ files_;
+    ClosableTabControl^ files_;
     System::Collections::Generic::List<Sheet^>^ sheets_;
 
     RichTextBox^ text_;
@@ -604,10 +659,11 @@ private:
         upper->Panel1->Controls->Add(tree_);
 
         sheets_ = gcnew System::Collections::Generic::List<Sheet^>();
-        files_ = gcnew TabControl();
+        files_ = gcnew ClosableTabControl();
         files_->Dock = DockStyle::Fill;
         files_->SelectedIndexChanged +=
             gcnew EventHandler(this, &MainForm::OnSheetChanged);
+        files_->TabCloseRequested += gcnew TabCloseHandler(this, &MainForm::OnTabClose);
         upper->Panel2->Controls->Add(files_);
         outer->Panel1->Controls->Add(upper);
 
@@ -2260,8 +2316,9 @@ private:
         what_->Text = System::IO::Path::GetFileName(path) + "  " + text_->Lines->Length + " lines";
     }
 
-    void OnCloseFile(Object^, EventArgs^) {
-        Sheet^ sheet = Current();
+    void OnCloseFile(Object^, EventArgs^) { CloseSheet(Current()); }
+
+    void CloseSheet(Sheet^ sheet) {
         if (sheet == nullptr) return;
         if (!MayDiscard(sheet)) return;
 
@@ -2275,6 +2332,19 @@ private:
 
         console_->Text = "";
         what_->Text = "closed";
+    }
+
+    Sheet^ SheetForPage(TabPage^ page) {
+        for (int i = 0; i < sheets_->Count; ++i)
+            if (sheets_[i]->page == page) return sheets_[i];
+        return nullptr;
+    }
+    // The tab-view raises this from its built-in × (see ClosableTabControl);
+    // MayDiscard prompts first if the file has unsaved changes.
+    void OnTabClose(int index) {
+        if (index < 0 || index >= files_->TabPages->Count) return;
+        Sheet^ s = SheetForPage(files_->TabPages[index]);
+        if (s != nullptr) CloseSheet(s);
     }
 
     void OnSave(Object^, EventArgs^) {
@@ -2326,6 +2396,7 @@ private:
                            ? "[no name]"
                            : System::IO::Path::GetFileName(sheet->path);
         sheet->page->Text = sheet->box->Modified ? name + "*" : name;
+        if (files_ != nullptr) files_->Invalidate();
     }
 
     void OnExit(Object^, EventArgs^) { Close(); }
