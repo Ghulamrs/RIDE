@@ -12,9 +12,13 @@ Menu::Menu() : active_(false), dropped_(false), column_(0), item_(0) {
     file.items.push_back({"Save", "Ctrl-S", ActionSave});
     file.items.push_back({"Save As...", "", ActionSaveAs});
     file.items.push_back({"Close", "", ActionCloseFile});
-    file.items.push_back({"Next file", "F3", ActionNextFile});
-    file.items.push_back({"Previous file", "F2", ActionPrevFile});
     file.items.push_back({"Quit", "Ctrl-Q", ActionQuit});
+    // The last three files opened on their own; F3 and F2 still step
+    // through what is open, off the menu.
+    file.items.push_back(separator());
+    file.items.push_back({"1. (no recent file)", "", ActionFileRecent});
+    file.items.push_back({"2.", "", ActionFileRecent2});
+    file.items.push_back({"3.", "", ActionFileRecent3});
     columns_.push_back(file);
 
     MenuColumn edit;

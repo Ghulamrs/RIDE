@@ -100,10 +100,10 @@ std::vector<std::string> lines() {
     tool(said, "cc1i.exe");
     tool(said, "cxx1i.exe");
     tool(said, "shci.exe");
-    tool(said, "vm6747.exe");
     tool(said, "c2s.exe");
     said.push_back("");
-    said.push_back("Copyright \xC2\xA9 2026 G. R. Akhtar");
+    // The sign docked to the year, the word left out: the user's wording.
+    said.push_back("\xC2\xA9""2026 G. R. Akhtar");
     said.push_back("Islamabad, Pakistan");
     return said;
 }

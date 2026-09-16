@@ -145,6 +145,8 @@ const char* rstudio_last_project(void);
 int rstudio_remember_project(const char* directory);
 // The last three projects opened, most recent first; empty past the end.
 const char* rstudio_recent_project(int index);
+const char* rstudio_recent_file(int index);
+int rstudio_remember_file(const char* path);
 const char* rstudio_demo_directory(void);
 
 int rstudio_begin_project(RStudioProject* project, const char* directory, const char* name,

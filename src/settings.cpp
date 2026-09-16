@@ -274,6 +274,29 @@ std::vector<std::string> recentProjects() {
     return out;
 }
 
+std::vector<std::string> recentFiles() {
+    std::vector<std::string> out;
+    const Json& recent = readAll().get("recentFiles");
+    for (size_t i = 0; i < recent.size() && out.size() < 3; ++i) {
+        std::string one = recent.at(i).text("");
+        if (!one.empty() && path::exists(one)) out.push_back(one);
+    }
+    return out;
+}
+
+bool rememberFile(const std::string& file) {
+    if (fileName().empty() || file.empty()) return false;
+    std::string now = path::absolute(file);
+    std::vector<std::string> recent = recentFiles();
+    Json list = Json::array();
+    list.push(Json::fromText(now));
+    for (size_t i = 0; i < recent.size() && list.size() < 3; ++i)
+        if (path::oneName(recent[i]) != path::oneName(now)) list.push(Json::fromText(recent[i]));
+    Json root = readAll();
+    root.set("recentFiles", list);
+    return writeAll(root);
+}
+
 std::string lastProject() {
     std::vector<std::string> recent = recentProjects();
     return recent.empty() ? std::string() : recent[0];

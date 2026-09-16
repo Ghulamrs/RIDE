@@ -1678,6 +1678,8 @@ void Editor::saveAs() {
     if (cancelled || name.empty()) { say("not saved"); return; }
     buf_.setPath(name);
     if (!save()) return;
+    settings::rememberFile(buf_.path());
+    refreshRecent();
 
     // Saved into the project's directory is saved into the project.
     Outcome joined = editor::adoptSaved(project_, buf_.path());
@@ -1768,6 +1770,8 @@ void Editor::openPrompt() {
         }
 
         open(path::join(where, name));
+        settings::rememberFile(path::join(where, name));
+        refreshRecent();
         return;
     }
 }
@@ -1985,7 +1989,7 @@ void Editor::refreshRecent() {
     std::vector<std::string> recent = settings::recentProjects();
     const Action actions[3] = { ActionProjectRecent, ActionProjectRecent2, ActionProjectRecent3 };
     for (size_t i = 0; i < 3; ++i) {
-        std::string label = std::to_string(i + 1);
+        std::string label = std::to_string(i + 1) + ".";
         if (i < recent.size()) {
             std::string leaf = path::filename(recent[i]);
             size_t dot = leaf.rfind('.');
@@ -1996,6 +2000,16 @@ void Editor::refreshRecent() {
             label += " (no recent project)";
         }
         menu_.relabel(actions[i], label);
+    }
+
+    // And the File menu's, the last three files opened on their own.
+    std::vector<std::string> files = settings::recentFiles();
+    const Action fileActions[3] = { ActionFileRecent, ActionFileRecent2, ActionFileRecent3 };
+    for (size_t i = 0; i < 3; ++i) {
+        std::string label = std::to_string(i + 1) + ".";
+        if (i < files.size()) label += " " + path::filename(files[i]);
+        else if (i == 0) label += " (no recent file)";
+        menu_.relabel(fileActions[i], label);
     }
 }
 
@@ -3062,6 +3076,15 @@ void Editor::perform(Action action) {
         case ActionFileRegroup:  regroupFile(); break;
         case ActionNextFile:     nextDocument(1); break;
         case ActionPrevFile:     nextDocument(-1); break;
+        case ActionFileRecent:
+        case ActionFileRecent2:
+        case ActionFileRecent3: {
+            std::vector<std::string> files = settings::recentFiles();
+            size_t which = action == ActionFileRecent ? 0 : action == ActionFileRecent2 ? 1 : 2;
+            if (which >= files.size()) say("no such recent file");
+            else open(files[which]);
+            break;
+        }
         case ActionLayOut:       reindentAll(); break;
         case ActionCopy:         copySelection(false); break;
         case ActionCut:          copySelection(true); break;

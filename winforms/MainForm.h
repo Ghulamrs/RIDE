@@ -413,13 +413,19 @@ private:
         file->DropDownItems->Add(
             Item("Close", Keys::Control | Keys::W, gcnew EventHandler(this, &MainForm::OnCloseFile)));
         file->DropDownItems->Add(gcnew ToolStripSeparator());
-
-        file->DropDownItems->Add(
-            Item("Next file", Keys::Control | Keys::PageDown,
-                 gcnew EventHandler(this, &MainForm::OnNextFile)));
-        file->DropDownItems->Add(
-            Item("Previous file", Keys::Control | Keys::PageUp,
-                 gcnew EventHandler(this, &MainForm::OnPreviousFile)));
+        // The last three files opened on their own, most recent first. Next
+        // and previous file keep their keys, Ctrl+PageDown and Ctrl+PageUp,
+        // off the menu.
+        recentFileItems_ = gcnew System::Collections::Generic::List<ToolStripMenuItem^>();
+        for (int i = 0; i < 3; ++i) {
+            ToolStripMenuItem^ one = gcnew ToolStripMenuItem(
+                "Recent", nullptr, gcnew EventHandler(this, &MainForm::OnOpenRecentFile));
+            one->Tag = i;
+            one->Visible = false;
+            recentFileItems_->Add(one);
+            file->DropDownItems->Add(one);
+        }
+        file->DropDownItems->Add(gcnew ToolStripSeparator());
         file->DropDownItems->Add(
             Item("Exit", Keys::Control | Keys::Q, gcnew EventHandler(this, &MainForm::OnExit)));
         bar->Items->Add(file);
@@ -653,7 +659,7 @@ private:
         ToolStripMenuItem^ help = gcnew ToolStripMenuItem("&Help");
         help->DropDownItems->Add(Item("Keys", Keys::F1,
                                       gcnew EventHandler(this, &MainForm::OnKeys)));
-        help->DropDownItems->Add("About " + ProductName(), nullptr,
+        help->DropDownItems->Add("About", nullptr,
                                  gcnew EventHandler(this, &MainForm::OnAbout));
         bar->Items->Add(help);
 
@@ -2350,10 +2356,32 @@ private:
             String^ shown = System::IO::File::Exists(where)
                                 ? System::IO::Path::GetFileNameWithoutExtension(where)
                                 : System::IO::Path::GetFileName(where);
-            item->Text = String::Format("&{0} {1}", i + 1, shown);
+            item->Text = String::Format("&{0}. {1}", i + 1, shown);
             item->ToolTipText = where;
             item->Visible = true;
         }
+        RefreshRecentFiles();
+    }
+
+    System::Collections::Generic::List<ToolStripMenuItem^>^ recentFileItems_;
+
+    void RefreshRecentFiles() {
+        if (recentFileItems_ == nullptr) return;
+        for (int i = 0; i < recentFileItems_->Count; ++i) {
+            String^ where = FromUtf8(rstudio_recent_file(i));
+            ToolStripMenuItem^ item = recentFileItems_[i];
+            if (where->Length == 0) { item->Visible = false; continue; }
+            item->Text = String::Format("&{0}. {1}", i + 1, System::IO::Path::GetFileName(where));
+            item->ToolTipText = where;
+            item->Visible = true;
+        }
+    }
+
+    void OnOpenRecentFile(Object^ sender, EventArgs^) {
+        ToolStripMenuItem^ item = safe_cast<ToolStripMenuItem^>(sender);
+        String^ where = FromUtf8(rstudio_recent_file(safe_cast<int>(item->Tag)));
+        if (where->Length == 0) { what_->Text = "no file remembered"; return; }
+        OpenPath(where);
     }
 
     void OnOpenRecent(Object^ sender, EventArgs^) {
@@ -2538,6 +2566,12 @@ private:
             return;
         }
         OpenPath(pick->FileName);
+        {
+            array<Byte>^ bytes = Utf8Of(pick->FileName);
+            pin_ptr<Byte> pinned = &bytes[0];
+            rstudio_remember_file(reinterpret_cast<const char*>(pinned));
+        }
+        RefreshRecentFiles();
     }
 
     void OpenPath(String^ path) {
@@ -2667,11 +2701,14 @@ private:
         SayBuild();
         OnSave(nullptr, nullptr);
 
-        // Saved into the project's directory is saved into the project.
+        // Saved into the project's directory is saved into the project;
+        // and a file saved under a name is one to recall from the menu.
         array<Byte>^ saved = Utf8Of(pick->FileName);
         pin_ptr<Byte> savedPin = &saved[0];
         if (rstudio_adopt_saved(project_, reinterpret_cast<const char*>(savedPin)) != 0)
             what_->Text = FromUtf8(rstudio_outcome_message(project_));
+        rstudio_remember_file(reinterpret_cast<const char*>(savedPin));
+        RefreshRecentFiles();
         FillTree();
     }
 
@@ -2769,7 +2806,7 @@ private:
 
     void OnAbout(Object^, EventArgs^) {
         MessageBox::Show(this, TakeUtf8(rstudio_about())->Replace("\n", "\r\n"),
-                         "About " + ProductName(),
+                         "About",
                          MessageBoxButtons::OK, MessageBoxIcon::Information);
     }
 

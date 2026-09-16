@@ -1204,6 +1204,17 @@ const char* rstudio_recent_project(int index) {
     return scratch().c_str();
 }
 
+const char* rstudio_recent_file(int index) {
+    std::vector<std::string> recent = editor::settings::recentFiles();
+    scratch() = (index >= 0 && index < static_cast<int>(recent.size())) ? recent[static_cast<size_t>(index)]
+                                                                         : std::string();
+    return scratch().c_str();
+}
+
+int rstudio_remember_file(const char* path) {
+    return editor::settings::rememberFile(path ? path : "") ? 1 : 0;
+}
+
 int rstudio_remember_project(const char* directory) {
     return editor::settings::rememberProject(directory ? directory : "") ? 1 : 0;
 }

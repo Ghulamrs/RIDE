@@ -18,6 +18,10 @@ bool rememberProject(const std::string& directory);
 // The last three projects opened, most recent first, as the Project menu
 // lists them; lastProject() is the first of them.
 std::vector<std::string> recentProjects();
+// The last three files opened on their own, most recent first, for the
+// File menu the same way.
+std::vector<std::string> recentFiles();
+bool rememberFile(const std::string& path);
 
 bool plainFrame();
 

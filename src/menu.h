@@ -96,7 +96,10 @@ enum Action {
     ActionLocateVcvars,
     ActionProjectRecent,
     ActionProjectRecent2,
-    ActionProjectRecent3
+    ActionProjectRecent3,
+    ActionFileRecent,
+    ActionFileRecent2,
+    ActionFileRecent3
 };
 
 struct MenuItem {
