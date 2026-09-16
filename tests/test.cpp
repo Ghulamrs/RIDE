@@ -1156,6 +1156,8 @@ void projects() {
     { std::ofstream f((tiny / "RStudio.json").string().c_str()); f << "{}\n"; }
     editor::Project small;
     check(small.load(tiny.string(), error), "an empty object is a project");
+    check(small.builds() && small.target().groups.size() == 1 && small.target().groups[0] == "Sources",
+          "and, saying nothing about a build, builds its Sources");
     check(error.empty() && small.indent().width == 4 && !small.indent().tabs,
           "and every setting falls back to its default");
     checkEqual(editor::settings::configuration(), "debug",
@@ -3934,7 +3936,9 @@ void whatTheProjectBuilds() {
     project.setTarget(empty);
     check(!project.targetSources(sources, lang, why, &detail), "a group with no source is refused");
 
-    // Nothing said at all is not an error to report, only nothing to build.
+    // Nothing said at all means the Sources group, since 2026-09-16 - the
+    // window wrote every project without a build entry until then. An
+    // empty Sources is then a refusal with a reason, not a silence.
     editor::Project quiet;
     file::path bare = file::temp_directory_path() / "rstudio-target-bare";
     file::remove_all(bare);
@@ -3942,9 +3946,13 @@ void whatTheProjectBuilds() {
     writeSource((bare / "RStudio.json").string(),
                 "{ \"name\": \"quiet\", \"groups\": { \"Sources\": [] } }\n");
     check(quiet.load(bare.string(), error), "a project with no build entry still loads");
-    check(!quiet.builds(), "and says it builds nothing");
-    check(!quiet.targetSources(sources, lang, why, &detail), "so there is nothing to hand back");
+    check(quiet.builds(), "and builds its Sources group by default");
+    check(!quiet.targetSources(sources, lang, why, &detail), "which, empty, hands nothing back");
     check(!why.empty(), "and it says so rather than saying nothing");
+    // Said and empty is a different thing: that project builds nothing.
+    writeSource((bare / "RStudio.json").string(),
+                "{ \"name\": \"quiet\", \"groups\": { \"Sources\": [\"a.c\"] }, \"build\": {} }\n");
+    check(quiet.load(bare.string(), error) && !quiet.builds(), "a build entry that names no group builds nothing");
 
     // What it says it builds survives being written and read again.
     editor::Target kept;

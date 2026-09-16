@@ -247,6 +247,17 @@ bool Project::load(const std::string& dir, std::string& error) {
             std::string group = from.at(i).text();
             if (!group.empty()) target_.groups.push_back(group);
         }
+    } else if (!root.has("build")) {
+        // A file with no build entry at all - every project the window
+        // wrote before 2026-09-16 - builds its Sources group into a program
+        // of its own name, as a project made today does. An entry that is
+        // there but empty still means "nothing", as written.
+        for (size_t i = 0; i < groups_.size(); ++i)
+            if (groups_[i].name == "Sources") {
+                target_.name = name_;
+                target_.groups.push_back(groups_[i].name);
+                break;
+            }
     }
 
     loaded_ = true;
