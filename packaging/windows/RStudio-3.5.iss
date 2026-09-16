@@ -49,7 +49,7 @@ Name: "{group}\Uninstall RIDE 3.5"; Filename: "{uninstallexe}"
 Name: "{autodesktop}\RIDE 3.5"; Filename: "{app}\bin\RStudio.exe"; WorkingDir: "{app}\examples"; Tasks: desktopicon
 
 [Tasks]
-Name: "desktopicon"; Description: "Create a desktop shortcut"; Flags: unchecked
+Name: "desktopicon"; Description: "Create a desktop shortcut"
 Name: "addtopath"; Description: "Add the bin folder to PATH (cc1i, cxx1i, shci, vm6747, c2s on the command line)"; Flags: unchecked
 
 [Registry]
