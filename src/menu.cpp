@@ -11,7 +11,6 @@ Menu::Menu() : active_(false), dropped_(false), column_(0), item_(0) {
     file.items.push_back({"Open...", "", ActionOpen});
     file.items.push_back({"Save", "Ctrl-S", ActionSave});
     file.items.push_back({"Save As...", "", ActionSaveAs});
-    file.items.push_back({"Rename...", "", ActionFileRename});
     file.items.push_back({"Close", "", ActionCloseFile});
     file.items.push_back({"Next file", "F3", ActionNextFile});
     file.items.push_back({"Previous file", "F2", ActionPrevFile});

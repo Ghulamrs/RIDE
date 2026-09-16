@@ -410,8 +410,6 @@ private:
         file->DropDownItems->Add(save);
         file->DropDownItems->Add("Save as...", nullptr,
                                  gcnew EventHandler(this, &MainForm::OnSaveAs));
-        file->DropDownItems->Add("Rename...", nullptr,
-                                 gcnew EventHandler(this, &MainForm::OnRenameFile));
         file->DropDownItems->Add(
             Item("Close", Keys::Control | Keys::W, gcnew EventHandler(this, &MainForm::OnCloseFile)));
         file->DropDownItems->Add(gcnew ToolStripSeparator());
