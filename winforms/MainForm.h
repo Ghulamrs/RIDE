@@ -410,7 +410,7 @@ private:
         file->DropDownItems->Add(save);
         file->DropDownItems->Add("Save as...", nullptr,
                                  gcnew EventHandler(this, &MainForm::OnSaveAs));
-        file->DropDownItems->Add("Rename File...", nullptr,
+        file->DropDownItems->Add("Rename...", nullptr,
                                  gcnew EventHandler(this, &MainForm::OnRenameFile));
         file->DropDownItems->Add(
             Item("Close", Keys::Control | Keys::W, gcnew EventHandler(this, &MainForm::OnCloseFile)));
@@ -1107,6 +1107,11 @@ private:
         PaneFollowsTabs();
         files_->TabPages->Add(sheet->page);
         files_->SelectedTab = sheet->page;
+        // The first tab of an empty environment is selected as it is
+        // added, and selecting it again raises no change - so the sheet is
+        // made current here, not left to the event. Without this, File >
+        // New after an empty start had a sheet nothing could paste into.
+        OnSheetChanged(nullptr, nullptr);
         return sheet;
     }
 
