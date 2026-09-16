@@ -81,20 +81,36 @@ Outcome createFile(Project& project, const std::string& asked,
                    where);
 }
 
+// Inside a project the new name is relative to its root and the project
+// follows the file; a file of no project, or one outside its root, is
+// renamed where it is - a bare name stays beside it.
 Outcome renameFile(Project& project, const std::string& fromAbsolute,
                    const std::string& toRelative) {
-    std::string why;
-    if (!Project::allows(toRelative, why)) return no(toRelative + ": " + why);
+    if (fromAbsolute.empty()) return no("no file to rename");
+    if (toRelative.empty()) return no("a file needs a name");
 
-    std::string to = project.absolute(toRelative);
-    if (path::exists(to)) return no(toRelative + " is already there");
+    bool inside = project.loaded() &&
+                  project.groupOf(project.relative(fromAbsolute)) < project.groups().size();
+    std::string to;
+    if (inside) {
+        std::string why;
+        if (!Project::allows(toRelative, why)) return no(toRelative + ": " + why);
+        to = project.absolute(toRelative);
+    } else {
+        std::string name = path::withSlashes(toRelative);
+        bool rooted = name[0] == '/' || (name.size() > 1 && name[1] == ':');
+        to = rooted ? name : path::join(path::parent(fromAbsolute), name);
+    }
+    if (path::exists(to)) return no(baseName(to) + " is already there");
 
     std::string parent = path::parent(to);
     if (!parent.empty()) path::makeDirectories(parent);
 
     if (!path::rename(fromAbsolute, to))
-        return no("could not rename " + baseName(fromAbsolute) + " to " + toRelative);
+        return no("could not rename " + baseName(fromAbsolute) + " to " + baseName(to) +
+                  " - is it open elsewhere, or read-only?");
 
+    if (!inside) return yes(baseName(fromAbsolute) + " is now " + baseName(to), to);
     project.renameFile(project.relative(fromAbsolute), toRelative);
     return andSave(project, baseName(fromAbsolute) + " is now " + toRelative, to);
 }

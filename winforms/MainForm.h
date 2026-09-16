@@ -2120,8 +2120,11 @@ private:
 
         array<Byte>^ was = Utf8Of(target);
         pin_ptr<Byte> wasPin = &was[0];
-        String^ shown = FromUtf8(rstudio_project_relative(project_,
-                                                      reinterpret_cast<const char*>(wasPin)));
+        // Offered by its name in the project, or by its bare name when it
+        // is not in one - which is what the new name is taken relative to.
+        String^ shown = rstudio_project_holds(project_, reinterpret_cast<const char*>(wasPin)) != 0
+                            ? FromUtf8(rstudio_project_relative(project_, reinterpret_cast<const char*>(wasPin)))
+                            : System::IO::Path::GetFileName(target);
 
         String^ name = Ask("Rename " + shown + " to", shown);
         if (name == nullptr || name->Length == 0) { what_->Text = "not renamed"; return; }

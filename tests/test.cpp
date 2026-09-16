@@ -1307,6 +1307,20 @@ void operations() {
     check(file::exists(bare / "loose.c"), "and it is really there");
     check(!file::exists(bare / "RStudio.json") && !file::exists(bare / "RStudio.json"),
           "and no project file was invented, under either name");
+    // Renamed with no project: beside itself, by its bare name.
+    {
+        editor::Project alone;
+        std::string here = (file::temp_directory_path() / "rstudio-rename-alone").string();
+        editor::path::makeDirectories(here);
+        writeSource(editor::path::join(here, "was.c"), "int main(void) { return 0; }\n");
+        editor::Outcome moved = editor::renameFile(alone, editor::path::join(here, "was.c"), "now.c");
+        check(moved.ok && editor::path::exists(editor::path::join(here, "now.c")) &&
+              !editor::path::exists(editor::path::join(here, "was.c")),
+              "a file of no project is renamed where it is");
+        check(!editor::renameFile(alone, editor::path::join(here, "now.c"), "now.c").ok,
+              "and not over itself");
+        editor::path::removeTree(here);
+    }
 
     file::remove_all(dir);
 }
