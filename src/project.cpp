@@ -119,12 +119,33 @@ void Project::begin(const std::string& dir, const std::string& name) {
     file_ = root_ + "/" + name + suffix();
     name_ = name;
     groups_.clear();
+    includes_.clear();
+    libraries_.clear();
 
     Group all;
     all.name = "Sources";
     groups_.push_back(all);
 
+    // A new project builds what it holds: its one group, into a program of
+    // its own name. Without this F4 refused every project made here and
+    // sent its maker to write the entry by hand.
+    target_ = Target();
+    target_.name = name;
+    target_.groups.push_back(all.name);
+
     loaded_ = true;
+}
+
+std::vector<std::string> Project::absoluteIncludes() const {
+    std::vector<std::string> out;
+    for (size_t i = 0; i < includes_.size(); ++i) out.push_back(path::absolute(absolute(includes_[i])));
+    return out;
+}
+
+std::vector<std::string> Project::absoluteLibraries() const {
+    std::vector<std::string> out;
+    for (size_t i = 0; i < libraries_.size(); ++i) out.push_back(path::absolute(absolute(libraries_[i])));
+    return out;
 }
 
 bool Project::load(const std::string& dir, std::string& error) {
@@ -204,6 +225,19 @@ bool Project::load(const std::string& dir, std::string& error) {
         groups_.push_back(all);
     }
 
+    includes_.clear();
+    const Json& includes = root.get("include");
+    for (size_t i = 0; i < includes.size(); ++i) {
+        std::string named = withSlashes(includes.at(i).text());
+        if (!named.empty()) includes_.push_back(named);
+    }
+    libraries_.clear();
+    const Json& libraries = root.get("libraries");
+    for (size_t i = 0; i < libraries.size(); ++i) {
+        std::string file = withSlashes(libraries.at(i).text());
+        if (!file.empty()) libraries_.push_back(file);
+    }
+
     target_ = Target();
     const Json& built = root.get("build");
     if (built.is(Json::Object)) {
@@ -264,6 +298,17 @@ bool Project::save(std::string& error) {
         }
     }
     root.set("groups", groups);
+
+    if (!includes_.empty()) {
+        Json dirs = Json::array();
+        for (size_t i = 0; i < includes_.size(); ++i) dirs.push(Json::fromText(includes_[i]));
+        root.set("include", dirs);
+    }
+    if (!libraries_.empty()) {
+        Json files = Json::array();
+        for (size_t i = 0; i < libraries_.size(); ++i) files.push(Json::fromText(libraries_[i]));
+        root.set("libraries", files);
+    }
 
     if (builds()) {
         Json target = Json::object();
@@ -459,7 +504,7 @@ bool Project::targetParts(std::vector<Part>& parts, std::string& why,
     if (!builds()) {
         why = std::string("this project does not say what it builds");
         if (detail)
-            *detail = std::string("Add a \"build\" entry to ") + fileName() +
+            *detail = std::string("Add a \"build\" entry to ") + path::filename(file_) +
                       " naming the program and the groups its sources are in, like "
                       "\"build\": { \"target\": \"" + name_ +
                       "\", \"groups\": [\"Sources\"] }. Until then, Ctrl-B still "
@@ -477,7 +522,7 @@ bool Project::targetParts(std::vector<Part>& parts, std::string& why,
         if (at == groups_.size()) {
             why = "no such group in this project: " + target_.groups[i];
             if (detail)
-                *detail = std::string("The \"build\" entry in ") + fileName() +
+                *detail = std::string("The \"build\" entry in ") + path::filename(file_) +
                           " names a group the project does not have. Groups are the "
                           "headings in the pane on the left.";
             parts.clear();

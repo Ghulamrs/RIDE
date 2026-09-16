@@ -32,11 +32,12 @@ if [ -z "${CPP:-}" ]; then
   done
 fi
 : "${CPP:?set CPP to the C++ clone that has include/ and lib/}"
+CC="${CC:-$CPP/../Compiler-Ci}"
 
 echo "==========================================================================="
 echo " RIDE $VER build (Linux/macOS)"
 echo "   repo    : $ROOT"
-echo "   headers : $CPP"
+echo "   headers : $CPP (include), $CC (lib)"
 echo "   output  : $OUT"
 echo "==========================================================================="
 
@@ -73,8 +74,13 @@ for f in "$ROOT"/bin/*; do
 done
 cp -f "$ROOT"/bin/lib/*.a "$STAGE/bin/lib/" 2>/dev/null || true
 [ -d "$ROOT/bin/lib/shmrt-tms6747" ] && cp -rf "$ROOT/bin/lib/shmrt-tms6747" "$STAGE/bin/lib/"
+# include/ is cxx1i's - its C++ headers and the C ones they wrap, in one
+# directory; lib/ is cc1i's. Each compiler looks one directory above its bin/
+# for its own, and settings.json beside them says so for the editor.
 [ -d "$CPP/include" ] && cp -rf "$CPP/include" "$STAGE/include"
-[ -d "$CPP/lib" ] && cp -rf "$CPP/lib" "$STAGE/lib"
+[ -d "$CPP/lib" ] && cp -f "$CPP"/lib/*.h "$STAGE/include/"
+[ -d "$CC/lib" ] && cp -rf "$CC/lib" "$STAGE/lib"
+printf '{\n  "include": "include",\n  "lib": "lib",\n  "vcvars": ""\n}\n' > "$STAGE/settings.json"
 [ -d "$ROOT/help" ] && cp -rf "$ROOT/help" "$STAGE/help"
 [ -d "$ROOT/docs" ] && cp -rf "$ROOT/docs" "$STAGE/docs"
 for e in c h cpp shl pro; do cp -f "$ROOT"/examples/*."$e" "$STAGE/examples/" 2>/dev/null || true; done

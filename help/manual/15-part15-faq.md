@@ -13,7 +13,8 @@ each compiler refuses a language that is not its own — by name (Parts II, IV).
 emits assembly; the *assembler* (`ml64`) and *linker* (`link`) are Microsoft's and
 are on `PATH` only inside a Developer Command Prompt. The compiler finds Visual
 Studio and sources `vcvars64.bat` for those steps, so it works from an ordinary
-shell too (Part V chapter 22).
+shell too (Part V chapter 22). If yours is somewhere it does not look, name
+the file once with *Tools ▸ Locate vcvars64.bat...*.
 
 **Why can't I step through C on Windows?** The `x86_64-windows` MASM path carries
 no line table and `ml64` cannot relocate CodeView. Use `-masm=gnu` for a

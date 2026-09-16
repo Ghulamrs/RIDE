@@ -278,6 +278,7 @@ PRODUCT ?= $(HOME)/cc1-studio
 # Since 3.5 the binary is cxx1i from the VM6747 line, so its headers come
 # from there too.
 CXX1_DIR ?= ../VM6747/Compiler-Cppi
+CC1_DIR ?= ../VM6747/Compiler-Ci
 
 # `confirm` and not `$(EDITOR)`, for the reason build.bat gives on its own
 # product rule: an editor without its compilers is not a product, it is half of
@@ -301,14 +302,18 @@ product: confirm
 	mkdir -p "$(PRODUCT)/bin/lib" "$(PRODUCT)/examples"
 	cp $(EDITOR) "$(PRODUCT)/bin/"
 	cp $(BINDIR)/cc1i.exe $(BINDIR)/cxx1i.exe $(BINDIR)/vm6747.exe $(BINDIR)/shci.exe $(BINDIR)/c2s.exe "$(PRODUCT)/bin/"
-# cxx1's headers go with it, since 3.0: it looks for include/ and lib/ beside
-# its binary and then one directory up, and falls back to the paths compiled
-# into it, which name the checkout it was built from - a product that outlives
-# that checkout would compile nothing that says #include. One up rather than
-# beside, because bin/lib/ is shc's runtime and cxx1's lib/ is C headers.
+# The headers go with the compilers, one directory above bin/ - because
+# bin/lib/ is shc's runtime. include/ is cxx1i's: its C++ headers and the C
+# ones they wrap, in one directory; lib/ is cc1i's. Each looks there for its
+# own before the paths compiled into it, which name the checkout it was built
+# from - a product that outlives that checkout would otherwise compile
+# nothing that says #include. settings.json beside them tells the editor the
+# same two directories, and is where a vcvars64.bat is named when it has to be.
 	rm -rf "$(PRODUCT)/include" "$(PRODUCT)/lib"
 	cp -R $(CXX1_DIR)/include "$(PRODUCT)/include"
-	cp -R $(CXX1_DIR)/lib "$(PRODUCT)/lib"
+	cp $(CXX1_DIR)/lib/*.h "$(PRODUCT)/include/"
+	cp -R $(CC1_DIR)/lib "$(PRODUCT)/lib"
+	printf '{\n  "include": "include",\n  "lib": "lib",\n  "vcvars": ""\n}\n' > "$(PRODUCT)/settings.json"
 # Into bin/lib/ rather than anywhere tidier, because that is where shc looks:
 # beside its own binary. Both archives, debug included - see DEPENDENCIES.
 	cp $(BINDIR)/lib/shmrt-$(SHM_TARGET).a \

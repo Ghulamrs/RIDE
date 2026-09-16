@@ -82,6 +82,16 @@ public:
     ToolchainKind toolchain() const { return toolchain_; }
     const std::string& arch() const { return arch_; }
 
+    // Header directories the project's sources include from, and libraries
+    // its program links, each relative to the root as written in the file
+    // (an absolute one stays absolute); the second form has them resolved.
+    const std::vector<std::string>& includes() const { return includes_; }
+    const std::vector<std::string>& libraries() const { return libraries_; }
+    void setIncludes(const std::vector<std::string>& dirs) { includes_ = dirs; }
+    void setLibraries(const std::vector<std::string>& files) { libraries_ = files; }
+    std::vector<std::string> absoluteIncludes() const;
+    std::vector<std::string> absoluteLibraries() const;
+
     void setIndent(const IndentStyle& style) { indent_ = style; }
     void setToolchain(ToolchainKind kind) { toolchain_ = kind; }
     void setArch(const std::string& arch) { arch_ = arch; }
@@ -118,6 +128,8 @@ private:
                             std::string* detail) const;
     ToolchainKind toolchain_;
     std::string arch_;
+    std::vector<std::string> includes_;
+    std::vector<std::string> libraries_;
 };
 
 }

@@ -245,8 +245,8 @@ Build build(const Toolchain& tool, ToolchainKind kind, const std::string& source
     Build result;
 
     if (!prepareFor(kind)) {
-        result.output = "no Visual Studio 2022 found - cl cannot be run\n";
-        if (sink) sink(context, "no Visual Studio 2022 found - cl cannot be run");
+        result.output = "no Visual Studio found - cl, ml64 and link cannot be run; name its vcvars64.bat under Tools\n";
+        if (sink) sink(context, "no Visual Studio found - cl, ml64 and link cannot be run; name its vcvars64.bat under Tools");
         return result;
     }
 
@@ -304,8 +304,8 @@ Built buildProgram(const Toolchain& tool, ToolchainKind kind, const std::string&
     Built result;
 
     if (!prepareFor(kind)) {
-        result.output = "no Visual Studio 2022 found - cl cannot be run\n";
-        if (sink) sink(context, "no Visual Studio 2022 found - cl cannot be run");
+        result.output = "no Visual Studio found - cl, ml64 and link cannot be run; name its vcvars64.bat under Tools\n";
+        if (sink) sink(context, "no Visual Studio found - cl, ml64 and link cannot be run; name its vcvars64.bat under Tools");
         return result;
     }
 
@@ -344,8 +344,8 @@ Built buildTarget(const Toolchain& tool, ToolchainKind kind,
     }
 
     if (!prepareFor(kind)) {
-        result.output = "no Visual Studio 2022 found - cl cannot be run\n";
-        if (sink) sink(context, "no Visual Studio 2022 found - cl cannot be run");
+        result.output = "no Visual Studio found - cl, ml64 and link cannot be run; name its vcvars64.bat under Tools\n";
+        if (sink) sink(context, "no Visual Studio found - cl, ml64 and link cannot be run; name its vcvars64.bat under Tools");
         return result;
     }
 
@@ -386,17 +386,23 @@ Built buildParts(const Toolchain& tool, const std::vector<Part>& parts,
         return result;
     }
 
+    // One part is its compiler's own link - unless the project names
+    // libraries, which cc1 and cxx1 do not take: those go to the host's
+    // linker below, with the objects. The emulated target links nothing and
+    // a Shalimar program links its own runtime, so those two stay.
     if (parts.size() == 1) {
-        return buildTarget(tool, toolchainOf(tool, parts[0]), parts[0].sources,
-                           parts[0].lang, arch, config, program, sink, context);
+        ToolchainKind only = toolchainOf(tool, parts[0]);
+        if (tool.libraries.empty() || isEmulated(arch) || only == ToolShc)
+            return buildTarget(tool, only, parts[0].sources, parts[0].lang, arch, config,
+                               program, sink, context);
     }
 
     bool withCpp = false;
     for (size_t i = 0; i < parts.size(); ++i) {
         ToolchainKind kind = toolchainOf(tool, parts[i]);
         if (!prepareFor(kind)) {
-            result.output = "no Visual Studio 2022 found - cl cannot be run\n";
-            if (sink) sink(context, "no Visual Studio 2022 found - cl cannot be run");
+            result.output = "no Visual Studio found - cl, ml64 and link cannot be run; name its vcvars64.bat under Tools\n";
+            if (sink) sink(context, "no Visual Studio found - cl, ml64 and link cannot be run; name its vcvars64.bat under Tools");
             return result;
         }
         if (parts[i].lang == LangCpp) withCpp = true;

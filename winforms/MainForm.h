@@ -447,6 +447,11 @@ private:
                                     gcnew EventHandler(this, &MainForm::OnAddThisFile));
         project->DropDownItems->Add("Remove File", nullptr,
                                     gcnew EventHandler(this, &MainForm::OnRemoveFromProject));
+        project->DropDownItems->Add(gcnew ToolStripSeparator());
+        project->DropDownItems->Add("Include paths...", nullptr,
+                                    gcnew EventHandler(this, &MainForm::OnProjectIncludes));
+        project->DropDownItems->Add("Libraries...", nullptr,
+                                    gcnew EventHandler(this, &MainForm::OnProjectLibraries));
         bar->Items->Add(project);
 
         ToolStripMenuItem^ build = gcnew ToolStripMenuItem("&Build");
@@ -608,6 +613,11 @@ private:
 
         tools->DropDownItems->Add("Font...", nullptr,
                                   gcnew EventHandler(this, &MainForm::OnFont));
+        tools->DropDownItems->Add(gcnew ToolStripSeparator());
+        tools->DropDownItems->Add("Header directories...", nullptr,
+                                  gcnew EventHandler(this, &MainForm::OnHeaderDirs));
+        tools->DropDownItems->Add("Locate vcvars64.bat...", nullptr,
+                                  gcnew EventHandler(this, &MainForm::OnLocateVcvars));
         bar->Items->Add(tools);
         bar->Items->Add(target);
 
@@ -2148,6 +2158,84 @@ private:
             FillTree();
     }
 
+    // The two lists a project keeps beside its groups, edited as one line
+    // each with ';' between the entries, and written back at once.
+    void OnProjectIncludes(Object^, EventArgs^) {
+        if (rstudio_project_loaded(project_) == 0) {
+            what_->Text = "there is no project - make one first";
+            return;
+        }
+        String^ line = Ask("Include paths", "relative to " + FromUtf8(rstudio_project_root(project_)) +
+                           ", ';' between them",
+                           FromUtf8(rstudio_project_includes(project_)));
+        if (line == nullptr) { what_->Text = "include paths unchanged"; return; }
+        array<Byte>^ bytes = Utf8Of(line);
+        pin_ptr<Byte> pinned = &bytes[0];
+        if (Did(rstudio_project_set_includes(project_, reinterpret_cast<const char*>(pinned))))
+            what_->Text = "include paths: " + FromUtf8(rstudio_project_includes(project_)) +
+                          " - " + what_->Text;
+    }
+
+    void OnProjectLibraries(Object^, EventArgs^) {
+        if (rstudio_project_loaded(project_) == 0) {
+            what_->Text = "there is no project - make one first";
+            return;
+        }
+        String^ line = Ask("Libraries", "relative to " + FromUtf8(rstudio_project_root(project_)) +
+                           ", ';' between them, linked after the objects",
+                           FromUtf8(rstudio_project_libraries(project_)));
+        if (line == nullptr) { what_->Text = "libraries unchanged"; return; }
+        array<Byte>^ bytes = Utf8Of(line);
+        pin_ptr<Byte> pinned = &bytes[0];
+        if (Did(rstudio_project_set_libraries(project_, reinterpret_cast<const char*>(pinned))))
+            what_->Text = "libraries: " + FromUtf8(rstudio_project_libraries(project_)) +
+                          " - " + what_->Text;
+    }
+
+    // The installation's settings.json: where the shipped headers are.
+    void OnHeaderDirs(Object^, EventArgs^) {
+        String^ file = FromUtf8(rstudio_install_file());
+        if (file->Length == 0) { what_->Text = "no installation directory to keep this in"; return; }
+        String^ include = Ask("cxx1's headers (include)", "kept in " + file,
+                              FromUtf8(rstudio_include_dir()));
+        if (include == nullptr) { what_->Text = "header directories unchanged"; return; }
+        String^ lib = Ask("cc1's headers (lib)", "kept in " + file, FromUtf8(rstudio_lib_dir()));
+        if (lib == nullptr) { what_->Text = "header directories unchanged"; return; }
+        array<Byte>^ a = Utf8Of(include);
+        pin_ptr<Byte> aPin = &a[0];
+        array<Byte>^ b = Utf8Of(lib);
+        pin_ptr<Byte> bPin = &b[0];
+        if (rstudio_remember_header_dirs(reinterpret_cast<const char*>(aPin),
+                                         reinterpret_cast<const char*>(bPin)) == 0) {
+            what_->Text = "cannot write " + file;
+            return;
+        }
+        what_->Text = "include " + FromUtf8(rstudio_include_dir()) + ", lib " +
+                      FromUtf8(rstudio_lib_dir()) + " - written to " + file;
+    }
+
+    // Visual Studio's tools, when the editor's own search did not find them.
+    void OnLocateVcvars(Object^, EventArgs^) {
+        String^ file = FromUtf8(rstudio_install_file());
+        if (file->Length == 0) { what_->Text = "no installation directory to keep this in"; return; }
+        OpenFileDialog^ pick = gcnew OpenFileDialog();
+        pick->Title = "Locate vcvars64.bat (Visual Studio\\VC\\Auxiliary\\Build)";
+        pick->Filter = "vcvars64.bat|vcvars64.bat|Batch files (*.bat)|*.bat";
+        String^ now = FromUtf8(rstudio_vcvars());
+        if (now->Length > 0) pick->InitialDirectory = System::IO::Path::GetDirectoryName(now);
+        if (pick->ShowDialog(this) != System::Windows::Forms::DialogResult::OK) {
+            what_->Text = "vcvars unchanged";
+            return;
+        }
+        array<Byte>^ bytes = Utf8Of(pick->FileName);
+        pin_ptr<Byte> pinned = &bytes[0];
+        if (rstudio_remember_vcvars(reinterpret_cast<const char*>(pinned)) == 0) {
+            what_->Text = "cannot write " + file;
+            return;
+        }
+        what_->Text = "Visual Studio's tools come from " + pick->FileName + " - written to " + file;
+    }
+
     void OnNewProject(Object^, EventArgs^) {
         FolderBrowserDialog^ pick = gcnew FolderBrowserDialog();
         pick->Description = "Where to put the project";
@@ -2423,6 +2511,12 @@ private:
         RefreshTitle();
         SayBuild();
         OnSave(nullptr, nullptr);
+
+        // Saved into the project's directory is saved into the project.
+        array<Byte>^ saved = Utf8Of(pick->FileName);
+        pin_ptr<Byte> savedPin = &saved[0];
+        if (rstudio_adopt_saved(project_, reinterpret_cast<const char*>(savedPin)) != 0)
+            what_->Text = FromUtf8(rstudio_outcome_message(project_));
         FillTree();
     }
 
@@ -2556,7 +2650,7 @@ private:
 
         console_->Text =
             "$ " +
-            FromUtf8(rstudio_shown_command(reinterpret_cast<const char*>(cc1),
+            FromUtf8(rstudio_shown_command(project_, reinterpret_cast<const char*>(cc1),
                                        reinterpret_cast<const char*>(cl),
                                        reinterpret_cast<const char*>(shc),
                                        reinterpret_cast<const char*>(cxx1), kind,
@@ -2566,7 +2660,7 @@ private:
         panel_->SelectedIndex = 0;
         Application::DoEvents();
 
-        RStudioBuild* built = rstudio_build(reinterpret_cast<const char*>(cc1),
+        RStudioBuild* built = rstudio_build(project_, reinterpret_cast<const char*>(cc1),
                                     reinterpret_cast<const char*>(cl),
                                        reinterpret_cast<const char*>(shc),
                                        reinterpret_cast<const char*>(cxx1), kind,
@@ -2642,7 +2736,7 @@ private:
 
         console_->Text =
             "$ " +
-            FromUtf8(rstudio_shown_run_command(reinterpret_cast<const char*>(cc1),
+            FromUtf8(rstudio_shown_run_command(project_, reinterpret_cast<const char*>(cc1),
                                            reinterpret_cast<const char*>(cl),
                                        reinterpret_cast<const char*>(shc),
                                        reinterpret_cast<const char*>(cxx1), kind,
@@ -2652,7 +2746,7 @@ private:
         panel_->SelectedIndex = 0;
         Application::DoEvents();
 
-        RStudioRan* ran = rstudio_run(reinterpret_cast<const char*>(cc1),
+        RStudioRan* ran = rstudio_run(project_, reinterpret_cast<const char*>(cc1),
                               reinterpret_cast<const char*>(cl),
                                        reinterpret_cast<const char*>(shc),
                                        reinterpret_cast<const char*>(cxx1), kind,
@@ -2875,7 +2969,7 @@ private:
                 array<Byte>^ cxx1Bytes = Utf8Of(cxx1_);
                 pin_ptr<Byte> cxx1 = &cxx1Bytes[0];
 
-                built_ = rstudio_build_program(reinterpret_cast<const char*>(cc1),
+                built_ = rstudio_build_program(project_, reinterpret_cast<const char*>(cc1),
                                            reinterpret_cast<const char*>(cl),
                                            reinterpret_cast<const char*>(shc),
                                        reinterpret_cast<const char*>(cxx1), workKind_,

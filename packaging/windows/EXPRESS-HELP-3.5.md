@@ -99,10 +99,17 @@ machine (none of TI's tools ship here); see `bin\ti\TI-BUILD.txt`.
     bin\lib\  the Shalimar runtime (shmrt-x86_64-windows[-debug].lib) and the
               C6000 runtime (shmrt-tms6747\*.s)
     bin\ti\   ti-build.cmd — the real-silicon TI build path
-    include\  the C++ standard headers (<vector>, <new>, <typeinfo>, …)
-    lib\      the C standard headers (<stdio.h>, <string.h>, …)
+    include\  cxx1i's headers: C++ (<vector>, <new>, <typeinfo>, …) and the
+              C ones they wrap, in one directory
+    lib\      cc1i's headers: the C standard headers (<stdio.h>, <string.h>, …)
+    settings.json  the installation's settings: where include\ and lib\ are,
+              and a vcvars64.bat when Visual Studio had to be named by hand
+              (Tools > Header directories..., Tools > Locate vcvars64.bat...)
     examples\ worked programs and a demo project (demo.pro)
     help\     the full help pages
+
+A project's own .pro may add `"include": [dirs]` and `"libraries": [files]`,
+relative to the project (Project > Include paths..., Project > Libraries...).
 
 --------------------------------------------------------------------------
 ## The full manual

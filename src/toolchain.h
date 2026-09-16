@@ -50,10 +50,28 @@ struct Toolchain {
     // cc1i, cxx1i and shci since 3.5: the VM6747 line, the first two
     // carrying tms6747. The kinds keep their names, cc1, cxx1 and shc, being
     // the same compilers one target on.
+    // Where the shipped headers are, from the settings: include/ is cxx1's
+    // and lib/ is cc1's. Empty leaves each compiler to find its own.
+    std::string include;
+    std::string lib;
+
+    // The project's own: header directories every compiler searches first,
+    // absolute, in the order the project lists them, and libraries linked
+    // after the objects.
+    std::vector<std::string> includes;
+    std::vector<std::string> libraries;
+
     Toolchain()
         : kind(ToolAuto), cc1("cc1i.exe"), cl("cl"), shc("shci.exe"),
           cxx(hostCxxName()), cxx1("cxx1i.exe") {}
 };
+
+// The header directories a compiler is given, as its flags: the project's
+// first, then the shipped ones this compiler reads - cc1 lib/, cxx1 include/.
+// shc gets none, Shalimar having no include.
+std::string includeFlags(const Toolchain& tool, ToolchainKind kind);
+// The project's libraries, spelled for the link.
+std::string libraryArguments(const Toolchain& tool);
 
 ToolchainKind resolve(const Toolchain& tool, Language lang);
 

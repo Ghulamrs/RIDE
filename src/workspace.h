@@ -26,6 +26,11 @@ Outcome moveToGroup(Project& project, const std::string& absolute,
 
 std::string groupForFile(const std::string& name);
 
+// A file saved under the project's root joins the project, in the group its
+// name puts it in, unless it is there already or lies where a project file
+// may not; nothing is said when it does not apply, and the file stays saved.
+Outcome adoptSaved(Project& project, const std::string& absolute);
+
 Outcome addExisting(Project& project, const std::string& absolute,
                     const std::string& group);
 

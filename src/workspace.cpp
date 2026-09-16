@@ -232,6 +232,24 @@ Outcome addExisting(Project& project, const std::string& absolute,
     return andSave(project, relative + " added to " + group, absolute);
 }
 
+Outcome adoptSaved(Project& project, const std::string& absolute) {
+    Outcome quiet;
+    if (!project.loaded() || absolute.empty()) return quiet;
+
+    std::string relative = project.relative(absolute);
+    std::string why;
+    if (!Project::allows(relative, why)) return quiet;
+    if (project.groupOf(relative) < project.groups().size()) return quiet;
+    if (path::filename(absolute) == Project::fileName() ||
+        path::filename(absolute) == path::filename(project.file()))
+        return quiet;
+
+    std::string group = groupForFile(path::filename(absolute));
+    if (group.empty()) group = "Sources";
+    project.addFile(relative, group);
+    return andSave(project, relative + " saved, and added to " + group, absolute);
+}
+
 Outcome removeExisting(Project& project, const std::string& absolute) {
     std::string relative = project.relative(absolute);
 

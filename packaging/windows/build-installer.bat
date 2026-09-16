@@ -9,7 +9,9 @@ rem
 rem  Usage:   build-installer.bat [3.5|3.0]
 rem  Env overrides (all optional):
 rem     CPP    the C++ compiler clone that carries include\ and lib\ headers
-rem            (default: <repo>\..\Compiler-Cpp)
+rem            (default: <repo>\..\VM6747\Compiler-Cppi, else <repo>\..\Compiler-Cpp)
+rem     CC     the C compiler clone whose lib\ holds cc1i's headers
+rem            (default: <CPP>\..\Compiler-Ci)
 rem     OUT    output directory for the stage tree and the setup.exe
 rem            (default: <repo>\dist)
 rem     ISCC   full path to Inno Setup's ISCC.exe (auto-detected otherwise)
@@ -24,14 +26,16 @@ if "%VER%"=="" set "VER=3.5"
 set "NV=%VER:.=%"
 set "HERE=%~dp0"
 for %%I in ("%HERE%..\..") do set "ROOT=%%~fI"
+if "%CPP%"=="" if exist "%ROOT%\..\VM6747\Compiler-Cppi\include" set "CPP=%ROOT%\..\VM6747\Compiler-Cppi"
 if "%CPP%"=="" set "CPP=%ROOT%\..\Compiler-Cpp"
+if "%CC%"=="" set "CC=%CPP%\..\Compiler-Ci"
 if "%OUT%"=="" set "OUT=%ROOT%\dist"
 set "STAGE=%OUT%\stage%NV%"
 
 echo ===========================================================================
 echo  RIDE %VER% installer build
 echo    repo    : %ROOT%
-echo    headers : %CPP%
+echo    headers : %CPP% (include), %CC% (lib)
 echo    output  : %OUT%
 echo ===========================================================================
 
@@ -46,7 +50,7 @@ call :genhtml
 
 echo [3/6] Staging the install tree ...
 if not exist "%OUT%" mkdir "%OUT%"
-call "%HERE%stage.cmd" "%ROOT%" "%CPP%" "%STAGE%"
+call "%HERE%stage.cmd" "%ROOT%" "%CPP%" "%STAGE%" "%CC%"
 if errorlevel 1 (echo   STAGE FAILED & exit /b 1)
 
 echo [4/6] Bundling Express Help and (3.5) the TI build path ...

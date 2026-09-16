@@ -85,7 +85,15 @@ enum Action {
     ActionKeys,
     ActionAbout,
 
-    ActionConvert
+    ActionConvert,
+
+    // Header directories and libraries: the installation's two, and a
+    // project's own. Last, so the session suite's counts of menu items above
+    // them hold.
+    ActionProjectIncludes,
+    ActionProjectLibraries,
+    ActionHeaderDirs,
+    ActionLocateVcvars
 };
 
 struct MenuItem {

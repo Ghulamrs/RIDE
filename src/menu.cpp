@@ -49,6 +49,9 @@ Menu::Menu() : active_(false), dropped_(false), column_(0), item_(0) {
     project.items.push_back({"New File", "", ActionFileCreate});
     project.items.push_back({"Add File", "", ActionProjectAdd});
     project.items.push_back({"Remove File", "", ActionProjectRemove});
+    project.items.push_back(separator());
+    project.items.push_back({"Include paths...", "", ActionProjectIncludes});
+    project.items.push_back({"Libraries...", "", ActionProjectLibraries});
     columns_.push_back(project);
 
     MenuColumn build;
@@ -104,6 +107,9 @@ Menu::Menu() : active_(false), dropped_(false), column_(0), item_(0) {
     tools.items.push_back({"shc", "", ActionToolShc});
     tools.items.push_back({"MSVC (cl)", "", ActionToolMsvc});
     tools.items.push_back({"C++ (host)", "", ActionToolCxx});
+    tools.items.push_back(separator());
+    tools.items.push_back({"Header directories...", "", ActionHeaderDirs});
+    tools.items.push_back({"Locate vcvars64.bat...", "", ActionLocateVcvars});
     columns_.push_back(tools);
 
     MenuColumn target;

@@ -1631,7 +1631,11 @@ void Editor::saveAs() {
     std::string name = prompt("save as: ", cancelled);
     if (cancelled || name.empty()) { say("not saved"); return; }
     buf_.setPath(name);
-    save();
+    if (!save()) return;
+
+    // Saved into the project's directory is saved into the project.
+    Outcome joined = editor::adoptSaved(project_, buf_.path());
+    if (joined.ok) { say(joined.message); refreshTree(); }
 }
 
 std::vector<std::string> Editor::whatIsIn(const std::string& directory) const {
@@ -1902,6 +1906,99 @@ void Editor::addToProject() {
     Outcome done = editor::addExisting(project_, buf_.path(), group);
     say(done.message);
     if (done.ok) refreshTree();
+}
+
+// A list of paths is edited as one line, the entries separated by ';' -
+// the one character that is not in a path on any of the three systems.
+namespace {
+
+std::string joined(const std::vector<std::string>& parts) {
+    std::string out;
+    for (size_t i = 0; i < parts.size(); ++i) out += (i ? ";" : "") + parts[i];
+    return out;
+}
+
+std::vector<std::string> splitList(const std::string& line) {
+    std::vector<std::string> out;
+    size_t at = 0;
+    while (at <= line.size()) {
+        size_t cut = line.find(';', at);
+        if (cut == std::string::npos) cut = line.size();
+        std::string part = line.substr(at, cut - at);
+        size_t a = part.find_first_not_of(" \t"), b = part.find_last_not_of(" \t");
+        if (a != std::string::npos) out.push_back(part.substr(a, b - a + 1));
+        at = cut + 1;
+    }
+    return out;
+}
+
+}
+
+Toolchain Editor::toolFor() const {
+    Toolchain tool = tool_;
+    tool.include = settings::includeDir();
+    tool.lib = settings::libDir();
+    if (project_.loaded()) {
+        tool.includes = project_.absoluteIncludes();
+        tool.libraries = project_.absoluteLibraries();
+    }
+    return tool;
+}
+
+void Editor::editProjectIncludes() {
+    if (!project_.loaded()) { say("there is no project - make one first"); return; }
+    bool cancelled = false;
+    std::string line = prompt("include paths, relative to " + project_.root() + ", ';' between [" +
+                              joined(project_.includes()) + "]: ", cancelled);
+    if (cancelled) { say("include paths unchanged"); return; }
+    if (line.empty()) { say("include paths unchanged"); return; }
+    project_.setIncludes(splitList(line == "-" ? std::string() : line));
+    Outcome done = editor::saveProject(project_);
+    say(done.ok ? "include paths: " + joined(project_.includes()) + " - " + done.message
+                : done.message);
+}
+
+void Editor::editProjectLibraries() {
+    if (!project_.loaded()) { say("there is no project - make one first"); return; }
+    bool cancelled = false;
+    std::string line = prompt("libraries, relative to " + project_.root() + ", ';' between [" +
+                              joined(project_.libraries()) + "]: ", cancelled);
+    if (cancelled) { say("libraries unchanged"); return; }
+    if (line.empty()) { say("libraries unchanged"); return; }
+    project_.setLibraries(splitList(line == "-" ? std::string() : line));
+    Outcome done = editor::saveProject(project_);
+    say(done.ok ? "libraries: " + joined(project_.libraries()) + " - " + done.message
+                : done.message);
+}
+
+void Editor::editHeaderDirs() {
+    std::string file = settings::installFile();
+    if (file.empty()) { say("no installation directory to keep this in"); return; }
+    bool cancelled = false;
+    std::string include = prompt("cxx1's headers (include) [" + settings::includeDir() + "]: ", cancelled);
+    if (cancelled) { say("header directories unchanged"); return; }
+    std::string lib = prompt("cc1's headers (lib) [" + settings::libDir() + "]: ", cancelled);
+    if (cancelled) { say("header directories unchanged"); return; }
+    if (include.empty()) include = settings::includeDir();
+    if (lib.empty()) lib = settings::libDir();
+    if (settings::rememberHeaderDirs(include, lib))
+        say("written to " + file + " - include " + settings::includeDir() + ", lib " + settings::libDir());
+    else
+        say("cannot write " + file);
+}
+
+void Editor::locateVcvars() {
+    std::string file = settings::installFile();
+    if (file.empty()) { say("no installation directory to keep this in"); return; }
+    bool cancelled = false;
+    std::string bat = prompt("vcvars64.bat, full path [" + settings::vcvars() + "]: ", cancelled);
+    if (cancelled || bat.empty()) { say("vcvars unchanged"); return; }
+    if (bat != "-" && !path::exists(bat)) { say("no such file: " + bat); return; }
+    if (settings::rememberVcvars(bat == "-" ? std::string() : bat))
+        say("written to " + file + (bat == "-" ? " - the editor looks for Visual Studio itself again"
+                                              : " - Visual Studio's tools come from " + bat));
+    else
+        say("cannot write " + file);
 }
 
 void Editor::removeFromProject() {
@@ -2210,7 +2307,7 @@ void Editor::compile() {
     tab_ = TabConsole;
     console_.clear();
 
-    Toolchain shownAs = tool_;
+    Toolchain shownAs = toolFor();
     shownAs.cc1 = baseName(tool_.cc1);
     shownAs.cxx1 = baseName(tool_.cxx1);
     shownAs.cl = baseName(tool_.cl);
@@ -2224,7 +2321,7 @@ void Editor::compile() {
         " ...");
     refresh();
 
-    Build result = build(tool_, kind, buf_.path(), lang_, kArches[arch_], config_,
+    Build result = build(toolFor(), kind, buf_.path(), lang_, kArches[arch_], config_,
                          consoleSink, this);
 
     assembly_ = result.asmLines;
@@ -2276,7 +2373,7 @@ void Editor::buildAndRun() {
     tab_ = TabConsole;
     console_.clear();
 
-    Toolchain shownAs = tool_;
+    Toolchain shownAs = toolFor();
     shownAs.cc1 = baseName(tool_.cc1);
     shownAs.cxx1 = baseName(tool_.cxx1);
     shownAs.cl = baseName(tool_.cl);
@@ -2288,7 +2385,7 @@ void Editor::buildAndRun() {
     say(std::string("building and running with ") + toolchainName(kind) + " ...");
     refresh();
 
-    Ran result = runProgram(tool_, kind, buf_.path(), lang_, kArches[arch_], config_,
+    Ran result = runProgram(toolFor(), kind, buf_.path(), lang_, kArches[arch_], config_,
                             consoleSink, this);
 
     lastDiag_ = result.diag;
@@ -2395,7 +2492,7 @@ void Editor::buildProject(bool andRun) {
     say("building " + baseName(program) + " with " + compilersNamed(parts) + " ...");
     refresh();
 
-    Built made = buildParts(tool_, parts, kArches[arch_], config_, program,
+    Built made = buildParts(toolFor(), parts, kArches[arch_], config_, program,
                             consoleSink, this);
 
     const std::string compilers = compilersNamed(parts);
@@ -2720,10 +2817,10 @@ void Editor::debug(bool project) {
 
     debugTemporary_ = !project;
     if (project)
-        debugBuilt_ = buildParts(tool_, parts, kArches[arch_], config_,
+        debugBuilt_ = buildParts(toolFor(), parts, kArches[arch_], config_,
                                  project_.targetProgram(), consoleSink, this);
     else
-        debugBuilt_ = buildProgram(tool_, kind, buf_.path(), parts[0].lang, kArches[arch_],
+        debugBuilt_ = buildProgram(toolFor(), kind, buf_.path(), parts[0].lang, kArches[arch_],
                                    config_, consoleSink, this);
     lastDiag_ = debugBuilt_.diag;
     if (!debugBuilt_.ok) {
@@ -2875,6 +2972,10 @@ void Editor::perform(Action action) {
         case ActionProjectClose: closeProject(); break;
         case ActionProjectAdd:   addToProject(); break;
         case ActionProjectRemove: removeFromProject(); break;
+        case ActionProjectIncludes: editProjectIncludes(); break;
+        case ActionProjectLibraries: editProjectLibraries(); break;
+        case ActionHeaderDirs:   editHeaderDirs(); break;
+        case ActionLocateVcvars: locateVcvars(); break;
         case ActionFileCreate:   createFile(); break;
         case ActionFileRename:   renameFile(); break;
         case ActionFileDelete:   deleteFile(); break;

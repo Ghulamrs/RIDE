@@ -8,6 +8,25 @@ operations that create and change it.
 --------------------------------------------------------------------------------
 ## 11. The project file (`.pro`)
 
+Beside a project's file there is **the installation's `settings.json`**, one
+directory above `bin\`, beside `include\` and `lib\`:
+
+    {
+      "include": "include",
+      "lib": "lib",
+      "vcvars": ""
+    }
+
+It is read for every compile, project or none. `include` is where `cxx1i`'s
+headers are (its C++ headers and the C ones they wrap, in one directory) and
+`lib` where `cc1i`'s are, each relative to the file unless absolute; the
+editor passes each compiler its own as `-I`, and the compilers also look
+there themselves, so the command line works without the editor. `vcvars` is
+empty until Visual Studio's tools could not be found by looking, and then
+names the `vcvars64.bat` to use. *Tools ▸ Header directories...* and *Tools ▸
+Locate vcvars64.bat...* write this file; the editor writes it with the two
+directories on its first run where it finds none.
+
 A project is one JSON object in a file named `<name>.pro`, living in the
 project's directory. Here is a complete one:
 
@@ -21,6 +40,8 @@ project's directory. Here is a complete one:
         "Sources": ["greet.c", "main.c"],
         "Headers": ["greet.h"]
       },
+      "include": ["include", "../common"],
+      "libraries": ["lib/mathlib.lib"],
       "build": { "target": "demo", "groups": ["Sources"] }
     }
 
@@ -41,9 +62,22 @@ Field by field:
   convenience *and* the unit the build selects. A group may carry its own
   `"toolchain"` to override the project's for that group only (an object form:
   `"Legacy": { "files": [...], "toolchain": "msvc" }`).
+- **`include`** — header directories of the project's own, relative to the
+  project's directory (an absolute path stays as written). Every compile of
+  the project's sources searches them, in this order, before the shipped
+  headers: `-I` to `cc1i`, `cxx1i` and the host's C++, `/I` to `cl`. Shalimar
+  has no include and `shci` is given none. Edited with *Project ▸ Include
+  paths...*, one line with `;` between the entries.
+- **`libraries`** — libraries linked into the program after its objects, each
+  relative to the project's directory: `.lib` files under Windows, `.a` under
+  Unix. A project that names any is built as objects and linked by the host's
+  linker, whatever its compilers (`cc1i` and `cxx1i` take sources only). They
+  do not apply to `tms6747`, which is not linked. Edited with *Project ▸
+  Libraries...*.
 - **`build`** — what the project builds: `target` names the program, and
   `groups` lists which groups' sources compile into it. Files in un-named groups,
-  and headers, are passed over.
+  and headers, are passed over. A project made in the editor gets one that
+  builds its `Sources` group into a program of the project's name.
 
 **What the `.pro` provides:**
 
@@ -59,17 +93,19 @@ Field by field:
 
 **What the `.pro` lacks — deliberately:**
 
-- **No compiler flags per file or per project** beyond the target and the
-  compiler choice. There is no `cflags`/`cxxflags`/`defines`/`includes` field.
-  The editor builds each source with a fixed, correct recipe for its language
-  and target; if you need custom flags, compile from the command line (Part IV).
+- **No compiler flags per file or per project** beyond the target, the
+  compiler choice, the header directories and the libraries. There is no
+  `cflags`/`cxxflags`/`defines` field. The editor builds each source with a
+  fixed, correct recipe for its language and target; if you need custom flags,
+  compile from the command line (Part IV).
 - **No custom build steps, no rules, no dependencies you write.** It is not
   `make`. The build is: compile the named groups' sources, link them, done.
 - **No multiple programs from one `.pro`.** One `build` entry, one `target`. Two
   programs is two projects. (This is why Shalimar-beside-C is refused — see
   below.)
 - **No library targets, no install rules, no configurations beyond
-  debug/release** (which is an editor toggle, not a `.pro` field).
+  debug/release** (which is an editor toggle, not a `.pro` field). A project
+  *uses* libraries; it does not make one.
 - **No conditional inclusion** (files in / out by platform or setting). A file
   is in a group or it is not.
 

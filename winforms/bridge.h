@@ -89,6 +89,22 @@ const char* rstudio_group_for_file(const char* name);
 const char* rstudio_project_suffix(void);
 const char* rstudio_version(void);
 
+// A project's header directories and libraries, as one ';'-separated line
+// each, relative to the root as the file has them; setting one saves.
+const char* rstudio_project_includes(RStudioProject* project);
+const char* rstudio_project_libraries(RStudioProject* project);
+int rstudio_project_set_includes(RStudioProject* project, const char* line);
+int rstudio_project_set_libraries(RStudioProject* project, const char* line);
+
+// The installation's settings.json, above bin/: where cxx1's headers
+// (include) and cc1's (lib) are, and the vcvars64.bat named there if any.
+const char* rstudio_install_file(void);
+const char* rstudio_include_dir(void);
+const char* rstudio_lib_dir(void);
+int rstudio_remember_header_dirs(const char* include, const char* lib);
+const char* rstudio_vcvars(void);
+int rstudio_remember_vcvars(const char* file);
+
 int rstudio_project_save_as(RStudioProject* project, const char* file,
                             char* why, int whySize);
 
@@ -105,6 +121,9 @@ int rstudio_rename_file(RStudioProject* project, const char* fromAbsolute, const
 int rstudio_delete_file(RStudioProject* project, const char* absolute);
 int rstudio_move_to_group(RStudioProject* project, const char* absolute, const char* group);
 int rstudio_add_existing(RStudioProject* project, const char* absolute, const char* group);
+// A file just saved under the project's root joins it; 0 when that did not
+// apply, and nothing to say then.
+int rstudio_adopt_saved(RStudioProject* project, const char* absolute);
 
 int rstudio_remove_from_project(RStudioProject* project, const char* absolute);
 
@@ -135,7 +154,7 @@ int rstudio_runs_here(int kind, const char* arch);
 const char* rstudio_why_not_run(int kind, const char* arch);
 const char* rstudio_host_arch(void);
 
-const char* rstudio_shown_command(const char* cc1, const char* cl, const char* shc, const char* cxx1, int kind,
+const char* rstudio_shown_command(RStudioProject* project, const char* cc1, const char* cl, const char* shc, const char* cxx1, int kind,
                               const char* source, int language, const char* arch,
                               int config);
 
@@ -155,7 +174,7 @@ const char* rstudio_conversion_output(RStudioConversion* made);
 
 typedef struct RStudioBuild RStudioBuild;
 
-RStudioBuild* rstudio_build(const char* cc1, const char* cl, const char* shc, const char* cxx1, int kind, const char* source,
+RStudioBuild* rstudio_build(RStudioProject* project, const char* cc1, const char* cl, const char* shc, const char* cxx1, int kind, const char* source,
                     int language, const char* arch, int config);
 
 int rstudio_project_builds(RStudioProject* project);
@@ -197,7 +216,7 @@ const char* rstudio_build_error_message(RStudioBuild* built);
 
 typedef struct RStudioRan RStudioRan;
 
-RStudioRan* rstudio_run(const char* cc1, const char* cl, const char* shc, const char* cxx1, int kind, const char* source,
+RStudioRan* rstudio_run(RStudioProject* project, const char* cc1, const char* cl, const char* shc, const char* cxx1, int kind, const char* source,
                 int language, const char* arch, int config);
 
 RStudioRan* rstudio_run_built(const char* program);
@@ -212,7 +231,7 @@ int rstudio_ran_error_line(RStudioRan* ran);
 int rstudio_ran_error_column(RStudioRan* ran);
 const char* rstudio_ran_error_message(RStudioRan* ran);
 
-const char* rstudio_shown_run_command(const char* cc1, const char* cl, const char* shc, const char* cxx1, int kind,
+const char* rstudio_shown_run_command(RStudioProject* project, const char* cc1, const char* cl, const char* shc, const char* cxx1, int kind,
                                   const char* source, int language, const char* arch,
                                   int config);
 
@@ -220,7 +239,7 @@ char* rstudio_about(void);
 
 typedef struct RStudioProgram RStudioProgram;
 
-RStudioProgram* rstudio_build_program(const char* cc1, const char* cl, const char* shc, const char* cxx1, int kind, const char* source,
+RStudioProgram* rstudio_build_program(RStudioProject* project, const char* cc1, const char* cl, const char* shc, const char* cxx1, int kind, const char* source,
                               int language, const char* arch, int config);
 void rstudio_program_free(RStudioProgram* built);
 

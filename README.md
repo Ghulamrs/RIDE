@@ -413,10 +413,12 @@ Each compiler is also *told* which language it is being handed - `/TC` or
 because that is what this arena holds itself to: cc1 is written in it, so the
 editor is built in it, and C++ compiled here is compiled as it.
 
-**cl is found without a Developer Command Prompt.** RIDE asks Visual Studio 2022
-where it lives, runs `vcvars64` once, and keeps the environment for the rest of
-the session. Started from an ordinary console with `cl` nowhere on PATH, it
-still builds C++. With `cl` in use the target chooser goes quiet, because cl
+**cl is found without a Developer Command Prompt.** RIDE asks Visual Studio
+where it lives - any version or edition `vswhere` knows, then the places the
+installer puts them, then a `vcvars64.bat` named once under *Tools ▸ Locate
+vcvars64.bat...* - runs `vcvars64` once, and keeps the environment for the
+rest of the session. Started from an ordinary console with `cl` nowhere on
+PATH, it still builds C++. With `cl` in use the target chooser goes quiet, because cl
 builds for the host it was installed as and a menu offering a choice that does
 nothing would be the status bar telling a lie.
 

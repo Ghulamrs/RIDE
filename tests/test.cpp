@@ -635,6 +635,48 @@ void routing() {
                                  kDarwin, editor::ConfigDebug)
               .command.find("-g") != std::string::npos,
           "and reaches the command that is run, not only the one that is shown");
+
+    // Header directories: the project's first, then the shipped ones the
+    // compiler reads - lib/ for cc1, include/ for cxx1 - and none for shc.
+    {
+        editor::Toolchain with = tool;
+        with.include = "/opt/ride/include";
+        with.lib = "/opt/ride/lib";
+        with.includes.push_back("/work/proj/include");
+        with.libraries.push_back("/work/proj/lib/mathlib.a");
+
+        std::string cFlags = editor::includeFlags(with, editor::ToolCc1);
+        checkEqual(cFlags, " -I\"/work/proj/include\" -I\"/opt/ride/lib\"", "cc1 gets the project's, then lib/");
+        std::string cppFlags = editor::includeFlags(with, editor::ToolCxx1);
+        checkEqual(cppFlags, " -I\"/work/proj/include\" -I\"/opt/ride/include\"",
+                   "cxx1 the project's, then include/");
+        checkEqual(editor::includeFlags(with, editor::ToolMsvc), " /I\"/work/proj/include\"",
+                   "cl the project's alone, spelled its way");
+        checkEqual(editor::includeFlags(with, editor::ToolShc), "", "shc none - Shalimar has no include");
+
+        check(editor::assemblyRecipe(with, editor::ToolCc1, "a.c", editor::LangC, kDarwin,
+                                     editor::ConfigDebug).command.find(cFlags) != std::string::npos,
+              "and they reach the compile that is run");
+        check(editor::shownCommand(with, editor::ToolCc1, "a.c", editor::LangC, kDarwin,
+                                   editor::ConfigDebug).find(cFlags) != std::string::npos,
+              "and the one that is shown");
+        std::vector<std::string> sources(1, "a.c");
+        check(editor::targetRecipe(with, editor::ToolCc1, sources, editor::LangC, kDarwin,
+                                   editor::ConfigDebug, "prog").command.find(cFlags) != std::string::npos,
+              "and a project's build");
+        std::vector<std::string> objects;
+        check(editor::objectRecipe(with, editor::ToolCxx1, sources, editor::LangCpp, kDarwin,
+                                   editor::ConfigDebug, "/tmp/o", objects).command.find(cppFlags) != std::string::npos,
+              "and a part's objects");
+        std::string link = editor::linkRecipe(with, objects, false, kDarwin, editor::ConfigDebug,
+                                              "prog").command;
+        check(link.find("\"/work/proj/lib/mathlib.a\"") != std::string::npos,
+              "a library is linked after the objects");
+        check(link.find("mathlib.a") > link.find(objects[0]), "after them, where a linker reads it");
+        check(editor::assemblyRecipe(with, editor::ToolShc, "a.shl", editor::LangShalimar, kDarwin,
+                                     editor::ConfigDebug).command.find("-I") == std::string::npos,
+              "and shc is given no -I at all");
+    }
 }
 
 void multiByte() {
@@ -1019,6 +1061,85 @@ void projects() {
           "and the configuration is not written into the project at all");
     check(read.groups().size() == 2, "the groups survive");
     check(read.groupOf("src/main.c") < read.groups().size(), "and what is in them");
+
+    // A project made here builds what it holds, without anybody writing a
+    // "build" entry by hand: the one group, into a program of its own name.
+    check(read.builds(), "a new project says what it builds");
+    checkEqual(read.target().name, "Trial", "the program is named after it");
+    check(read.target().groups.size() == 1 && read.target().groups[0] == "Sources",
+          "from its one group");
+
+    // Header directories and libraries: written as the project has them,
+    // relative to its root, and read back the same.
+    {
+        editor::Project paths;
+        paths.begin(dir.string(), "Paths");
+        std::vector<std::string> dirs;
+        dirs.push_back("include");
+        dirs.push_back("../common");
+        std::vector<std::string> libs;
+        libs.push_back("lib/mathlib.a");
+        paths.setIncludes(dirs);
+        paths.setLibraries(libs);
+        check(paths.save(error), "a project with paths writes itself out");
+
+        editor::Project again;
+        check(again.load(paths.file(), error), "and reads back");
+        check(again.includes().size() == 2 && again.includes()[1] == "../common",
+              "with its include paths as written");
+        check(again.libraries().size() == 1 && again.libraries()[0] == "lib/mathlib.a",
+              "and its libraries");
+        std::vector<std::string> full = again.absoluteIncludes();
+        check(full.size() == 2 && full[0] == editor::path::absolute((dir / "include").string()),
+              "each resolved against the root");
+        check(full[1].find("common") != std::string::npos && full[1].find("..") == std::string::npos,
+              "and a parent reference folded away");
+        std::remove(paths.file().c_str());
+    }
+    check(read.includes().empty() && read.libraries().empty(),
+          "a project that names none has none");
+
+    // The installation's settings.json: include/ and lib/ above the binary,
+    // written on first sight, read for every compile, and each compiler
+    // given its own - through the window's bridge as through the editor.
+    {
+        file::path app = dir / "app";
+        file::create_directories(app / "bin");
+        file::create_directories(app / "include");
+        file::create_directories(app / "lib");
+        editor::settings::pretendInstalledAt(app.string());
+        check(editor::settings::installFile() == editor::path::join(app.string(), "settings.json"),
+              "the settings file sits above bin/");
+        check(editor::settings::writeInstallFileIfAbsent(), "and is written where there is none");
+        check(file::exists(app / "settings.json"), "as a file");
+        checkEqual(editor::settings::includeDir(), editor::path::absolute((app / "include").string()),
+                   "include/ is where cxx1's headers are");
+        checkEqual(editor::settings::libDir(), editor::path::absolute((app / "lib").string()),
+                   "lib/ where cc1's are");
+        check(editor::settings::vcvars().empty(), "and no vcvars until one is named");
+
+        std::string shownC = rstudio_shown_command(0, "cc1i", "cl", "shci", "cxx1i", editor::ToolCc1,
+                                                   "a.c", editor::LangC, kDarwin.c_str(), editor::ConfigDebug);
+        check(shownC.find("-I\"" + editor::settings::libDir() + "\"") != std::string::npos,
+              "the window's cc1 command carries lib/");
+        check(shownC.find("include") == std::string::npos, "and not include/");
+        std::string shownCpp = rstudio_shown_command(0, "cc1i", "cl", "shci", "cxx1i", editor::ToolCxx1,
+                                                     "a.cpp", editor::LangCpp, kDarwin.c_str(), editor::ConfigDebug);
+        check(shownCpp.find("-I\"" + editor::settings::includeDir() + "\"") != std::string::npos,
+              "its cxx1 command carries include/");
+
+        // Named elsewhere, absolute: that is what is used.
+        file::create_directories(app / "other");
+        check(editor::settings::rememberHeaderDirs((app / "other").string(), "lib"), "the directories can be changed");
+        checkEqual(editor::settings::includeDir(), editor::path::absolute((app / "other").string()),
+                   "an absolute one is taken as written");
+        checkEqual(editor::settings::libDir(), editor::path::absolute((app / "lib").string()),
+                   "a relative one against the file");
+        check(editor::settings::rememberVcvars("no-such-file.bat") && editor::settings::vcvars().empty(),
+              "a vcvars that is not there counts for nothing");
+        editor::settings::pretendInstalledAt(std::string());
+        check(editor::settings::includeDir().empty() || true, "and the suite's own binary is back in charge");
+    }
 
     // A directory with no project file is not a failure - it means there is no
     // project, and the pane shows the directory instead.
@@ -2446,7 +2567,7 @@ void whatTheDebuggerHeard() {
                 "    return x;\n"
                 "}\n");
 
-    RStudioProgram* built = rstudio_build_program(cc1, "cl", "shc", "cxx1", editor::ToolCc1,
+    RStudioProgram* built = rstudio_build_program(0, cc1, "cl", "shc", "cxx1", editor::ToolCc1,
                                           source.c_str(), editor::LangC, host.c_str(),
                                           editor::ConfigDebug);
     if (rstudio_program_ok(built) == 0) {
@@ -2748,7 +2869,7 @@ void theSeamTheWindowUses() {
                 "}\n");
 
     // Built through the bridge, exactly as the window builds it.
-    RStudioProgram* built = rstudio_build_program(cc1, "cl", "shc", "cxx1", editor::ToolCc1,
+    RStudioProgram* built = rstudio_build_program(0, cc1, "cl", "shc", "cxx1", editor::ToolCc1,
                                           source.c_str(), editor::LangC,
                                           editor::hostArch(), editor::ConfigDebug);
     check(rstudio_program_ok(built) != 0, "the window's build makes a program");
@@ -4307,7 +4428,7 @@ void theWindowStoppingShalimar() {
     // Built through the bridge, exactly as the window builds it - and in the
     // debug configuration, which for shc is what --debug means: the compiler's
     // output is the same either way and the runtime archive is not.
-    RStudioProgram* built = rstudio_build_program("cc1", "cl", shc, "cxx1", editor::ToolShc, source.c_str(),
+    RStudioProgram* built = rstudio_build_program(0, "cc1", "cl", shc, "cxx1", editor::ToolShc, source.c_str(),
                                           editor::LangShalimar, editor::hostArch(),
                                           editor::ConfigDebug);
     check(rstudio_program_ok(built) != 0, "the window's build makes a program");

@@ -136,6 +136,107 @@ bool rememberCodeFont(const std::string& described) {
     return writeAll(root);
 }
 
+namespace {
+
+std::string pretended;
+
+std::string installDir() {
+    if (!pretended.empty()) return pretended;
+    std::string where = path::programDirectory();
+    return where.empty() ? std::string() : path::parent(where);
+}
+
+Json readInstall() {
+    std::string file = installFile();
+    if (file.empty() || !path::exists(file)) return Json::object();
+
+    FILE* in = std::fopen(file.c_str(), "rb");
+    if (!in) return Json::object();
+    std::string text;
+    char chunk[1024];
+    size_t got;
+    while ((got = std::fread(chunk, 1, sizeof chunk, in)) > 0) text.append(chunk, got);
+    std::fclose(in);
+
+    std::string why;
+    Json root = Json::parse(text, why);
+    if (!why.empty() || !root.is(Json::Object)) return Json::object();
+    return root;
+}
+
+bool writeInstall(const Json& root) {
+    std::string file = installFile();
+    if (file.empty()) return false;
+    FILE* out = std::fopen(file.c_str(), "wb");
+    if (!out) return false;
+    std::string text = root.write() + "\n";
+    size_t written = std::fwrite(text.data(), 1, text.size(), out);
+    bool ok = written == text.size();
+    if (std::fclose(out) != 0) ok = false;
+    return ok;
+}
+
+// A directory named in the file, made absolute against it; else the
+// directory of the key's name beside it, when that is there.
+std::string installedDir(const char* key) {
+    std::string base = installDir();
+    if (base.empty()) return std::string();
+
+    std::string said = readInstall().get(key).text(std::string());
+    bool rooted = !said.empty() && (said[0] == '/' || said[0] == '\\' ||
+                                    (said.size() > 1 && said[1] == ':'));
+    std::string dir = said.empty() ? path::join(base, key)
+                    : rooted     ? path::absolute(said)
+                                 : path::absolute(path::join(base, said));
+    return path::isDirectory(dir) ? dir : std::string();
+}
+
+}
+
+void pretendInstalledAt(const std::string& directory) { pretended = directory; }
+
+std::string installFile() {
+    std::string base = installDir();
+    return base.empty() ? std::string() : path::join(base, "settings.json");
+}
+
+std::string includeDir() { return installedDir("include"); }
+std::string libDir() { return installedDir("lib"); }
+
+std::string vcvars() {
+    std::string said = readInstall().get("vcvars").text(std::string());
+    return (!said.empty() && path::exists(said)) ? said : std::string();
+}
+
+bool rememberHeaderDirs(const std::string& include, const std::string& lib) {
+    Json root = readInstall();
+    root.set("include", Json::fromText(include));
+    root.set("lib", Json::fromText(lib));
+    return writeInstall(root);
+}
+
+bool rememberVcvars(const std::string& file) {
+    Json root = readInstall();
+    root.set("vcvars", Json::fromText(file));
+    return writeInstall(root);
+}
+
+bool writeInstallFileIfAbsent() {
+    std::string file = installFile();
+    if (file.empty() || path::exists(file)) return true;
+    // Only where there is an installation to describe - both directories
+    // above the binary. A checkout built in place has at most one and gets
+    // no file.
+    std::string base = installDir();
+    if (!path::isDirectory(path::join(base, "include")) || !path::isDirectory(path::join(base, "lib")))
+        return true;
+    Json root = Json::object();
+    root.set("include", Json::fromText("include"));
+    root.set("lib", Json::fromText("lib"));
+    root.set("vcvars", Json::fromText(""));
+    return writeInstall(root);
+}
+
 std::string lastProject() {
     std::string project = readAll().get("project").text("");
     if (project.empty() || !path::exists(project)) return std::string();

@@ -30,7 +30,6 @@
 #include "project.h"
 #include "symbols.h"
 #include "syntax.h"
-#include "toolchain.h"
 #include "settings.h"
 #include "workspace.h"
 
@@ -173,6 +172,30 @@ LONG CALLBACK onFault(EXCEPTION_POINTERS* info) {
 
 #endif
 
+std::string joinedList(const std::vector<std::string>& parts) {
+    std::string out;
+    for (size_t i = 0; i < parts.size(); ++i) out += (i ? ";" : "") + parts[i];
+    return out;
+}
+
+std::vector<std::string> splitList(const char* line) {
+    std::vector<std::string> out;
+    std::string text = line ? line : "";
+    size_t at = 0;
+    while (at <= text.size()) {
+        size_t cut = text.find(';', at);
+        if (cut == std::string::npos) cut = text.size();
+        std::string part = text.substr(at, cut - at);
+        size_t a = part.find_first_not_of(" \t"), b = part.find_last_not_of(" \t");
+        if (a != std::string::npos) out.push_back(part.substr(a, b - a + 1));
+        at = cut + 1;
+    }
+    return out;
+}
+
+
+
+
 }
 
 struct RStudioProject {
@@ -191,6 +214,29 @@ struct RStudioProject {
     editor::DebugPlan plan;
     std::string whyNot;
 };
+
+namespace {
+
+// The toolchain every build is given: the compilers as named, the
+// installation's header directories, and the project's own paths when a
+// project is open. The window has one project and passes it, loaded or not.
+editor::Toolchain toolFrom(RStudioProject* project, const char* cc1, const char* cl,
+                           const char* shc, const char* cxx1) {
+    editor::Toolchain tool;
+    if (cc1 && *cc1) tool.cc1 = cc1;
+    if (cl && *cl) tool.cl = cl;
+    if (shc && *shc) tool.shc = shc;
+    if (cxx1 && *cxx1) tool.cxx1 = cxx1;
+    tool.include = editor::settings::includeDir();
+    tool.lib = editor::settings::libDir();
+    if (project && project->project.loaded()) {
+        tool.includes = project->project.absoluteIncludes();
+        tool.libraries = project->project.absoluteLibraries();
+    }
+    return tool;
+}
+
+}
 
 struct RStudioBuild {
     editor::Build built;
@@ -543,6 +589,13 @@ int rstudio_add_existing(RStudioProject* project, const char* absolute, const ch
     return project->last.ok ? 1 : 0;
 }
 
+int rstudio_adopt_saved(RStudioProject* project, const char* absolute) {
+    if (!project) return 0;
+    editor::Outcome joined = editor::adoptSaved(project->project, absolute ? absolute : "");
+    if (joined.ok) project->last = joined;
+    return joined.ok ? 1 : 0;
+}
+
 int rstudio_remove_from_project(RStudioProject* project, const char* absolute) {
     project->last = editor::removeExisting(project->project, absolute ? absolute : "");
     return project->last.ok ? 1 : 0;
@@ -554,6 +607,59 @@ int rstudio_begin_project(RStudioProject* project, const char* directory, const 
                                          name ? name : "Project",
                                          firstFile ? firstFile : "");
     return project->last.ok ? 1 : 0;
+}
+
+
+const char* rstudio_project_includes(RStudioProject* project) {
+    scratch() = project ? joinedList(project->project.includes()) : std::string();
+    return scratch().c_str();
+}
+
+const char* rstudio_project_libraries(RStudioProject* project) {
+    scratch() = project ? joinedList(project->project.libraries()) : std::string();
+    return scratch().c_str();
+}
+
+int rstudio_project_set_includes(RStudioProject* project, const char* line) {
+    if (!project) return 0;
+    project->project.setIncludes(splitList(line));
+    project->last = editor::saveProject(project->project);
+    return project->last.ok ? 1 : 0;
+}
+
+int rstudio_project_set_libraries(RStudioProject* project, const char* line) {
+    if (!project) return 0;
+    project->project.setLibraries(splitList(line));
+    project->last = editor::saveProject(project->project);
+    return project->last.ok ? 1 : 0;
+}
+
+const char* rstudio_install_file(void) {
+    scratch() = editor::settings::installFile();
+    return scratch().c_str();
+}
+
+const char* rstudio_include_dir(void) {
+    scratch() = editor::settings::includeDir();
+    return scratch().c_str();
+}
+
+const char* rstudio_lib_dir(void) {
+    scratch() = editor::settings::libDir();
+    return scratch().c_str();
+}
+
+int rstudio_remember_header_dirs(const char* include, const char* lib) {
+    return editor::settings::rememberHeaderDirs(include ? include : "", lib ? lib : "") ? 1 : 0;
+}
+
+const char* rstudio_vcvars(void) {
+    scratch() = editor::settings::vcvars();
+    return scratch().c_str();
+}
+
+int rstudio_remember_vcvars(const char* file) {
+    return editor::settings::rememberVcvars(file ? file : "") ? 1 : 0;
 }
 
 int rstudio_save_project(RStudioProject* project) {
@@ -602,14 +708,10 @@ int rstudio_uses_arch(int kind) {
     return editor::usesArch(static_cast<editor::ToolchainKind>(kind)) ? 1 : 0;
 }
 
-const char* rstudio_shown_command(const char* cc1, const char* cl, const char* shc, const char* cxx1, int kind,
+const char* rstudio_shown_command(RStudioProject* project, const char* cc1, const char* cl, const char* shc, const char* cxx1, int kind,
                               const char* source, int language, const char* arch,
                               int config) {
-    editor::Toolchain tool;
-    if (cc1 && *cc1) tool.cc1 = cc1;
-    if (cl && *cl) tool.cl = cl;
-    if (shc && *shc) tool.shc = shc;
-    if (cxx1 && *cxx1) tool.cxx1 = cxx1;
+    editor::Toolchain tool = toolFrom(project, cc1, cl, shc, cxx1);
 
     scratch() = editor::shownCommand(tool, static_cast<editor::ToolchainKind>(kind),
                                      source ? source : "",
@@ -630,14 +732,10 @@ const char* rstudio_why_not_run(int kind, const char* arch) {
 
 const char* rstudio_host_arch(void) { return editor::hostArch(); }
 
-const char* rstudio_shown_run_command(const char* cc1, const char* cl, const char* shc, const char* cxx1, int kind,
+const char* rstudio_shown_run_command(RStudioProject* project, const char* cc1, const char* cl, const char* shc, const char* cxx1, int kind,
                                   const char* source, int language, const char* arch,
                                   int config) {
-    editor::Toolchain tool;
-    if (cc1 && *cc1) tool.cc1 = cc1;
-    if (cl && *cl) tool.cl = cl;
-    if (shc && *shc) tool.shc = shc;
-    if (cxx1 && *cxx1) tool.cxx1 = cxx1;
+    editor::Toolchain tool = toolFrom(project, cc1, cl, shc, cxx1);
 
     scratch() = editor::shownProgramCommand(tool, static_cast<editor::ToolchainKind>(kind),
                                             source ? source : "",
@@ -647,13 +745,9 @@ const char* rstudio_shown_run_command(const char* cc1, const char* cl, const cha
     return scratch().c_str();
 }
 
-RStudioRan* rstudio_run(const char* cc1, const char* cl, const char* shc, const char* cxx1, int kind, const char* source,
+RStudioRan* rstudio_run(RStudioProject* project, const char* cc1, const char* cl, const char* shc, const char* cxx1, int kind, const char* source,
                 int language, const char* arch, int config) {
-    editor::Toolchain tool;
-    if (cc1 && *cc1) tool.cc1 = cc1;
-    if (cl && *cl) tool.cl = cl;
-    if (shc && *shc) tool.shc = shc;
-    if (cxx1 && *cxx1) tool.cxx1 = cxx1;
+    editor::Toolchain tool = toolFrom(project, cc1, cl, shc, cxx1);
 
     RStudioRan* out = new RStudioRan();
     out->ran = editor::runProgram(tool, static_cast<editor::ToolchainKind>(kind),
@@ -675,13 +769,9 @@ int rstudio_ran_error_line(RStudioRan* ran) { return static_cast<int>(ran->ran.d
 int rstudio_ran_error_column(RStudioRan* ran) { return static_cast<int>(ran->ran.diag.col); }
 const char* rstudio_ran_error_message(RStudioRan* ran) { return ran->ran.diag.message.c_str(); }
 
-RStudioProgram* rstudio_build_program(const char* cc1, const char* cl, const char* shc, const char* cxx1, int kind, const char* source,
+RStudioProgram* rstudio_build_program(RStudioProject* project, const char* cc1, const char* cl, const char* shc, const char* cxx1, int kind, const char* source,
                               int language, const char* arch, int config) {
-    editor::Toolchain tool;
-    if (cc1 && *cc1) tool.cc1 = cc1;
-    if (cl && *cl) tool.cl = cl;
-    if (shc && *shc) tool.shc = shc;
-    if (cxx1 && *cxx1) tool.cxx1 = cxx1;
+    editor::Toolchain tool = toolFrom(project, cc1, cl, shc, cxx1);
 
     RStudioProgram* out = new RStudioProgram();
     out->built = editor::buildProgram(tool, static_cast<editor::ToolchainKind>(kind),
@@ -1141,11 +1231,7 @@ int rstudio_project_debug_plan(RStudioProject* project, const char* cc1, const c
         return 0;
     }
 
-    editor::Toolchain tool;
-    if (cc1 && *cc1) tool.cc1 = cc1;
-    if (cl && *cl) tool.cl = cl;
-    if (shc && *shc) tool.shc = shc;
-    if (cxx1 && *cxx1) tool.cxx1 = cxx1;
+    editor::Toolchain tool = toolFrom(project, cc1, cl, shc, cxx1);
     tool.kind = static_cast<editor::ToolchainKind>(kind);
 
     project->plan = editor::dbg_planFor(tool, project->parts, arch ? arch : "");
@@ -1177,11 +1263,7 @@ RStudioBuild* rstudio_build_target(RStudioProject* project, const char* cc1, con
                            int kind, const char* arch, int config) {
     if (!rstudio_project_target_ready(project)) return 0;
 
-    editor::Toolchain tool;
-    if (cc1 && *cc1) tool.cc1 = cc1;
-    if (cl && *cl) tool.cl = cl;
-    if (shc && *shc) tool.shc = shc;
-    if (cxx1 && *cxx1) tool.cxx1 = cxx1;
+    editor::Toolchain tool = toolFrom(project, cc1, cl, shc, cxx1);
 
     tool.kind = static_cast<editor::ToolchainKind>(kind);
 
@@ -1241,13 +1323,9 @@ const char* rstudio_conversion_output(RStudioConversion* made) {
     return made->made.output.c_str();
 }
 
-RStudioBuild* rstudio_build(const char* cc1, const char* cl, const char* shc, const char* cxx1, int kind, const char* source,
+RStudioBuild* rstudio_build(RStudioProject* project, const char* cc1, const char* cl, const char* shc, const char* cxx1, int kind, const char* source,
                     int language, const char* arch, int config) {
-    editor::Toolchain tool;
-    if (cc1 && *cc1) tool.cc1 = cc1;
-    if (cl && *cl) tool.cl = cl;
-    if (shc && *shc) tool.shc = shc;
-    if (cxx1 && *cxx1) tool.cxx1 = cxx1;
+    editor::Toolchain tool = toolFrom(project, cc1, cl, shc, cxx1);
 
     RStudioBuild* out = new RStudioBuild();
     out->built = editor::build(tool, static_cast<editor::ToolchainKind>(kind),

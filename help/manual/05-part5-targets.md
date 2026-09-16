@@ -85,14 +85,22 @@ recorded at the emission site, not accidents.
 
 **Why it must be *found* first.** `ml64` and `link` are on `PATH` only inside a
 Visual Studio Developer Command Prompt. An editor started from Explorer is not
-one. So the compiler locates Visual Studio itself (`vswhere`, pinned to the
-2022 toolset) and runs the assemble and link steps inside a shell that has
-sourced `vcvars64.bat`. That sets both `PATH` (for `ml64`/`link`) and `LIB` (so
-the linker finds `libcmt.lib`). Before this, a build started from a
-double-clicked editor died with `'ml64.exe' is not recognized`, which read like a
-broken compiler and was a missing environment. The lesson: on Windows, "the
-compiler works from a developer prompt but not from the editor" is always an
-environment question, never a code-generation one.
+one. So the compiler locates Visual Studio itself and runs the assemble and
+link steps inside a shell that has sourced `vcvars64.bat`. That sets both
+`PATH` (for `ml64`/`link`) and `LIB` (so the linker finds `libcmt.lib`). The
+search, in the compilers and the editor alike: already inside a developer
+prompt (`VCToolsInstallDir` set), nothing to do; else `vswhere` asked for the
+newest installation with the C++ tools, any version or edition, Build Tools
+and previews included; else the places the installer puts them - `Microsoft
+Visual Studio\18`, `\2022`, `\2019`, `\2017`, each edition. When none of
+that finds it - a Visual Studio somewhere of its own - *Tools ▸ Locate
+vcvars64.bat...* names the file once, in the installation's `settings.json`
+(`"vcvars"`), and every build from then on uses it. Before this, a build
+started from a double-clicked editor died with `'ml64.exe' is not
+recognized`, which read like a broken compiler and was a missing
+environment. The lesson: on Windows, "the compiler works from a developer
+prompt but not from the editor" is always an environment question, never a
+code-generation one.
 
 **Why CodeView (native Windows debug info) does *not* work here.** A native
 Windows debugger wants **CodeView**, not DWARF. Two things stop the MASM path

@@ -182,14 +182,25 @@ if "%BINDIR%"=="" set BINDIR=bin
 if exist "%BINDIR%\cc1i.exe" copy /y "%BINDIR%\cc1i.exe" "%PRODUCT%\bin\" >nul
 if exist "%BINDIR%\cxx1i.exe" copy /y "%BINDIR%\cxx1i.exe" "%PRODUCT%\bin\" >nul
 if exist "%BINDIR%\vm6747.exe" copy /y "%BINDIR%\vm6747.exe" "%PRODUCT%\bin\" >nul
-rem cxx1's headers go with it: it looks for include\ and lib\ beside its
-rem binary and then one directory up, and falls back to the paths compiled
-rem into it, which name the checkout. One up, because bin\lib\ is shc's.
+rem The headers go with the compilers, one directory above bin\ - because
+rem bin\lib\ is shc's. include\ is cxx1i's, its C++ headers and the C ones
+rem they wrap in one directory; lib\ is cc1i's. Each looks there for its own
+rem before the paths compiled into it, which name the checkout, and the
+rem settings.json beside them tells the editor the same.
 if "%CXX1_DIR%"=="" set CXX1_DIR=..\VM6747\Compiler-Cppi
+if "%CC1_DIR%"=="" set CC1_DIR=..\VM6747\Compiler-Ci
 if exist "%PRODUCT%\include" rmdir /s /q "%PRODUCT%\include"
 if exist "%PRODUCT%\lib" rmdir /s /q "%PRODUCT%\lib"
 if exist "%CXX1_DIR%\include" xcopy /e /i /q "%CXX1_DIR%\include" "%PRODUCT%\include" >nul
-if exist "%CXX1_DIR%\lib" xcopy /e /i /q "%CXX1_DIR%\lib" "%PRODUCT%\lib" >nul
+if exist "%CXX1_DIR%\lib\*.h" copy /y "%CXX1_DIR%\lib\*.h" "%PRODUCT%\include\" >nul
+if exist "%CC1_DIR%\lib" xcopy /e /i /q "%CC1_DIR%\lib" "%PRODUCT%\lib" >nul
+(
+   echo {
+   echo   "include": "include",
+   echo   "lib": "lib",
+   echo   "vcvars": ""
+   echo }
+) > "%PRODUCT%\settings.json"
 if exist "%BINDIR%\shci.exe" copy /y "%BINDIR%\shci.exe" "%PRODUCT%\bin\" >nul
 if exist "%BINDIR%\RStudio.exe" copy /y "%BINDIR%\RStudio.exe" "%PRODUCT%\bin\" >nul
 if exist "%BINDIR%\lib\*.lib" (

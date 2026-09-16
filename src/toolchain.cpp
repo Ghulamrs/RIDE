@@ -1,6 +1,7 @@
 #include "toolchain.h"
 
 #include "path.h"
+#include "settings.h"
 
 #include <cstdio>
 #include <cstdlib>
@@ -75,24 +76,51 @@ std::string firstLineOf(const std::string& command) {
     return line;
 }
 
+// The batch file that puts cl, ml64 and link on PATH and LIB where they can
+// be found: named in the settings when a person had to, else the newest
+// Visual Studio vswhere knows of - any version, any edition, Build Tools
+// included - and failing vswhere, the places the installer puts them.
 std::string findVcvars() {
+    std::string named = settings::vcvars();
+    if (!named.empty()) return named;
+
     const char* programFiles = std::getenv("ProgramFiles(x86)");
-    if (!programFiles) return std::string();
+    if (programFiles) {
+        std::string vswhere = std::string(programFiles) +
+                              "\\Microsoft Visual Studio\\Installer\\vswhere.exe";
+        if (path::exists(vswhere)) {
+            std::string where = firstLineOf(forCmd(
+                quote(vswhere) + " -latest -prerelease -products *"
+                                 " -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64"
+                                 " -property installationPath"));
+            std::string bat = where + "\\VC\\Auxiliary\\Build\\vcvars64.bat";
+            if (!where.empty() && path::exists(bat)) return bat;
+        }
+    }
 
-    std::string vswhere = std::string(programFiles) +
-                          "\\Microsoft Visual Studio\\Installer\\vswhere.exe";
-
-    std::string where = firstLineOf(forCmd(
-        quote(vswhere) + " -latest -products * -version \"[17.0,18.0)\""
-                         " -property installationPath"));
-    if (where.empty()) return std::string();
-
-    return where + "\\VC\\Auxiliary\\Build\\vcvars64.bat";
+    static const char* const roots[] = {
+        "C:\\Program Files\\Microsoft Visual Studio\\18\\",
+        "C:\\Program Files\\Microsoft Visual Studio\\2022\\",
+        "C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\",
+        "C:\\Program Files (x86)\\Microsoft Visual Studio\\2017\\"
+    };
+    static const char* const editions[] = {
+        "Community", "Professional", "Enterprise", "BuildTools", "Preview"
+    };
+    for (size_t r = 0; r < sizeof roots / sizeof roots[0]; ++r)
+        for (size_t e = 0; e < sizeof editions / sizeof editions[0]; ++e) {
+            std::string bat = std::string(roots[r]) + editions[e] +
+                              "\\VC\\Auxiliary\\Build\\vcvars64.bat";
+            if (path::exists(bat)) return bat;
+        }
+    return std::string();
 }
 
 bool importMsvcEnvironment() {
     static int done = 0;
-    if (done != 0) return done == 1;
+    if (done == 1) return true;
+    // A failure is tried again once a person has named the batch file.
+    if (done == -1 && settings::vcvars().empty()) return false;
 
     if (std::getenv("VSCMD_ARG_TGT_ARCH")) {
         done = 1;
@@ -189,6 +217,23 @@ const char* programOf(const Toolchain& tool, ToolchainKind kind) {
 
 bool usesArch(ToolchainKind kind) {
     return kind == ToolCc1 || kind == ToolShc || kind == ToolCxx1;
+}
+
+std::string includeFlags(const Toolchain& tool, ToolchainKind kind) {
+    if (kind == ToolShc) return std::string();
+    const char* flag = (kind == ToolMsvc) ? " /I" : " -I";
+
+    std::string flags;
+    for (size_t i = 0; i < tool.includes.size(); ++i) flags += flag + quote(tool.includes[i]);
+    if (kind == ToolCc1 && !tool.lib.empty()) flags += flag + quote(tool.lib);
+    if (kind == ToolCxx1 && !tool.include.empty()) flags += flag + quote(tool.include);
+    return flags;
+}
+
+std::string libraryArguments(const Toolchain& tool) {
+    std::string named;
+    for (size_t i = 0; i < tool.libraries.size(); ++i) named += " " + quote(tool.libraries[i]);
+    return named;
 }
 
 // The target as each compiler spells it: `-arch x` to cc1 and cxx1, `--target=x` to shc.
@@ -415,10 +460,10 @@ Recipe targetRecipe(const Toolchain& tool, ToolchainKind kind,
         std::string pdb = path::join(objects, "rstudio-target.pdb");
 
         recipe.command = quote(programOf(tool, kind)) + " /nologo /diagnostics:column" +
-                         forLanguage + configFlags(kind, config, arch) +
+                         forLanguage + configFlags(kind, config, arch) + includeFlags(tool, kind) +
                          (config == ConfigDebug ? " /Fd" + quote(pdb) : std::string()) +
                          " /Fe" + quote(program) +
-                         " /Fo" + quoteDirectory(objects + kSep) + named +
+                         " /Fo" + quoteDirectory(objects + kSep) + named + libraryArguments(tool) +
                          (config == ConfigDebug ? " /link /DEBUG" : std::string());
 
         for (size_t i = 0; i < sources.size(); ++i) {
@@ -452,13 +497,14 @@ Recipe targetRecipe(const Toolchain& tool, ToolchainKind kind,
             recipe.command += quote(programOf(tool, kind)) + " -S" + archFlag(kind, arch) +
                               " " + quote(sources[i]) + " -o " +
                               quote(path::join(dir, objectFor(std::string(), sources[i], ".s"))) +
-                              configFlags(kind, config, arch);
+                              configFlags(kind, config, arch) + includeFlags(tool, kind);
         }
         return recipe;
     }
 
     recipe.command = quote(programOf(tool, kind)) + languageFlag(kind, lang) +
-                     named + " -o " + quote(program) + configFlags(kind, config, arch);
+                     named + " -o " + quote(program) + configFlags(kind, config, arch) +
+                     includeFlags(tool, kind);
     return recipe;
 }
 
@@ -512,7 +558,7 @@ Recipe objectRecipe(const Toolchain& tool, ToolchainKind kind,
         std::string pdb = path::join(objectDir, "rstudio-target.pdb");
 
         recipe.command = quote(programOf(tool, kind)) + " /nologo /diagnostics:column /c" +
-                         forLanguage + crt + configFlags(kind, config, arch) +
+                         forLanguage + crt + configFlags(kind, config, arch) + includeFlags(tool, kind) +
                          (config == ConfigDebug ? " /Fd" + quote(pdb) : std::string()) +
                          " /Fo" + quoteDirectory(objectDir + kSep) + named;
 
@@ -529,7 +575,7 @@ Recipe objectRecipe(const Toolchain& tool, ToolchainKind kind,
             if (i > 0) recipe.command += " && ";
             recipe.command += quote(programOf(tool, kind)) + " -S" + archFlag(kind, arch) +
                               " " + quote(sources[i]) + " -o " + quote(out) +
-                              configFlags(kind, config, arch);
+                              configFlags(kind, config, arch) + includeFlags(tool, kind);
             objects.push_back(out);
         }
         recipe.leftovers = objects;
@@ -539,7 +585,7 @@ Recipe objectRecipe(const Toolchain& tool, ToolchainKind kind,
     recipe.command = "cd " + quote(objectDir) + " && " +
                      quote(programOf(tool, kind)) + " -c" +
                      languageFlag(kind, lang) + named +
-                     configFlags(kind, config, arch);
+                     configFlags(kind, config, arch) + includeFlags(tool, kind);
 
     for (size_t i = 0; i < sources.size(); ++i)
         objects.push_back(objectFor(objectDir, sources[i], ".o"));
@@ -550,13 +596,13 @@ Recipe objectRecipe(const Toolchain& tool, ToolchainKind kind,
 Recipe linkRecipe(const Toolchain& tool, const std::vector<std::string>& objects,
                   bool withCpp, const std::string& arch, Configuration config,
                   const std::string& program) {
-    (void)tool;
     (void)arch;
     Recipe recipe;
     recipe.assemblyPath = program;
 
     std::string named;
     for (size_t i = 0; i < objects.size(); ++i) named += " " + quote(objects[i]);
+    named += libraryArguments(tool);
 
 #ifdef _WIN32
     (void)withCpp;
@@ -591,7 +637,7 @@ Recipe programRecipe(const Toolchain& tool, ToolchainKind kind,
         recipe.assemblyPath = mine("rstudio-run") + ".s";
         recipe.command = quote(programOf(tool, kind)) + " -S" + archFlag(kind, arch) + " " +
                          quote(source) + " -o " + quote(recipe.assemblyPath) +
-                         configFlags(kind, config, arch);
+                         configFlags(kind, config, arch) + includeFlags(tool, kind);
         return recipe;
     }
 
@@ -602,10 +648,10 @@ Recipe programRecipe(const Toolchain& tool, ToolchainKind kind,
 
         std::string pdb = mine("rstudio-run") + ".pdb";
         recipe.command = quote(program) + " /nologo /diagnostics:column" + forLanguage +
-                         configFlags(kind, config, arch) +
+                         configFlags(kind, config, arch) + includeFlags(tool, kind) +
                          (config == ConfigDebug ? " /Fd" + quote(pdb) : std::string()) +
                          " /Fe" + quote(recipe.assemblyPath) +
-                         " /Fo" + quote(obj) + " " + quote(source) +
+                         " /Fo" + quote(obj) + " " + quote(source) + libraryArguments(tool) +
                          (config == ConfigDebug ? " /link /DEBUG" : std::string());
         recipe.leftovers.push_back(obj);
         if (config == ConfigDebug) {
@@ -615,8 +661,12 @@ Recipe programRecipe(const Toolchain& tool, ToolchainKind kind,
         return recipe;
     }
 
+    // cc1 and cxx1 take sources only, so a library rides on F4, where the
+    // objects are linked by the host; the machine's own C++ takes them here.
     recipe.command = quote(program) + " " + quote(source) + " -o " +
-                     quote(recipe.assemblyPath) + configFlags(kind, config, arch);
+                     quote(recipe.assemblyPath) + configFlags(kind, config, arch) +
+                     includeFlags(tool, kind) +
+                     (kind == ToolCxx ? libraryArguments(tool) : std::string());
     return recipe;
 }
 
@@ -626,13 +676,16 @@ std::string shownProgramCommand(const Toolchain& tool, ToolchainKind kind,
     std::string program = programOf(tool, kind);
     if (isEmulated(arch) && usesArch(kind))
         return program + " -S" + archFlag(kind, arch) + " " + source + " -o rstudio-run.s" +
-               configFlags(kind, config, arch) + " && vm6747 rstudio-run.s" +
+               configFlags(kind, config, arch) + includeFlags(tool, kind) +
+               " && vm6747 rstudio-run.s" +
                (kind == ToolShc ? " lib/shmrt-tms6747" : "");
     if (kind == ToolMsvc)
         return program + " /diagnostics:column" +
                ((lang == LangCpp) ? " /TP /EHsc /std:c++14" : " /TC") +
-               configFlags(kind, config, arch) + " /Ferstudio-run " + source;
-    return program + " " + source + " -o rstudio-run" + configFlags(kind, config, arch);
+               configFlags(kind, config, arch) + includeFlags(tool, kind) +
+               " /Ferstudio-run " + source + libraryArguments(tool);
+    return program + " " + source + " -o rstudio-run" + configFlags(kind, config, arch) +
+           includeFlags(tool, kind) + (kind == ToolCxx ? libraryArguments(tool) : std::string());
 }
 
 Recipe assemblyRecipe(const Toolchain& tool, ToolchainKind kind,
@@ -649,7 +702,7 @@ Recipe assemblyRecipe(const Toolchain& tool, ToolchainKind kind,
         std::string forLanguage = (lang == LangCpp) ? " /TP /EHsc /std:c++14" : " /TC";
 
         recipe.command = quote(program) + " /nologo /c /diagnostics:column /FAs" +
-                         forLanguage + configFlags(kind, config, arch) +
+                         forLanguage + configFlags(kind, config, arch) + includeFlags(tool, kind) +
                          " /Fa" + quote(recipe.assemblyPath) +
                          " /Fo" + quote(obj) + " " + quote(source);
         recipe.leftovers.push_back(obj);
@@ -667,7 +720,7 @@ Recipe assemblyRecipe(const Toolchain& tool, ToolchainKind kind,
     recipe.command = quote(programOf(tool, kind)) + " -S" + languageFlag(kind, lang) + " " +
                      quote(source) + " -o " + quote(recipe.assemblyPath) +
                      (usesArch(kind) ? " -arch " + arch : std::string()) +
-                     configFlags(kind, config, arch);
+                     configFlags(kind, config, arch) + includeFlags(tool, kind);
     return recipe;
 }
 
@@ -678,11 +731,11 @@ std::string shownCommand(const Toolchain& tool, ToolchainKind kind,
     if (kind == ToolMsvc)
         return program + " /c /diagnostics:column /FAs" +
                ((lang == LangCpp) ? " /TP /EHsc /std:c++14" : " /TC") +
-               configFlags(kind, config, arch) + " " + source;
+               configFlags(kind, config, arch) + includeFlags(tool, kind) + " " + source;
     if (kind == ToolShc)
         return program + " -S " + source + " --target=" + arch;
     return program + " -S " + source + " -arch " + arch +
-           configFlags(kind, config, arch);
+           configFlags(kind, config, arch) + includeFlags(tool, kind);
 }
 
 bool prepareFor(ToolchainKind kind) {

@@ -148,6 +148,8 @@ int main(int argc, char** argv) {
         else onItsOwn = true;
     }
 
+    // The installation's settings.json, written once with its two directories.
+    editor::settings::writeInstallFileIfAbsent();
     if (project.empty() && !onItsOwn) {
         project = editor::settings::lastProject();
         if (project.empty()) project = editor::demoDirectory();

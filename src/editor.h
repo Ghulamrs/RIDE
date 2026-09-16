@@ -194,6 +194,14 @@ private:
     void regroupFile();
     void addToProject();
     void removeFromProject();
+    void editProjectIncludes();
+    void editProjectLibraries();
+    void editHeaderDirs();
+    void locateVcvars();
+
+    // tool_ with the header directories and the project's paths filled in,
+    // which is what every build is given.
+    Toolchain toolFor() const;
 
     enum PaneMode { PaneProject, PaneFiles };
     void newProject();
