@@ -102,10 +102,16 @@ a{color:inherit;text-decoration:none}}
 bin\lib\  the Shalimar runtime (shmrt-x86_64-windows[-debug].lib) and the
           C6000 runtime (shmrt-tms6747\*.s)
 bin\ti\   ti-build.cmd — the real-silicon TI build path
-include\  the C++ standard headers (&lt;vector&gt;, &lt;new&gt;, &lt;typeinfo&gt;, …)
-lib\      the C standard headers (&lt;stdio.h&gt;, &lt;string.h&gt;, …)
+include\  cxx1i&#x27;s headers: C++ (&lt;vector&gt;, &lt;new&gt;, &lt;typeinfo&gt;, …) and the
+          C ones they wrap, in one directory
+lib\      cc1i&#x27;s headers: the C standard headers (&lt;stdio.h&gt;, &lt;string.h&gt;, …)
+settings.json  the installation&#x27;s settings: where include\ and lib\ are,
+          the default compiler (the Tools menu writes it), and a
+          vcvars64.bat when Visual Studio had to be named by hand
+          (Tools &gt; Header directories..., Tools &gt; Locate vcvars64.bat...)
 examples\ worked programs and a demo project (demo.pro)
 help\     the full help pages</code></pre>
+<p>Include paths and libraries for every compile are in settings.json (Tools &gt; Include paths..., Tools &gt; Libraries...); a project's own .pro may add its own <code>&quot;include&quot;: [dirs]</code> and <code>&quot;libraries&quot;: [files]</code>, relative to the project. The last three projects opened are at the end of the Project menu; none is opened on its own at start.</p>
 <hr>
 <h2 id="the-full-manual">The full manual</h2>
 <p>This is the quick reference. The complete manual — the compilation model, every language feature and non-feature, the project-file architecture, the full command-line reference, the targets and the native tools, and troubleshooting — is in <code>help\manual\</code> (Part I begins in <code>01-part1-model.md</code>), with the full Shalimar language spec in <code>help\appendix-a-shalimar-language.md</code>.</p></div></body></html>

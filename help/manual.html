@@ -275,6 +275,19 @@ a{color:inherit;text-decoration:none}}
 <p>A compiler takes a command line, not a project. A <em>project</em> is the editor's way of remembering what a program is made of and turning that into command lines. This part covers the project file, what it can and cannot express, and the operations that create and change it.</p>
 <hr>
 <h2 id="11-the-project-file-pro">11. The project file (<code>.pro</code>)</h2>
+<p>Beside a project's file there is <strong>the installation's <code>settings.json</code></strong>, one directory above <code>bin\</code>, beside <code>include\</code> and <code>lib\</code>:</p>
+<pre><code>{
+  &quot;include&quot;: &quot;include&quot;,
+  &quot;lib&quot;: &quot;lib&quot;,
+  &quot;vcvars&quot;: &quot;&quot;,
+  &quot;compiler&quot;: &quot;auto&quot;,
+  &quot;indent&quot;: 4,
+  &quot;tabs&quot;: false,
+  &quot;font&quot;: &quot;&quot;,
+  &quot;includes&quot;: [&quot;C:/work/common/include&quot;],
+  &quot;libraries&quot;: [&quot;C:/work/common/lib/mathlib.lib&quot;]
+}</code></pre>
+<p>It is read for every compile, project or none. <code>include</code> is where <code>cxx1i</code>'s headers are (its C++ headers and the C ones they wrap, in one directory) and <code>lib</code> where <code>cc1i</code>'s are, each relative to the file unless absolute; the editor passes each compiler its own as <code>-I</code>, and the compilers also look there themselves, so the command line works without the editor. <code>vcvars</code> is empty until Visual Studio's tools could not be found by looking, and then names the <code>vcvars64.bat</code> to use. <code>compiler</code> is the one chosen when the editor starts - <code>auto</code> (the file's extension decides), <code>cc1</code>, <code>cxx1</code>, <code>shc</code>, <code>msvc</code> or <code>c++</code> - and choosing one from the Tools menu writes it here; a project that names its own compiler takes precedence while it is open. <code>indent</code> and <code>tabs</code> are how a file is laid out unless its project says otherwise, and <code>font</code> is the window's, written by <em>Tools ▸ Font...</em>. <code>includes</code> and <code>libraries</code> are header directories every compile searches and libraries every host link takes, for the whole installation - <em>Tools ▸ Include paths...</em> and <em>Tools ▸ Libraries...</em> write them; a project may still carry its own in its <code>.pro</code>, searched first. <em>Tools ▸ Header directories...</em> and <em>Tools ▸ Locate vcvars64.bat...</em> write this file too; the editor writes it with the defaults on its first run where it finds none.</p>
 <p>A project is one JSON object in a file named <code>&lt;name&gt;.pro</code>, living in the project's directory. Here is a complete one:</p>
 <pre><code>{
   &quot;name&quot;: &quot;demo&quot;,
@@ -286,6 +299,8 @@ a{color:inherit;text-decoration:none}}
     &quot;Sources&quot;: [&quot;greet.c&quot;, &quot;main.c&quot;],
     &quot;Headers&quot;: [&quot;greet.h&quot;]
   },
+  &quot;include&quot;: [&quot;include&quot;, &quot;../common&quot;],
+  &quot;libraries&quot;: [&quot;lib/mathlib.lib&quot;],
   &quot;build&quot;: { &quot;target&quot;: &quot;demo&quot;, &quot;groups&quot;: [&quot;Sources&quot;] }
 }</code></pre>
 <p>Field by field:</p>
@@ -293,9 +308,12 @@ a{color:inherit;text-decoration:none}}
 <li><strong><code>name</code></strong> — the project's name. Shown in the title bar (3.5: <code>RIDE 3.5 - &lt;name&gt; - &lt;file&gt;</code>).</li>
 <li><strong><code>toolchain</code></strong> — the project-wide compiler choice: <code>auto</code> (the file's suffix decides), or a named one: <code>cc1</code>, <code>cxx1</code>, <code>shc</code>, or <code>msvc</code> (the host's <code>cl</code>). <code>auto</code> is almost always right; a named one forces every auto group to that compiler.</li>
 <li><strong><code>arch</code></strong> — the target the project builds for: one of <code>x86_64-windows</code>, <code>x86_64-linux</code>, <code>arm64-darwin</code>, <code>tms6747</code>. The editor's Target menu changes it; a project that names none gets this machine's host target.</li>
-<li><strong><code>indent</code></strong> / <strong><code>tabs</code></strong> — how the editor lays this project's files out.</li>
+<li><strong><code>indent</code></strong> / <strong><code>tabs</code></strong> — how the editor lays this project's files out; absent, the installation's <code>settings.json</code> answers, and a new project writes neither.</li>
 <li><strong><code>groups</code></strong> — a set of named groups, each a list of files. The names are the headings in the left pane. A file's group is a display and organisation convenience <em>and</em> the unit the build selects. A group may carry its own <code>&quot;toolchain&quot;</code> to override the project's for that group only (an object form: <code>&quot;Legacy&quot;: { &quot;files&quot;: [...], &quot;toolchain&quot;: &quot;msvc&quot; }</code>).</li>
-<li><strong><code>build</code></strong> — what the project builds: <code>target</code> names the program, and <code>groups</code> lists which groups' sources compile into it. Files in un-named groups, and headers, are passed over.</li>
+<li><strong><code>include</code></strong> — header directories of the project's own, relative to the project's directory (an absolute path stays as written). Every compile of the project's sources searches them, in this order, before the shipped headers: <code>-I</code> to <code>cc1i</code>, <code>cxx1i</code> and the host's C++, <code>/I</code> to <code>cl</code>. Shalimar has no include and <code>shci</code> is given none. The installation's own, from <code>settings.json</code>, are searched after these.</li>
+<li><strong><code>libraries</code></strong> — libraries linked into the program after its objects, each relative to the project's directory: <code>.lib</code> files under Windows, <code>.a</code> under Unix. A project that names any is built as objects and linked by the host's linker, whatever its compilers (<code>cc1i</code> and <code>cxx1i</code> take sources only). They do not apply to <code>tms6747</code>, which is not linked. The installation's own, from <code>settings.json</code>, are linked after these.</li>
+<li><strong><code>open</code></strong> — the file that opens with the project, relative to its directory. Written by the editor from the file in front when the project is closed or the editor left. A project without it opens the file that defines <code>main</code> (<code>int main(</code> in C and C++, <code>fun &lt;&gt; = main()</code> in Shalimar), and failing that its first file.</li>
+<li><strong><code>build</code></strong> — what the project builds: <code>target</code> names the program, and <code>groups</code> lists which groups' sources compile into it. Files in un-named groups, and headers, are passed over. A project made in the editor gets one that builds its <code>Sources</code> group into a program of the project's name.</li>
 </ul>
 <p><strong>What the <code>.pro</code> provides:</strong></p>
 <ul>
@@ -306,10 +324,10 @@ a{color:inherit;text-decoration:none}}
 </ul>
 <p><strong>What the <code>.pro</code> lacks — deliberately:</strong></p>
 <ul>
-<li><strong>No compiler flags per file or per project</strong> beyond the target and the compiler choice. There is no <code>cflags</code>/<code>cxxflags</code>/<code>defines</code>/<code>includes</code> field. The editor builds each source with a fixed, correct recipe for its language and target; if you need custom flags, compile from the command line (Part IV).</li>
+<li><strong>No compiler flags per file or per project</strong> beyond the target, the compiler choice, the header directories and the libraries. There is no <code>cflags</code>/<code>cxxflags</code>/<code>defines</code> field. The editor builds each source with a fixed, correct recipe for its language and target; if you need custom flags, compile from the command line (Part IV).</li>
 <li><strong>No custom build steps, no rules, no dependencies you write.</strong> It is not <code>make</code>. The build is: compile the named groups' sources, link them, done.</li>
 <li><strong>No multiple programs from one <code>.pro</code>.</strong> One <code>build</code> entry, one <code>target</code>. Two programs is two projects. (This is why Shalimar-beside-C is refused — see below.)</li>
-<li><strong>No library targets, no install rules, no configurations beyond debug/release</strong> (which is an editor toggle, not a <code>.pro</code> field).</li>
+<li><strong>No library targets, no install rules, no configurations beyond debug/release</strong> (which is an editor toggle, not a <code>.pro</code> field). A project <em>uses</em> libraries; it does not make one.</li>
 <li><strong>No conditional inclusion</strong> (files in / out by platform or setting). A file is in a group or it is not.</li>
 </ul>
 <p>The philosophy: the <code>.pro</code> says <em>what the program is made of</em>, and the editor knows <em>how</em> to build each language for each target. It keeps the file small and correct rather than a general-purpose build system. When you outgrow it, the command line (Part IV) is right there and takes over seamlessly.</p>
@@ -426,7 +444,7 @@ vm6747 hello.s</code></pre>
 <h2 id="22-why-ml64-exe-works-and-why-codeview-does-not">22. Why <code>ml64.exe</code> works, and why CodeView does not</h2>
 <p>This is the most-asked Windows question, so here it is in full.</p>
 <p><strong>What <code>ml64.exe</code> is.</strong> Microsoft's 64-bit macro assembler (MASM). On <code>x86_64-windows</code> the compiler emits MASM-syntax assembly and <code>ml64</code> turns it into a COFF object; <code>link.exe</code> links it. <code>ml64</code> works because the compiler writes exactly the dialect it expects — the same instruction stream as the Linux target, spelled Microsoft's way (<code>MasmSpelling</code> versus <code>GnuSpelling</code>; the two are the whole of the difference). Where a construct has no MASM room — for instance an identifier that MASM treats as a reserved word — the backend spells around it (e.g. <code>OPTION NOKEYWORD</code> for a name like <code>fabs</code>, <code>OPTION PROC:PRIVATE</code> so a <code>static</code> function is not exported as an external symbol). These are decisions recorded at the emission site, not accidents.</p>
-<p>**Why it must be <em>found</em> first.** <code>ml64</code> and <code>link</code> are on <code>PATH</code> only inside a Visual Studio Developer Command Prompt. An editor started from Explorer is not one. So the compiler locates Visual Studio itself (<code>vswhere</code>, pinned to the 2022 toolset) and runs the assemble and link steps inside a shell that has sourced <code>vcvars64.bat</code>. That sets both <code>PATH</code> (for <code>ml64</code>/<code>link</code>) and <code>LIB</code> (so the linker finds <code>libcmt.lib</code>). Before this, a build started from a double-clicked editor died with <code>&#x27;ml64.exe&#x27; is not recognized</code>, which read like a broken compiler and was a missing environment. The lesson: on Windows, "the compiler works from a developer prompt but not from the editor" is always an environment question, never a code-generation one.</p>
+<p>**Why it must be <em>found</em> first.** <code>ml64</code> and <code>link</code> are on <code>PATH</code> only inside a Visual Studio Developer Command Prompt. An editor started from Explorer is not one. So the compiler locates Visual Studio itself and runs the assemble and link steps inside a shell that has sourced <code>vcvars64.bat</code>. That sets both <code>PATH</code> (for <code>ml64</code>/<code>link</code>) and <code>LIB</code> (so the linker finds <code>libcmt.lib</code>). The search, in the compilers and the editor alike: already inside a developer prompt (<code>VCToolsInstallDir</code> set), nothing to do; else <code>vswhere</code> asked for the newest installation with the C++ tools, any version or edition, Build Tools and previews included; else the places the installer puts them - <code>Microsoft Visual Studio\18</code>, <code>\2022</code>, <code>\2019</code>, <code>\2017</code>, each edition. When none of that finds it - a Visual Studio somewhere of its own - <em>Tools ▸ Locate vcvars64.bat...</em> names the file once, in the installation's <code>settings.json</code> (<code>&quot;vcvars&quot;</code>), and every build from then on uses it. Before this, a build started from a double-clicked editor died with <code>&#x27;ml64.exe&#x27; is not recognized</code>, which read like a broken compiler and was a missing environment. The lesson: on Windows, "the compiler works from a developer prompt but not from the editor" is always an environment question, never a code-generation one.</p>
 <p>**Why CodeView (native Windows debug info) does <em>not</em> work here.<strong> A native Windows debugger wants </strong>CodeView**, not DWARF. Two things stop the MASM path from carrying it:</p>
 <ol>
 <li><strong>MASM carries no line table of its own</strong>, and <code>ml64</code> builds none from the assembly. So <code>-g</code> for <code>x86_64-windows</code> in the MASM spelling has nowhere to put a line table — the compiler refuses <code>-g</code> there and says why, rather than emit debug info a debugger cannot use.</li>
@@ -495,7 +513,7 @@ vm6747 program.s bin\lib\shmrt-tms6747     (Shalimar: runtime beside it)</code><
     [--cc1 path] [--cxx1 path] [--cl path] [--shc path]</code></pre>
 <ul>
 <li>A bare <code>file</code> opens that file; <code>--project dir</code> opens the project in <code>dir</code>.</li>
-<li>With nothing, the editor opens the project it was last in, or makes a small demo.</li>
+<li>With nothing, the editor opens nothing: the last three projects it was in are remembered and named at the end of the Project menu, never opened on their own.</li>
 <li><code>--toolchain</code> and <code>--config</code> preset the Tools and Debug/Release choices.</li>
 <li><code>--cc1</code>/<code>--cxx1</code>/<code>--cl</code>/<code>--shc</code> name the compilers explicitly; otherwise the editor finds them beside itself (<code>bin\</code>) before <code>PATH</code>. <code>$CC1</code>/<code>$CXX1</code>/<code>$CL</code>/ <code>$SHC</code> do the same through the environment.</li>
 </ul>
@@ -1014,7 +1032,7 @@ stdio.h    stdlib.h   string.h   time.h     (and the platform&#x27;s io/fcntl)</
 <h1 id="part-xv-faq-why-does-it">Part XV — FAQ: "why does it…"</h1>
 <p>Short answers to the questions the design provokes, each pointing at the part with the full story.</p>
 <p><strong>Why are there three compilers instead of one?</strong> Because they are three languages with genuinely different front ends and, for C vs C++, different rules about the same syntax. One binary pretending to be all three would have to guess a language it should be told; instead the suffix (or the Language menu) chooses, and each compiler refuses a language that is not its own — by name (Parts II, IV).</p>
-<p><strong>Why does the compiler need Visual Studio / vcvars on Windows?</strong> The compiler emits assembly; the <em>assembler</em> (<code>ml64</code>) and <em>linker</em> (<code>link</code>) are Microsoft's and are on <code>PATH</code> only inside a Developer Command Prompt. The compiler finds Visual Studio and sources <code>vcvars64.bat</code> for those steps, so it works from an ordinary shell too (Part V chapter 22).</p>
+<p><strong>Why does the compiler need Visual Studio / vcvars on Windows?</strong> The compiler emits assembly; the <em>assembler</em> (<code>ml64</code>) and <em>linker</em> (<code>link</code>) are Microsoft's and are on <code>PATH</code> only inside a Developer Command Prompt. The compiler finds Visual Studio and sources <code>vcvars64.bat</code> for those steps, so it works from an ordinary shell too (Part V chapter 22). If yours is somewhere it does not look, name the file once with <em>Tools ▸ Locate vcvars64.bat...</em>.</p>
 <p><strong>Why can't I step through C on Windows?</strong> The <code>x86_64-windows</code> MASM path carries no line table and <code>ml64</code> cannot relocate CodeView. Use <code>-masm=gnu</code> for a steppable DWARF build, or build the C++ with <code>cl</code> for CodeView (Part V chapter 22).</p>
 <p><strong>Why does <code>long</code> change size between platforms?</strong> LLP64 on Windows (and the C6000) makes <code>long</code> 32-bit; Linux/macOS make it 64-bit. The compiler follows each platform's ABI (Part XI chapter 55). Use fixed-width types when the size matters.</p>
 <p><strong>Why is <code>volatile</code> accepted but ignored in cxx1i?</strong> It is parsed and dropped; it does not change codegen. Do not rely on it for memory-mapped I/O (Parts II, X).</p>
