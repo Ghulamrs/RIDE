@@ -381,13 +381,12 @@ private:
 
     void Lay() {
         RefreshTitle();
-        // The icon the exe carries (winforms/RStudioGui.rc), for the title
-        // bar and the taskbar; a build without it keeps the default.
-        try {
-            Icon^ mark = System::Drawing::Icon::ExtractAssociatedIcon(Application::ExecutablePath);
-            if (mark != nullptr) Icon = mark;
-        } catch (Exception^) {
-        }
+        // The icon the exe carries (winforms/RStudioGui.rc, resource 1), for
+        // the title bar and the taskbar; a build without it keeps the
+        // default. Through LoadIcon rather than .NET's ExtractAssociatedIcon,
+        // whose name <windows.h> rewrites into a Win32 call.
+        HICON loaded = LoadIconW(GetModuleHandleW(NULL), MAKEINTRESOURCEW(1));
+        if (loaded != NULL) Icon = System::Drawing::Icon::FromHandle(IntPtr(loaded));
         Width = 1100;
         Height = 760;
         MinimumSize = System::Drawing::Size(840, 560);
