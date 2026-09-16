@@ -103,6 +103,10 @@ const char* rstudio_include_dir(void);
 const char* rstudio_lib_dir(void);
 int rstudio_remember_header_dirs(const char* include, const char* lib);
 const char* rstudio_vcvars(void);
+// The default compiler in settings.json, as an RSTUDIO_TOOL_* number, and
+// the choice written back when one is made from the menu.
+int rstudio_default_compiler(void);
+int rstudio_remember_default_compiler(int kind);
 int rstudio_remember_vcvars(const char* file);
 
 int rstudio_project_save_as(RStudioProject* project, const char* file,
@@ -116,7 +120,9 @@ void rstudio_project_close(RStudioProject* project);
 const char* rstudio_project_relative(RStudioProject* project, const char* path);
 const char* rstudio_project_file_name(void);
 
-int rstudio_create_file(RStudioProject* project, const char* relative, const char* group);
+// kind is the compiler chosen (RSTUDIO_TOOL_*): a name with no extension
+// gets that compiler's, or with the choice on automatic the project's usual.
+int rstudio_create_file(RStudioProject* project, const char* relative, const char* group, int kind);
 int rstudio_rename_file(RStudioProject* project, const char* fromAbsolute, const char* toRelative);
 int rstudio_delete_file(RStudioProject* project, const char* absolute);
 int rstudio_move_to_group(RStudioProject* project, const char* absolute, const char* group);

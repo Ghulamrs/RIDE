@@ -80,7 +80,7 @@ cp -f "$ROOT"/bin/lib/*.a "$STAGE/bin/lib/" 2>/dev/null || true
 [ -d "$CPP/include" ] && cp -rf "$CPP/include" "$STAGE/include"
 [ -d "$CPP/lib" ] && cp -f "$CPP"/lib/*.h "$STAGE/include/"
 [ -d "$CC/lib" ] && cp -rf "$CC/lib" "$STAGE/lib"
-printf '{\n  "include": "include",\n  "lib": "lib",\n  "vcvars": ""\n}\n' > "$STAGE/settings.json"
+printf '{\n  "include": "include",\n  "lib": "lib",\n  "vcvars": "",\n  "compiler": "auto"\n}\n' > "$STAGE/settings.json"
 [ -d "$ROOT/help" ] && cp -rf "$ROOT/help" "$STAGE/help"
 [ -d "$ROOT/docs" ] && cp -rf "$ROOT/docs" "$STAGE/docs"
 for e in c h cpp shl pro; do cp -f "$ROOT"/examples/*."$e" "$STAGE/examples/" 2>/dev/null || true; done

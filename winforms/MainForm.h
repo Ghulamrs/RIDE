@@ -315,7 +315,7 @@ private:
         cl_ = Named("CL", "cl");
         shc_ = Named("SHC", "shci");
         cxx1_ = Named("CXX1", "cxx1i");
-        toolKind_ = RSTUDIO_TOOL_AUTO;
+        toolKind_ = rstudio_default_compiler();
         languageChoice_ = -1;
         config_ = RSTUDIO_CONFIG_DEBUG;
         debugger_ = rstudio_debugger_new();
@@ -410,6 +410,8 @@ private:
         file->DropDownItems->Add(save);
         file->DropDownItems->Add("Save as...", nullptr,
                                  gcnew EventHandler(this, &MainForm::OnSaveAs));
+        file->DropDownItems->Add("Rename File...", nullptr,
+                                 gcnew EventHandler(this, &MainForm::OnRenameFile));
         file->DropDownItems->Add(
             Item("Close", Keys::Control | Keys::W, gcnew EventHandler(this, &MainForm::OnCloseFile)));
         file->DropDownItems->Add(gcnew ToolStripSeparator());
@@ -1031,6 +1033,38 @@ private:
         return nullptr;
     }
 
+    // The type spelled in full: inside a Form, the bare name is the
+    // control's own ContextMenuStrip property.
+    System::Windows::Forms::ContextMenuStrip^ EditMenuFor(RichTextBox^ box) {
+        System::Windows::Forms::ContextMenuStrip^ menu = gcnew System::Windows::Forms::ContextMenuStrip();
+        menu->Items->Add("Undo", nullptr, gcnew EventHandler(this, &MainForm::OnUndo));
+        menu->Items->Add("Redo", nullptr, gcnew EventHandler(this, &MainForm::OnRedo));
+        menu->Items->Add(gcnew ToolStripSeparator());
+        menu->Items->Add("Cut", nullptr, gcnew EventHandler(this, &MainForm::OnCut));
+        menu->Items->Add("Copy", nullptr, gcnew EventHandler(this, &MainForm::OnCopy));
+        menu->Items->Add("Paste", nullptr, gcnew EventHandler(this, &MainForm::OnPaste));
+        menu->Items->Add(gcnew ToolStripSeparator());
+        menu->Items->Add("Select all", nullptr, gcnew EventHandler(this, &MainForm::OnSelectAll));
+        // Before it opens: Cut and Copy want a selection, Paste text on the
+        // clipboard, Undo and Redo something to undo or redo.
+        menu->Opening += gcnew System::ComponentModel::CancelEventHandler(this, &MainForm::OnEditMenuOpening);
+        menu->Tag = box;
+        return menu;
+    }
+
+    void OnEditMenuOpening(Object^ sender, System::ComponentModel::CancelEventArgs^) {
+        System::Windows::Forms::ContextMenuStrip^ menu =
+            safe_cast<System::Windows::Forms::ContextMenuStrip^>(sender);
+        RichTextBox^ box = safe_cast<RichTextBox^>(menu->Tag);
+        bool selected = box->SelectionLength > 0;
+        menu->Items[0]->Enabled = box->CanUndo;
+        menu->Items[1]->Enabled = box->CanRedo;
+        menu->Items[3]->Enabled = selected;
+        menu->Items[4]->Enabled = selected;
+        menu->Items[5]->Enabled = Clipboard::ContainsText();
+        menu->Items[7]->Enabled = box->TextLength > 0;
+    }
+
     Sheet^ MakeSheet(String^ path, String^ contents) {
         Sheet^ sheet = gcnew Sheet();
         sheet->path = path;
@@ -1046,6 +1080,10 @@ private:
         sheet->box->KeyDown += gcnew KeyEventHandler(this, &MainForm::OnKeyDown);
         sheet->box->KeyUp += gcnew KeyEventHandler(this, &MainForm::OnKeyUp);
         sheet->box->SelectionChanged += gcnew EventHandler(this, &MainForm::OnCaretMoved);
+        // The right-click menu: the Edit menu's own handlers, so that a paste
+        // from here is the paste Ctrl-V does. A RichTextBox has none of its
+        // own, which read as a dead right button.
+        sheet->box->ContextMenuStrip = EditMenuFor(sheet->box);
         sheet->box->TextChanged += gcnew EventHandler(this, &MainForm::OnTextChanged);
         sheet->box->VScroll += gcnew EventHandler(this, &MainForm::OnScrolled);
 
@@ -1809,7 +1847,8 @@ private:
                 indentWidth_ = rstudio_project_indent_width(project_);
                 indentTabs_ = rstudio_project_indent_tabs(project_);
                 indentCase_ = rstudio_project_case_indent(project_);
-                toolKind_ = rstudio_project_toolchain(project_);
+                toolKind_ = rstudio_project_toolchain(project_) != RSTUDIO_TOOL_AUTO
+                        ? rstudio_project_toolchain(project_) : rstudio_default_compiler();
                 config_ = rstudio_configuration();
                 arch_ = FromUtf8(rstudio_project_arch(project_));
                 ShowChoices();
@@ -1833,7 +1872,8 @@ private:
         indentWidth_ = rstudio_project_indent_width(project_);
         indentTabs_ = rstudio_project_indent_tabs(project_);
         indentCase_ = rstudio_project_case_indent(project_);
-        toolKind_ = rstudio_project_toolchain(project_);
+        toolKind_ = rstudio_project_toolchain(project_) != RSTUDIO_TOOL_AUTO
+                        ? rstudio_project_toolchain(project_) : rstudio_default_compiler();
         config_ = rstudio_configuration();
         arch_ = FromUtf8(rstudio_project_arch(project_));
         ShowChoices();
@@ -1904,7 +1944,8 @@ private:
         indentWidth_ = rstudio_project_indent_width(project_);
         indentTabs_ = rstudio_project_indent_tabs(project_);
         indentCase_ = rstudio_project_case_indent(project_);
-        toolKind_ = rstudio_project_toolchain(project_);
+        toolKind_ = rstudio_project_toolchain(project_) != RSTUDIO_TOOL_AUTO
+                        ? rstudio_project_toolchain(project_) : rstudio_default_compiler();
         config_ = rstudio_configuration();
         arch_ = FromUtf8(rstudio_project_arch(project_));
         ShowChoices();
@@ -1949,6 +1990,12 @@ private:
             String^ only = Ask("New program (name, or one directory and a name)",
                                "It will be made in " + programs, "");
             if (only == nullptr || only->Length == 0) { what_->Text = "nothing made"; return; }
+            // The extension picks the compiler; a name without one gets the
+            // chosen compiler's, and C when the choice is automatic.
+            if (System::IO::Path::GetFileName(only)->IndexOf('.') < 0)
+                only += toolKind_ == RSTUDIO_TOOL_SHC ? ".shl"
+                      : toolKind_ == RSTUDIO_TOOL_CC1 || toolKind_ == RSTUDIO_TOOL_AUTO ? ".c"
+                                                                                        : ".cpp";
             String^ target = System::IO::Path::Combine(programs, only);
             if (System::IO::File::Exists(target)) {
                 what_->Text = only + " is already there"; return;
@@ -1980,7 +2027,7 @@ private:
         pin_ptr<Byte> groupPin = &group[0];
 
         if (!Did(rstudio_create_file(project_, reinterpret_cast<const char*>(relativePin),
-                                 reinterpret_cast<const char*>(groupPin))))
+                                 reinterpret_cast<const char*>(groupPin), toolKind_)))
             return;
 
         FillTree();
@@ -3826,30 +3873,35 @@ private:
     }
     void OnToolAuto(Object^, EventArgs^) {
         toolKind_ = RSTUDIO_TOOL_AUTO;
+        rstudio_remember_default_compiler(toolKind_);
         ShowChoices();
         RefreshDebugTab();
         what_->Text = "compiler: chosen by the file";
     }
     void OnToolCc1(Object^, EventArgs^) {
         toolKind_ = RSTUDIO_TOOL_CC1;
+        rstudio_remember_default_compiler(toolKind_);
         ShowChoices();
         RefreshDebugTab();
         what_->Text = "compiler: cc1";
     }
     void OnToolCl(Object^, EventArgs^) {
         toolKind_ = RSTUDIO_TOOL_MSVC;
+        rstudio_remember_default_compiler(toolKind_);
         ShowChoices();
         RefreshDebugTab();
         what_->Text = "compiler: cl";
     }
     void OnToolCxx1(Object^, EventArgs^) {
         toolKind_ = RSTUDIO_TOOL_CXX1;
+        rstudio_remember_default_compiler(toolKind_);
         ShowChoices();
         RefreshDebugTab();
         what_->Text = "compiler: cxx1";
     }
     void OnToolShc(Object^, EventArgs^) {
         toolKind_ = RSTUDIO_TOOL_SHC;
+        rstudio_remember_default_compiler(toolKind_);
         ShowChoices();
         RefreshDebugTab();
         what_->Text = "compiler: shc";

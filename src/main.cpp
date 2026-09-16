@@ -156,13 +156,10 @@ int main(int argc, char** argv) {
 
     if (!project.empty()) ed.openProject(project);
 
-    if (toolchain == "msvc" || toolchain == "cl") ed.setToolchain(editor::ToolMsvc);
-    else if (toolchain == "cc1") ed.setToolchain(editor::ToolCc1);
-    else if (toolchain == "shc") ed.setToolchain(editor::ToolShc);
-    else if (toolchain == "cxx1") ed.setToolchain(editor::ToolCxx1);
-    else if (toolchain == "c++" || toolchain == "cxx" || toolchain == "g++" ||
-             toolchain == "clang++") ed.setToolchain(editor::hostCppToolchain());
-    else if (toolchain == "auto") ed.setToolchain(editor::ToolAuto);
+    // The command line's compiler, else the installation's default from
+    // settings.json; a project opened above may have set its own already.
+    if (!toolchain.empty()) ed.setToolchain(editor::toolchainFrom(toolchain));
+    else if (project.empty()) ed.setToolchain(editor::toolchainFrom(editor::settings::defaultCompiler()));
 
     if (config == "release") ed.setConfig(editor::ConfigRelease);
     else if (config == "debug") ed.setConfig(editor::ConfigDebug);

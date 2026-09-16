@@ -103,7 +103,8 @@ machine (none of TI's tools ship here); see `bin\ti\TI-BUILD.txt`.
               C ones they wrap, in one directory
     lib\      cc1i's headers: the C standard headers (<stdio.h>, <string.h>, …)
     settings.json  the installation's settings: where include\ and lib\ are,
-              and a vcvars64.bat when Visual Studio had to be named by hand
+              the default compiler (the Tools menu writes it), and a
+              vcvars64.bat when Visual Studio had to be named by hand
               (Tools > Header directories..., Tools > Locate vcvars64.bat...)
     examples\ worked programs and a demo project (demo.pro)
     help\     the full help pages

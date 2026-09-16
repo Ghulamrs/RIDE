@@ -1104,6 +1104,28 @@ void projects() {
     check(read.includes().empty() && read.libraries().empty(),
           "a project that names none has none");
 
+    // A new file named without an extension gets the one its project
+    // mostly uses, else .c: the extension is what picks the compiler.
+    {
+        editor::Project ext;
+        ext.begin((dir / "ext").string(), "Ext");
+        checkEqual(editor::withExtension(ext, "hello"), "hello.c", "with no sources yet, C");
+        ext.addFile("a.cpp", "Sources");
+        ext.addFile("b.cpp", "Sources");
+        ext.addFile("c.c", "Sources");
+        checkEqual(editor::withExtension(ext, "hello"), "hello.cpp", "among C++ sources, C++");
+        checkEqual(editor::withExtension(ext, "hello.c"), "hello.c", "and a name with one keeps it");
+        checkEqual(editor::withExtension(ext, "hello", editor::ToolShc), "hello.shl",
+                   "the chosen compiler's extension wins - shc's");
+        checkEqual(editor::withExtension(ext, "hello", editor::ToolCc1), "hello.c", "cc1's");
+        checkEqual(editor::withExtension(ext, "hello", editor::ToolMsvc), "hello.cpp", "cl's");
+        editor::Outcome added = editor::createFile(ext, "sub/main", "Sources");
+        check(added.ok && added.path.find("sub/main.cpp") != std::string::npos, "New File adds it");
+        check(added.message.find("extension") != std::string::npos, "and says so");
+        std::remove(added.path.c_str());
+        std::remove(ext.file().c_str());
+    }
+
     // Which file opens with the project: the one it names, else the one
     // defining main, else the first. Headers and declarations do not count.
     {
@@ -1159,6 +1181,10 @@ void projects() {
         checkEqual(editor::settings::libDir(), editor::path::absolute((app / "lib").string()),
                    "lib/ where cc1's are");
         check(editor::settings::vcvars().empty(), "and no vcvars until one is named");
+        checkEqual(editor::settings::defaultCompiler(), "auto", "the compiler starts on automatic");
+        check(editor::settings::rememberDefaultCompiler("cxx1") && editor::settings::defaultCompiler() == "cxx1",
+              "and a choice from the menu is written");
+        check(rstudio_default_compiler() == editor::ToolCxx1, "which the window reads back as its kind");
 
         std::string shownC = rstudio_shown_command(0, "cc1i", "cl", "shci", "cxx1i", editor::ToolCc1,
                                                    "a.c", editor::LangC, kDarwin.c_str(), editor::ConfigDebug);

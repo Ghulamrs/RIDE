@@ -23,7 +23,8 @@ if exist "%CC%\lib" xcopy /e /i /q "%CC%\lib" "%STAGE%\lib" >nul
   echo {
   echo   "include": "include",
   echo   "lib": "lib",
-  echo   "vcvars": ""
+  echo   "vcvars": "",
+  echo   "compiler": "auto"
   echo }
 ) > "%STAGE%\settings.json"
 for %%e in (c h cpp shl pro) do (

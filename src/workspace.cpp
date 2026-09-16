@@ -39,8 +39,29 @@ Outcome andSave(Project& project, const std::string& said, const std::string& pa
 
 }
 
-Outcome createFile(Project& project, const std::string& relative,
-                   const std::string& group) {
+std::string withExtension(const Project& project, const std::string& relative,
+                          ToolchainKind chosen) {
+    std::string leaf = path::filename(relative);
+    if (leaf.find('.') != std::string::npos) return relative;
+
+    if (chosen == ToolCc1) return relative + ".c";
+    if (chosen == ToolShc) return relative + ".shl";
+    if (chosen == ToolCxx1 || chosen == ToolCxx || chosen == ToolMsvc) return relative + ".cpp";
+
+    int counts[LangCount] = {0};
+    const std::vector<Group>& groups = project.groups();
+    for (size_t i = 0; i < groups.size(); ++i)
+        for (size_t j = 0; j < groups[i].files.size(); ++j)
+            counts[languageFor(groups[i].files[j])]++;
+    Language most = LangC;
+    if (counts[LangCpp] > counts[most]) most = LangCpp;
+    if (counts[LangShalimar] > counts[most]) most = LangShalimar;
+    return relative + (most == LangCpp ? ".cpp" : most == LangShalimar ? ".shl" : ".c");
+}
+
+Outcome createFile(Project& project, const std::string& asked,
+                   const std::string& group, ToolchainKind chosen) {
+    std::string relative = withExtension(project, asked, chosen);
     std::string why;
     if (!Project::allows(relative, why)) return no(relative + ": " + why);
 
@@ -55,7 +76,9 @@ Outcome createFile(Project& project, const std::string& relative,
     std::fclose(made);
 
     project.addFile(relative, group);
-    return andSave(project, relative + " made", where);
+    return andSave(project, relative + " made" +
+                   (relative != asked ? " - the extension picks the compiler, so one was added" : ""),
+                   where);
 }
 
 Outcome renameFile(Project& project, const std::string& fromAbsolute,

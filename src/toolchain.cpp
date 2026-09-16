@@ -190,6 +190,27 @@ ToolchainKind resolve(const Toolchain& tool, Language lang) {
     return (lang == LangCpp) ? ToolCxx1 : ToolCc1;
 }
 
+ToolchainKind toolchainFrom(const std::string& word) {
+    if (word == "cc1") return ToolCc1;
+    if (word == "msvc" || word == "cl") return ToolMsvc;
+    if (word == "shc") return ToolShc;
+    if (word == "cxx1") return ToolCxx1;
+
+    if (word == "c++" || word == "cxx" || word == "g++" || word == "clang++")
+        return hostCppToolchain();
+    return ToolAuto;
+}
+
+const char* toolchainWord(ToolchainKind kind) {
+    if (kind == ToolCc1) return "cc1";
+    if (kind == ToolMsvc) return "msvc";
+    if (kind == ToolShc) return "shc";
+    if (kind == ToolCxx1) return "cxx1";
+
+    if (kind == ToolCxx) return "c++";
+    return "auto";
+}
+
 const char* toolchainName(ToolchainKind kind) {
     switch (kind) {
         case ToolMsvc: return "cl";
@@ -382,6 +403,8 @@ std::string refusal(ToolchainKind kind, Language lang) {
         return "cc1 compiles C, not C++ - Ctrl-K for automatic, and it picks cxx1";
     if (lang == LangC && kind == ToolCxx1)
         return "cxx1 compiles C++, not C - Ctrl-K for automatic, and it picks cc1";
+    if (lang == LangPlain)
+        return "nothing to compile: no extension names a language - .c, .cpp or .shl picks the compiler";
     if (lang != LangC && lang != LangCpp)
         return std::string("nothing to compile: this is ") + languageName(lang) +
                ", not C or C++";

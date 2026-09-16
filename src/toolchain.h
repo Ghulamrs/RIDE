@@ -76,6 +76,9 @@ std::string libraryArguments(const Toolchain& tool);
 ToolchainKind resolve(const Toolchain& tool, Language lang);
 
 const char* toolchainName(ToolchainKind kind);
+// The word a project file or settings.json spells a compiler with, and back.
+ToolchainKind toolchainFrom(const std::string& word);
+const char* toolchainWord(ToolchainKind kind);
 const char* programOf(const Toolchain& tool, ToolchainKind kind);
 
 // **The fourth target runs on an emulator.** tms6747 is the TI TMS320C6747;

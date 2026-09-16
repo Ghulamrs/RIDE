@@ -41,6 +41,11 @@ std::string installFile();
 std::string includeDir();
 std::string libDir();
 std::string vcvars();
+// The compiler chosen when the editor starts and no project or command
+// line says otherwise: auto, cc1, cxx1, shc, msvc or c++ - "compiler" in
+// the installation's settings.json. Choosing one from the menu writes it.
+std::string defaultCompiler();
+bool rememberDefaultCompiler(const std::string& word);
 bool rememberHeaderDirs(const std::string& include, const std::string& lib);
 bool rememberVcvars(const std::string& file);
 // Writes the file with the two directories when there is none yet, so that a

@@ -594,9 +594,9 @@ const char* rstudio_outcome_message(RStudioProject* project) {
 
 const char* rstudio_outcome_path(RStudioProject* project) { return project->last.path.c_str(); }
 
-int rstudio_create_file(RStudioProject* project, const char* relative, const char* group) {
+int rstudio_create_file(RStudioProject* project, const char* relative, const char* group, int kind) {
     project->last = editor::createFile(project->project, relative ? relative : "",
-                                       group ? group : "");
+                                       group ? group : "", static_cast<editor::ToolchainKind>(kind));
     return project->last.ok ? 1 : 0;
 }
 
@@ -701,6 +701,15 @@ const char* rstudio_lib_dir(void) {
 
 int rstudio_remember_header_dirs(const char* include, const char* lib) {
     return editor::settings::rememberHeaderDirs(include ? include : "", lib ? lib : "") ? 1 : 0;
+}
+
+int rstudio_default_compiler(void) {
+    return static_cast<int>(editor::toolchainFrom(editor::settings::defaultCompiler()));
+}
+
+int rstudio_remember_default_compiler(int kind) {
+    return editor::settings::rememberDefaultCompiler(
+               editor::toolchainWord(static_cast<editor::ToolchainKind>(kind))) ? 1 : 0;
 }
 
 const char* rstudio_vcvars(void) {

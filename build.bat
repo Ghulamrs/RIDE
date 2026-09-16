@@ -198,7 +198,8 @@ if exist "%CC1_DIR%\lib" xcopy /e /i /q "%CC1_DIR%\lib" "%PRODUCT%\lib" >nul
    echo {
    echo   "include": "include",
    echo   "lib": "lib",
-   echo   "vcvars": ""
+   echo   "vcvars": "",
+   echo   "compiler": "auto"
    echo }
 ) > "%PRODUCT%\settings.json"
 if exist "%BINDIR%\shci.exe" copy /y "%BINDIR%\shci.exe" "%PRODUCT%\bin\" >nul

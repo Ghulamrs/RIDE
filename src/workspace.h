@@ -13,8 +13,15 @@ struct Outcome {
     std::string path;
 };
 
+// A name with no extension is given one, since the extension is what picks
+// the compiler: the chosen compiler's - the one the menu bar's corner shows -
+// or, with the choice on automatic, the one most of the project's sources
+// have, else .c.
+std::string withExtension(const Project& project, const std::string& relative,
+                          ToolchainKind chosen = ToolAuto);
+
 Outcome createFile(Project& project, const std::string& relative,
-                   const std::string& group);
+                   const std::string& group, ToolchainKind chosen = ToolAuto);
 
 Outcome renameFile(Project& project, const std::string& fromAbsolute,
                    const std::string& toRelative);

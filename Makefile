@@ -313,7 +313,7 @@ product: confirm
 	cp -R $(CXX1_DIR)/include "$(PRODUCT)/include"
 	cp $(CXX1_DIR)/lib/*.h "$(PRODUCT)/include/"
 	cp -R $(CC1_DIR)/lib "$(PRODUCT)/lib"
-	printf '{\n  "include": "include",\n  "lib": "lib",\n  "vcvars": ""\n}\n' > "$(PRODUCT)/settings.json"
+	printf '{\n  "include": "include",\n  "lib": "lib",\n  "vcvars": "",\n  "compiler": "auto"\n}\n' > "$(PRODUCT)/settings.json"
 # Into bin/lib/ rather than anywhere tidier, because that is where shc looks:
 # beside its own binary. Both archives, debug included - see DEPENDENCIES.
 	cp $(BINDIR)/lib/shmrt-$(SHM_TARGET).a \

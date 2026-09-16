@@ -14,7 +14,8 @@ directory above `bin\`, beside `include\` and `lib\`:
     {
       "include": "include",
       "lib": "lib",
-      "vcvars": ""
+      "vcvars": "",
+      "compiler": "auto"
     }
 
 It is read for every compile, project or none. `include` is where `cxx1i`'s
@@ -23,9 +24,13 @@ headers are (its C++ headers and the C ones they wrap, in one directory) and
 editor passes each compiler its own as `-I`, and the compilers also look
 there themselves, so the command line works without the editor. `vcvars` is
 empty until Visual Studio's tools could not be found by looking, and then
-names the `vcvars64.bat` to use. *Tools ▸ Header directories...* and *Tools ▸
-Locate vcvars64.bat...* write this file; the editor writes it with the two
-directories on its first run where it finds none.
+names the `vcvars64.bat` to use. `compiler` is the one chosen when the editor
+starts - `auto` (the file's extension decides), `cc1`, `cxx1`, `shc`, `msvc`
+or `c++` - and choosing one from the Tools menu writes it here; a project
+that names its own compiler takes precedence while it is open. *Tools ▸
+Header directories...* and *Tools ▸ Locate vcvars64.bat...* write this file
+too; the editor writes it with the defaults on its first run where it finds
+none.
 
 A project is one JSON object in a file named `<name>.pro`, living in the
 project's directory. Here is a complete one:

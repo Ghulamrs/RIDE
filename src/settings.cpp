@@ -170,9 +170,16 @@ Json readInstall() {
     return root;
 }
 
+// Written only where an installation is - the file already there, or
+// include/ and lib/ beside it - so that a checkout built in place, or the
+// suite driving its menus, never grows one.
 bool writeInstall(const Json& root) {
     std::string file = installFile();
     if (file.empty()) return false;
+    std::string base = installDir();
+    if (!path::exists(file) &&
+        (!path::isDirectory(path::join(base, "include")) || !path::isDirectory(path::join(base, "lib"))))
+        return false;
     FILE* out = std::fopen(file.c_str(), "wb");
     if (!out) return false;
     std::string text = root.write() + "\n";
@@ -217,6 +224,17 @@ std::string vcvars() {
     return (!said.empty() && path::exists(said)) ? said : std::string();
 }
 
+std::string defaultCompiler() {
+    std::string said = readInstall().get("compiler").text("auto");
+    return said.empty() ? std::string("auto") : said;
+}
+
+bool rememberDefaultCompiler(const std::string& word) {
+    Json root = readInstall();
+    root.set("compiler", Json::fromText(word));
+    return writeInstall(root);
+}
+
 bool rememberHeaderDirs(const std::string& include, const std::string& lib) {
     Json root = readInstall();
     root.set("include", Json::fromText(include));
@@ -233,17 +251,13 @@ bool rememberVcvars(const std::string& file) {
 bool writeInstallFileIfAbsent() {
     std::string file = installFile();
     if (file.empty() || path::exists(file)) return true;
-    // Only where there is an installation to describe - both directories
-    // above the binary. A checkout built in place has at most one and gets
-    // no file.
-    std::string base = installDir();
-    if (!path::isDirectory(path::join(base, "include")) || !path::isDirectory(path::join(base, "lib")))
-        return true;
     Json root = Json::object();
     root.set("include", Json::fromText("include"));
     root.set("lib", Json::fromText("lib"));
     root.set("vcvars", Json::fromText(""));
-    return writeInstall(root);
+    root.set("compiler", Json::fromText("auto"));
+    writeInstall(root);   // declined where there is no installation, rightly
+    return true;
 }
 
 std::vector<std::string> recentProjects() {

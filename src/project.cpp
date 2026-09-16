@@ -13,27 +13,6 @@ namespace {
 
 std::string withSlashes(const std::string& text) { return path::withSlashes(text); }
 
-ToolchainKind toolchainFrom(const std::string& word) {
-    if (word == "cc1") return ToolCc1;
-    if (word == "msvc" || word == "cl") return ToolMsvc;
-    if (word == "shc") return ToolShc;
-    if (word == "cxx1") return ToolCxx1;
-
-    if (word == "c++" || word == "cxx" || word == "g++" || word == "clang++")
-        return hostCppToolchain();
-    return ToolAuto;
-}
-
-const char* toolchainWord(ToolchainKind kind) {
-    if (kind == ToolCc1) return "cc1";
-    if (kind == ToolMsvc) return "msvc";
-    if (kind == ToolShc) return "shc";
-    if (kind == ToolCxx1) return "cxx1";
-
-    if (kind == ToolCxx) return "c++";
-    return "auto";
-}
-
 Language languageOf(const std::string& relative) {
     size_t dot = relative.find_last_of('.');
     if (dot == std::string::npos) return LangPlain;

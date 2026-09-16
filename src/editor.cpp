@@ -416,7 +416,10 @@ void Editor::applyProject() {
     if (!project_.loaded()) return;
 
     style_ = project_.indent();
-    tool_.kind = project_.toolchain();
+    // The project's compiler when it names one; on automatic, the
+    // installation's default from settings.json stands.
+    tool_.kind = project_.toolchain() != ToolAuto ? project_.toolchain()
+                                                   : toolchainFrom(settings::defaultCompiler());
     for (size_t i = 0; i < kArchCount; ++i)
         if (project_.arch() == kArches[i]) arch_ = i;
 }
@@ -1854,7 +1857,7 @@ void Editor::createFile() {
     std::string group = groupForFile(path::filename(name));
     if (group.empty()) group = groupUnderCursor();
 
-    Outcome done = editor::createFile(project_, name, group);
+    Outcome done = editor::createFile(project_, name, group, tool_.kind);
     say(done.message);
     if (!done.ok) return;
 
@@ -3164,33 +3167,39 @@ void Editor::perform(Action action) {
         }
         case ActionToolShc:
             tool_.kind = ToolShc;
+            settings::rememberDefaultCompiler("shc");
             resetDebug();
             say("compiler: shc, for every file");
             break;
         case ActionToolAuto:
             tool_.kind = ToolAuto;
+            settings::rememberDefaultCompiler("auto");
             resetDebug();
             say(std::string("compiler: chosen by the file - this one goes to ") +
                 toolchainName(resolve(tool_, lang_)));
             break;
         case ActionToolCc1:
             tool_.kind = ToolCc1;
+            settings::rememberDefaultCompiler("cc1");
             resetDebug();
             say("compiler: cc1, for every file");
             break;
         case ActionToolCxx1:
             tool_.kind = ToolCxx1;
+            settings::rememberDefaultCompiler("cxx1");
             resetDebug();
             say("compiler: cxx1, for every file");
             break;
         case ActionToolMsvc:
             tool_.kind = ToolMsvc;
+            settings::rememberDefaultCompiler("msvc");
             resetDebug();
             say("compiler: cl, for every file");
             break;
         case ActionToolCxx:
 
             tool_.kind = hostCppToolchain();
+            settings::rememberDefaultCompiler(toolchainWord(tool_.kind));
             resetDebug();
 
             say("compiler: " + toolchainShown(tool_, tool_.kind) + ", for every file");

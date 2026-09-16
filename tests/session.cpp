@@ -750,9 +750,10 @@ void closingTheProject(const std::string& rstudio) {
     check(readFile(dir / "RStudio.json").find("src/two.c") != std::string::npos,
           "and RStudio.json still says everything it said before");
 
-    // File menu, fifth item - Close. No kRight: the menu reopens on the column
-    // it was left on, so walking right again would land somewhere else.
-    const std::string closeFile = kF10 + times(kLeft, 2) + times(kDown, 4) + kEnter;
+    // File menu, sixth item - Close, after Rename File. No kRight: the menu
+    // reopens on the column it was left on, so walking right again would
+    // land somewhere else.
+    const std::string closeFile = kF10 + times(kLeft, 2) + times(kDown, 5) + kEnter;
 
     Screen empty = drive(rstudio, opened, closeProject + closeFile + ctrl('q'), dir);
     check(!onScreen(empty, "one.c"), "closing the last open file empties the pane");
