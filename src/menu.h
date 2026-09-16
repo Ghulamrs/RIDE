@@ -93,7 +93,10 @@ enum Action {
     ActionProjectIncludes,
     ActionProjectLibraries,
     ActionHeaderDirs,
-    ActionLocateVcvars
+    ActionLocateVcvars,
+    ActionProjectRecent,
+    ActionProjectRecent2,
+    ActionProjectRecent3
 };
 
 struct MenuItem {
@@ -136,6 +139,8 @@ public:
     Action key(int k);
 
     void disable(const std::vector<Action>& actions);
+    // Relabel the item carrying an action - the recent projects, by name.
+    void relabel(Action action, const std::string& label);
     bool disabled(Action action) const;
 
     bool selectable(const MenuItem& item) const;

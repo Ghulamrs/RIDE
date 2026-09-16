@@ -2,6 +2,7 @@
 #define EDITOR_SETTINGS_H
 
 #include <string>
+#include <vector>
 
 namespace editor {
 
@@ -14,6 +15,9 @@ std::string formerFileName();
 std::string lastProject();
 
 bool rememberProject(const std::string& directory);
+// The last three projects opened, most recent first, as the Project menu
+// lists them; lastProject() is the first of them.
+std::vector<std::string> recentProjects();
 
 bool plainFrame();
 

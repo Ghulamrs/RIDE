@@ -150,11 +150,9 @@ int main(int argc, char** argv) {
 
     // The installation's settings.json, written once with its two directories.
     editor::settings::writeInstallFileIfAbsent();
-    if (project.empty() && !onItsOwn) {
-        project = editor::settings::lastProject();
-        if (project.empty()) project = editor::demoDirectory();
-        if (project.empty()) project = ".";
-    }
+    // Nothing named opens nothing: the last project is remembered and
+    // offered under Project > Recent, never opened on its own.
+    (void)onItsOwn;
 
     if (!project.empty()) ed.openProject(project);
 

@@ -124,6 +124,8 @@ int rstudio_add_existing(RStudioProject* project, const char* absolute, const ch
 // A file just saved under the project's root joins it; 0 when that did not
 // apply, and nothing to say then.
 int rstudio_adopt_saved(RStudioProject* project, const char* absolute);
+// Whether the project lists this file, in any group.
+int rstudio_project_holds(RStudioProject* project, const char* absolute);
 // The file the project opens with, relative to its root - its own choice,
 // else the one defining main, else the first - and remembering the one in
 // front when the project is closed or the window left.
@@ -135,6 +137,8 @@ int rstudio_remove_from_project(RStudioProject* project, const char* absolute);
 int rstudio_begin_from_what_is_there(RStudioProject* project, const char* directory);
 const char* rstudio_last_project(void);
 int rstudio_remember_project(const char* directory);
+// The last three projects opened, most recent first; empty past the end.
+const char* rstudio_recent_project(int index);
 const char* rstudio_demo_directory(void);
 
 int rstudio_begin_project(RStudioProject* project, const char* directory, const char* name,

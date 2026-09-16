@@ -3379,8 +3379,26 @@ void whatItRemembers() {
     pth::makeDirectories(gone);
     check(editor::settings::rememberProject(gone), "another can be remembered over it");
     pth::removeTree(gone);
-    check(editor::settings::lastProject().empty(),
-          "one that has since been deleted is not offered");
+    check(editor::settings::lastProject() == pth::absolute(demo),
+          "one that has since been deleted is not offered - the one before it is");
+
+    // Three are kept, most recent first, and a project opened again moves
+    // to the front rather than appearing twice.
+    std::string second = pth::join(home, "second"), third = pth::join(home, "third"),
+                fourth = pth::join(home, "fourth");
+    pth::makeDirectories(second); pth::makeDirectories(third); pth::makeDirectories(fourth);
+    editor::settings::rememberProject(second);
+    editor::settings::rememberProject(third);
+    std::vector<std::string> recent = editor::settings::recentProjects();
+    check(recent.size() == 3 && recent[0] == pth::absolute(third) && recent[2] == pth::absolute(demo),
+          "three are kept, most recent first");
+    editor::settings::rememberProject(fourth);
+    recent = editor::settings::recentProjects();
+    check(recent.size() == 3 && recent[2] == pth::absolute(second), "a fourth pushes the oldest out");
+    editor::settings::rememberProject(second);
+    recent = editor::settings::recentProjects();
+    check(recent.size() == 3 && recent[0] == pth::absolute(second) && recent[1] == pth::absolute(fourth),
+          "and one opened again comes to the front, once");
 
     sayWhereHomeIs(realHome);
     pth::removeTree(home);

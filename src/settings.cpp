@@ -246,18 +246,38 @@ bool writeInstallFileIfAbsent() {
     return writeInstall(root);
 }
 
+std::vector<std::string> recentProjects() {
+    std::vector<std::string> out;
+    Json root = readAll();
+    const Json& recent = root.get("recent");
+    for (size_t i = 0; i < recent.size() && out.size() < 3; ++i) {
+        std::string one = recent.at(i).text("");
+        if (!one.empty() && path::exists(one)) out.push_back(one);
+    }
+    // The single "project" of earlier versions, carried in as the first.
+    std::string project = root.get("project").text("");
+    if (out.empty() && !project.empty() && path::exists(project)) out.push_back(project);
+    return out;
+}
+
 std::string lastProject() {
-    std::string project = readAll().get("project").text("");
-    if (project.empty() || !path::exists(project)) return std::string();
-    return project;
+    std::vector<std::string> recent = recentProjects();
+    return recent.empty() ? std::string() : recent[0];
 }
 
 bool rememberProject(const std::string& directory) {
     if (fileName().empty() || directory.empty()) return false;
 
-    Json root = readAll();
-    root.set("project", Json::fromText(path::absolute(directory)));
+    std::string now = path::absolute(directory);
+    std::vector<std::string> recent = recentProjects();
+    Json list = Json::array();
+    list.push(Json::fromText(now));
+    for (size_t i = 0; i < recent.size() && list.size() < 3; ++i)
+        if (path::oneName(recent[i]) != path::oneName(now)) list.push(Json::fromText(recent[i]));
 
+    Json root = readAll();
+    root.set("project", Json::fromText(now));
+    root.set("recent", list);
     return writeAll(root);
 }
 

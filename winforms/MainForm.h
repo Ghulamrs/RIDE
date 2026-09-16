@@ -341,14 +341,10 @@ private:
 
         Lay();
 
-        if (projectDirectory == nullptr) {
-            String^ last = FromUtf8(rstudio_last_project());
-            if (last->Length == 0) last = FromUtf8(rstudio_demo_directory());
-            if (last->Length > 0 && System::IO::Directory::Exists(last))
-                projectDirectory = last;
-        }
-
+        // The last project is remembered and offered - Project > Recent -
+        // never opened on its own: a start with nothing named is empty.
         if (projectDirectory != nullptr) LoadProject(projectDirectory);
+        RefreshRecent();
 
         bool anyNamed = false;
         if (files != nullptr)
@@ -359,6 +355,24 @@ private:
                 }
 
         if (!anyNamed) OpenFirstOfProject();
+        started_ = true;
+
+        // Nothing opened: a genuinely empty environment, not an untitled
+        // sheet with a bare group name beside it. The sheet Lay() made is
+        // the spare OpenPath would have taken, so it goes when unused.
+        if (sheets_->Count == 1 && sheets_[0]->path == nullptr &&
+            sheets_[0]->box->TextLength == 0 && !sheets_[0]->box->Modified) {
+            Sheet^ spare = sheets_[0];
+            sheets_->Remove(spare);
+            files_->TabPages->Remove(spare->page);
+            text_ = nullptr;
+            path_ = nullptr;
+            if (rstudio_project_loaded(project_) == 0) paneMode_ = PaneMode::PaneFiles;
+            RefreshTitle();
+            FillTree();
+            SayBuild();
+            what_->Text = "ready";
+        }
     }
 
     void Lay() {
@@ -448,11 +462,17 @@ private:
                                     gcnew EventHandler(this, &MainForm::OnAddThisFile));
         project->DropDownItems->Add("Remove File", nullptr,
                                     gcnew EventHandler(this, &MainForm::OnRemoveFromProject));
+        // The last three projects, most recent first, to recall one by name.
         project->DropDownItems->Add(gcnew ToolStripSeparator());
-        project->DropDownItems->Add("Include paths...", nullptr,
-                                    gcnew EventHandler(this, &MainForm::OnProjectIncludes));
-        project->DropDownItems->Add("Libraries...", nullptr,
-                                    gcnew EventHandler(this, &MainForm::OnProjectLibraries));
+        recentItems_ = gcnew System::Collections::Generic::List<ToolStripMenuItem^>();
+        for (int i = 0; i < 3; ++i) {
+            ToolStripMenuItem^ one = gcnew ToolStripMenuItem(
+                "Recent", nullptr, gcnew EventHandler(this, &MainForm::OnOpenRecent));
+            one->Tag = i;
+            one->Visible = false;
+            recentItems_->Add(one);
+            project->DropDownItems->Add(one);
+        }
         bar->Items->Add(project);
 
         ToolStripMenuItem^ build = gcnew ToolStripMenuItem("&Build");
@@ -617,6 +637,10 @@ private:
         tools->DropDownItems->Add(gcnew ToolStripSeparator());
         tools->DropDownItems->Add("Header directories...", nullptr,
                                   gcnew EventHandler(this, &MainForm::OnHeaderDirs));
+        tools->DropDownItems->Add("Project include paths...", nullptr,
+                                  gcnew EventHandler(this, &MainForm::OnProjectIncludes));
+        tools->DropDownItems->Add("Project libraries...", nullptr,
+                                  gcnew EventHandler(this, &MainForm::OnProjectLibraries));
         tools->DropDownItems->Add("Locate vcvars64.bat...", nullptr,
                                   gcnew EventHandler(this, &MainForm::OnLocateVcvars));
         bar->Items->Add(tools);
@@ -1785,6 +1809,7 @@ private:
                 arch_ = FromUtf8(rstudio_project_arch(project_));
                 ShowChoices();
                 rstudio_remember_project(reinterpret_cast<const char*>(pinned));
+                RefreshRecent();
                 what_->Text = FromUtf8(rstudio_outcome_message(project_));
                 SayWhere();
                 RefreshTitle();
@@ -1811,12 +1836,22 @@ private:
         array<Byte>^ opened = Utf8Of(directory);
         pin_ptr<Byte> openedPin = &opened[0];
         rstudio_remember_project(reinterpret_cast<const char*>(openedPin));
+        RefreshRecent();
 
         what_->Text = String::Format("ready - {0}, {1} groups",
                                      FromUtf8(rstudio_project_name(project_)),
                                      rstudio_project_groups(project_));
         SayWhere();
         RefreshTitle();
+
+        // The project's own file comes to the front whichever way the
+        // project was opened - Start() asks the same after the command
+        // line's files, and skips this when one of them is named.
+        if (started_) {
+            String^ said = what_->Text;
+            OpenFirstOfProject();
+            what_->Text = said;
+        }
     }
 
     void PaneFollowsTabs() {
@@ -2149,6 +2184,9 @@ private:
 
     enum class PaneMode { PaneProject, PaneFiles };
     PaneMode paneMode_;
+    // Set once Start() has opened what the command line and the project
+    // asked for; LoadProject opens the project's file only after that.
+    bool started_ = false;
 
     void OnRemoveFromProject(Object^, EventArgs^) {
         if (path_ == nullptr) {
@@ -2239,6 +2277,32 @@ private:
             return;
         }
         what_->Text = "Visual Studio's tools come from " + pick->FileName + " - written to " + file;
+    }
+
+    // The last three projects remembered, named at the end of the Project
+    // menu; an entry whose project is gone is not shown.
+    System::Collections::Generic::List<ToolStripMenuItem^>^ recentItems_;
+
+    void RefreshRecent() {
+        if (recentItems_ == nullptr) return;
+        for (int i = 0; i < recentItems_->Count; ++i) {
+            String^ where = FromUtf8(rstudio_recent_project(i));
+            ToolStripMenuItem^ item = recentItems_[i];
+            if (where->Length == 0) { item->Visible = false; continue; }
+            String^ shown = System::IO::File::Exists(where)
+                                ? System::IO::Path::GetFileNameWithoutExtension(where)
+                                : System::IO::Path::GetFileName(where);
+            item->Text = String::Format("&{0} {1}", i + 1, shown);
+            item->ToolTipText = where;
+            item->Visible = true;
+        }
+    }
+
+    void OnOpenRecent(Object^ sender, EventArgs^) {
+        ToolStripMenuItem^ item = safe_cast<ToolStripMenuItem^>(sender);
+        String^ where = FromUtf8(rstudio_recent_project(safe_cast<int>(item->Tag)));
+        if (where->Length == 0) { what_->Text = "no project remembered"; return; }
+        LoadProject(where);
     }
 
     void OnNewProject(Object^, EventArgs^) {
@@ -2339,13 +2403,17 @@ private:
         String^ was = FromUtf8(rstudio_project_name(project_));
         RememberOpen();
 
-        // The project's files go with it - anything open from under its
-        // root - each unsaved one asking first, and one refusal keeps the
-        // project open with everything as it was.
-        String^ root = FromUtf8(rstudio_project_root(project_));
+        // The project's files go with it - every file it lists that is
+        // open; one merely under its directory stays - each unsaved one
+        // asking first, and one refusal keeps the project open with
+        // everything as it was.
         System::Collections::Generic::List<Sheet^>^ theirs = gcnew System::Collections::Generic::List<Sheet^>();
-        for (int i = 0; i < sheets_->Count; ++i)
-            if (sheets_[i]->path != nullptr && UnderRoot(sheets_[i]->path, root)) theirs->Add(sheets_[i]);
+        for (int i = 0; i < sheets_->Count; ++i) {
+            if (sheets_[i]->path == nullptr) continue;
+            array<Byte>^ bytes = Utf8Of(sheets_[i]->path);
+            pin_ptr<Byte> pinned = &bytes[0];
+            if (rstudio_project_holds(project_, reinterpret_cast<const char*>(pinned)) != 0) theirs->Add(sheets_[i]);
+        }
         for (int i = 0; i < theirs->Count; ++i)
             if (!MayDiscard(theirs[i])) { what_->Text = "not closed - " + System::IO::Path::GetFileName(theirs[i]->path) + " has unsaved changes"; return; }
         int closed = theirs->Count;
@@ -2369,12 +2437,6 @@ private:
         what_->Text = was + " closed" + (closed > 0 ? String::Format(", and its {0} file(s) with it", closed) : "");
     }
 
-    static bool UnderRoot(String^ path, String^ root) {
-        if (root == nullptr || root->Length == 0) return false;
-        String^ full = System::IO::Path::GetFullPath(path)->Replace('/', '\\');
-        String^ base = System::IO::Path::GetFullPath(root)->Replace('/', '\\')->TrimEnd('\\') + "\\";
-        return full->StartsWith(base, StringComparison::OrdinalIgnoreCase);
-    }
 
     void OnTreeOpen(Object^, TreeNodeMouseClickEventArgs^ e) {
         if (e->Node == nullptr || e->Node->Tag == nullptr) return;

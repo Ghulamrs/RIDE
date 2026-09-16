@@ -202,6 +202,7 @@ private:
     // tool_ with the header directories and the project's paths filled in,
     // which is what every build is given.
     Toolchain toolFor() const;
+    void refreshRecent();
 
     enum PaneMode { PaneProject, PaneFiles };
     void newProject();
@@ -252,6 +253,9 @@ private:
 
     Language langChoice_ = LangCount;
     Toolchain tool_;
+    // True until main.cpp has chosen what to open, so that the project
+    // opened at start-up does not open a file the command line will.
+    bool starting_ = true;
 
     size_t cx_, cy_, rx_;
     size_t rowoff_, coloff_;

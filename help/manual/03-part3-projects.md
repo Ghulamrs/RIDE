@@ -66,14 +66,14 @@ Field by field:
   project's directory (an absolute path stays as written). Every compile of
   the project's sources searches them, in this order, before the shipped
   headers: `-I` to `cc1i`, `cxx1i` and the host's C++, `/I` to `cl`. Shalimar
-  has no include and `shci` is given none. Edited with *Project ▸ Include
-  paths...*, one line with `;` between the entries.
+  has no include and `shci` is given none. Edited with *Tools ▸ Project
+  include paths...*, one line with `;` between the entries.
 - **`libraries`** — libraries linked into the program after its objects, each
   relative to the project's directory: `.lib` files under Windows, `.a` under
   Unix. A project that names any is built as objects and linked by the host's
   linker, whatever its compilers (`cc1i` and `cxx1i` take sources only). They
-  do not apply to `tms6747`, which is not linked. Edited with *Project ▸
-  Libraries...*.
+  do not apply to `tms6747`, which is not linked. Edited with *Tools ▸
+  Project libraries...*.
 - **`open`** — the file that opens with the project, relative to its
   directory. Written by the editor from the file in front when the project is
   closed or the editor left. A project without it opens the file that defines

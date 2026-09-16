@@ -241,6 +241,7 @@ Editor::Editor()
       bodyRows_(14), panelRows_(kPanelRows), panelWanted_(kPanelRows),
       treeCols_(kTreeWidth), sourceCols_(80), gutterCols_(4), paintedCols_(0),
       askChoice_(0) {
+    refreshRecent();
     frame_ = &kBoxFrame;
 
     for (size_t i = 0; i < kArchCount; ++i)
@@ -421,7 +422,8 @@ void Editor::applyProject() {
 }
 
 // The project's own choice of file first, then the one that defines main,
-// then the first file there is - see Project::fileToOpen.
+// then the first file there is - see Project::fileToOpen. Start-up only:
+// openProject does the same itself once the editor is running.
 void Editor::openFirstFile() {
     if (!buf_.path().empty()) return;
 
@@ -460,13 +462,14 @@ void Editor::closeProject() {
     std::string was = project_.name();
     editor::rememberOpen(project_, buf_.path());
 
-    // The project's files go with it - every document open from under its
-    // root - and one with unsaved changes keeps the project open.
+    // The project's files go with it - every document it lists that is
+    // open; one merely under its directory stays - and one with unsaved
+    // changes keeps the project open.
     stash();
     for (size_t i = 0; i < docs_.size(); ++i) {
         const std::string& at = docs_[i].buf.path();
-        if (!at.empty() && !path::relativeTo(at, project_.root()).empty() &&
-            path::relativeTo(at, project_.root()).compare(0, 2, "..") != 0 && docs_[i].buf.dirty()) {
+        if (!at.empty() && project_.groupOf(project_.relative(at)) < project_.groups().size() &&
+            docs_[i].buf.dirty()) {
             restore();
             say("not closed - " + path::filename(at) + " has unsaved changes");
             return;
@@ -475,8 +478,7 @@ void Editor::closeProject() {
     size_t closed = 0;
     for (size_t i = 0; i < docs_.size();) {
         const std::string& at = docs_[i].buf.path();
-        std::string rel = at.empty() ? std::string() : path::relativeTo(at, project_.root());
-        if (!rel.empty() && rel.compare(0, 2, "..") != 0) {
+        if (!at.empty() && project_.groupOf(project_.relative(at)) < project_.groups().size()) {
             docs_.erase(docs_.begin() + static_cast<long>(i));
             ++closed;
         } else {
@@ -509,6 +511,7 @@ void Editor::openProject(const std::string& path) {
         refreshTree();
 
         settings::rememberProject(project_.file());
+        refreshRecent();
 
         size_t howMany = project_.groups().size();
         std::string said = "ready - " + project_.name() + ", " + number(howMany) +
@@ -519,6 +522,18 @@ void Editor::openProject(const std::string& path) {
             said += " - " + number(named) + " projects here, Project > Open chooses";
         say(said);
         sayIfSettingsWereBad();
+
+        // The project's own file comes to the front - the one it names,
+        // else the one defining main, else the first - whichever way the
+        // project was opened; at start-up, main.cpp asks the same.
+        if (!starting_) {
+            std::string chosen = project_.fileToOpen();
+            if (!chosen.empty()) {
+                std::string kept = message_;
+                open(project_.absolute(chosen));
+                say(kept);
+            }
+        }
     } else if (error.empty()) {
 
         Outcome made = beginFromWhatIsThere(project_, path);
@@ -526,6 +541,7 @@ void Editor::openProject(const std::string& path) {
             applyProject();
             refreshTree();
             settings::rememberProject(project_.file());
+        refreshRecent();
             say(made.message);
         } else {
             tree_.setRoot(path);
@@ -1961,6 +1977,25 @@ std::vector<std::string> splitList(const std::string& line) {
 
 }
 
+// The Project menu's last three entries name the projects remembered.
+void Editor::refreshRecent() {
+    std::vector<std::string> recent = settings::recentProjects();
+    const Action actions[3] = { ActionProjectRecent, ActionProjectRecent2, ActionProjectRecent3 };
+    for (size_t i = 0; i < 3; ++i) {
+        std::string label = std::to_string(i + 1);
+        if (i < recent.size()) {
+            std::string leaf = path::filename(recent[i]);
+            size_t dot = leaf.rfind('.');
+            if (dot != std::string::npos && leaf.compare(dot, std::string::npos, Project::suffix()) == 0)
+                leaf.resize(dot);
+            label += " " + leaf;
+        } else if (i == 0) {
+            label += " (no recent project)";
+        }
+        menu_.relabel(actions[i], label);
+    }
+}
+
 Toolchain Editor::toolFor() const {
     Toolchain tool = tool_;
     tool.include = settings::includeDir();
@@ -2068,6 +2103,7 @@ void Editor::saveProjectAs() {
     }
     refreshTree();
     settings::rememberProject(project_.file());
+        refreshRecent();
     say(name + " written - the project is saved there from now on");
 }
 
@@ -3005,6 +3041,15 @@ void Editor::perform(Action action) {
         case ActionProjectAdd:   addToProject(); break;
         case ActionProjectRemove: removeFromProject(); break;
         case ActionProjectIncludes: editProjectIncludes(); break;
+        case ActionProjectRecent:
+        case ActionProjectRecent2:
+        case ActionProjectRecent3: {
+            std::vector<std::string> recent = settings::recentProjects();
+            size_t which = action == ActionProjectRecent ? 0 : action == ActionProjectRecent2 ? 1 : 2;
+            if (which >= recent.size()) say("no such recent project");
+            else openProject(recent[which]);
+            break;
+        }
         case ActionProjectLibraries: editProjectLibraries(); break;
         case ActionHeaderDirs:   editHeaderDirs(); break;
         case ActionLocateVcvars: locateVcvars(); break;
@@ -3409,6 +3454,7 @@ void Editor::processKey(int key) {
 }
 
 void Editor::run() {
+    starting_ = false;
     if (message_.empty()) say("F10 menu  Ctrl-B build  Ctrl-Z undo  Ctrl-F find  F1 keys  Ctrl-Q quit");
 
     int wasRows = 0, wasCols = 0;

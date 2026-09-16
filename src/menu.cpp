@@ -50,8 +50,9 @@ Menu::Menu() : active_(false), dropped_(false), column_(0), item_(0) {
     project.items.push_back({"Add File", "", ActionProjectAdd});
     project.items.push_back({"Remove File", "", ActionProjectRemove});
     project.items.push_back(separator());
-    project.items.push_back({"Include paths...", "", ActionProjectIncludes});
-    project.items.push_back({"Libraries...", "", ActionProjectLibraries});
+    project.items.push_back({"1 (no recent project)", "", ActionProjectRecent});
+    project.items.push_back({"2", "", ActionProjectRecent2});
+    project.items.push_back({"3", "", ActionProjectRecent3});
     columns_.push_back(project);
 
     MenuColumn build;
@@ -109,6 +110,8 @@ Menu::Menu() : active_(false), dropped_(false), column_(0), item_(0) {
     tools.items.push_back({"C++ (host)", "", ActionToolCxx});
     tools.items.push_back(separator());
     tools.items.push_back({"Header directories...", "", ActionHeaderDirs});
+    tools.items.push_back({"Project include paths...", "", ActionProjectIncludes});
+    tools.items.push_back({"Project libraries...", "", ActionProjectLibraries});
     tools.items.push_back({"Locate vcvars64.bat...", "", ActionLocateVcvars});
     columns_.push_back(tools);
 
@@ -191,6 +194,12 @@ bool Menu::disabled(Action action) const {
     for (size_t i = 0; i < disabled_.size(); ++i)
         if (disabled_[i] == action) return true;
     return false;
+}
+
+void Menu::relabel(Action action, const std::string& label) {
+    for (size_t c = 0; c < columns_.size(); ++c)
+        for (size_t i = 0; i < columns_[c].items.size(); ++i)
+            if (columns_[c].items[i].action == action) columns_[c].items[i].label = label;
 }
 
 bool Menu::selectable(const MenuItem& item) const {

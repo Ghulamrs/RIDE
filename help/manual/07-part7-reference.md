@@ -46,8 +46,9 @@ Help. The last three — Language, Tools, Target — are one chain: what the fil
         [--cc1 path] [--cxx1 path] [--cl path] [--shc path]
 
 - A bare `file` opens that file; `--project dir` opens the project in `dir`.
-- With nothing, the editor opens the project it was last in, or makes a small
-  demo.
+- With nothing, the editor opens nothing: the last three projects it was in
+  are remembered and named at the end of the Project menu, never opened on
+  their own.
 - `--toolchain` and `--config` preset the Tools and Debug/Release choices.
 - `--cc1`/`--cxx1`/`--cl`/`--shc` name the compilers explicitly; otherwise the
   editor finds them beside itself (`bin\`) before `PATH`. `$CC1`/`$CXX1`/`$CL`/

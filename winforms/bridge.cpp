@@ -133,6 +133,15 @@ LONG CALLBACK onFault(EXCEPTION_POINTERS* info) {
     std::fprintf(f, "\nexception 0x%08lX at %p%s\n", static_cast<unsigned long>(code),
                  info->ExceptionRecord->ExceptionAddress,
                  code == kManaged ? " (managed, first chance)" : "");
+
+    // A managed one is noted and no more: they are routine and handled, and
+    // symbolising one would load the .pdb and hold it - which kept a build
+    // from writing it while a window was open.
+    if (code == kManaged) {
+        std::fclose(f);
+        inside = false;
+        return EXCEPTION_CONTINUE_SEARCH;
+    }
     if (code == EXCEPTION_ACCESS_VIOLATION &&
         info->ExceptionRecord->NumberParameters >= 2) {
         std::fprintf(f, "  %s address %p\n",
@@ -171,6 +180,7 @@ LONG CALLBACK onFault(EXCEPTION_POINTERS* info) {
         }
     }
 
+    SymCleanup(process);
     std::fclose(f);
     inside = false;
     return EXCEPTION_CONTINUE_SEARCH;
@@ -618,6 +628,12 @@ int rstudio_adopt_saved(RStudioProject* project, const char* absolute) {
     editor::Outcome joined = editor::adoptSaved(project->project, absolute ? absolute : "");
     if (joined.ok) project->last = joined;
     return joined.ok ? 1 : 0;
+}
+
+int rstudio_project_holds(RStudioProject* project, const char* absolute) {
+    if (!project || !absolute || !*absolute || !project->project.loaded()) return 0;
+    std::string relative = project->project.relative(absolute);
+    return project->project.groupOf(relative) < project->project.groups().size() ? 1 : 0;
 }
 
 const char* rstudio_project_file_to_open(RStudioProject* project) {
@@ -1169,6 +1185,13 @@ int rstudio_begin_from_what_is_there(RStudioProject* project, const char* direct
 const char* rstudio_last_project(void) {
 
     scratch() = editor::settings::lastProject();
+    return scratch().c_str();
+}
+
+const char* rstudio_recent_project(int index) {
+    std::vector<std::string> recent = editor::settings::recentProjects();
+    scratch() = (index >= 0 && index < static_cast<int>(recent.size())) ? recent[static_cast<size_t>(index)]
+                                                                         : std::string();
     return scratch().c_str();
 }
 

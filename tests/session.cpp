@@ -742,7 +742,7 @@ void closingTheProject(const std::string& rstudio) {
     Screen after = drive(rstudio, opened, closeProject + ctrl('q'), dir);
     check(!onScreen(after, "- First"), "closing the project takes the group off the pane");
     check(!onScreen(after, "src/two.c"), "and the files it held that were not open");
-    check(onScreen(after, "one.c"), "the file that is open is still shown");
+    check(!onScreen(after, "one.c"), "the file that was open closes with it, being one of its files");
     check(onScreen(after, "closed"), "and the line says so");
 
     // The file on disk is not touched. Closing a project is a change to what
@@ -920,7 +920,7 @@ void thePaneDrawsOneOfTwoThings(const std::string& rstudio) {
     const std::string closeProject = kF10 + times(kRight, 2) + times(kDown, 4) + kEnter;
     Screen closed = drive(rstudio, outside, closeProject + ctrl('q'), dir);
     check(!onScreen(closed, "Sources"), "closing the project takes its groups with it");
-    check(onScreen(closed, "outside.c"), "and leaves what is open on the pane");
+    check(onScreen(closed, "outside.c"), "and leaves what is open on the pane when it is not one of its files");
 
     file::remove_all(dir);
 }
@@ -1393,8 +1393,8 @@ void buildingTheProject(const std::string& rstudio, const std::string& cc1,
     writeFile(plain / "src" / "one.c", "int main(void) { return 0; }\n");
     Screen quiet = drive(rstudio, "--project \"" + plain.string() + "\" --cc1 \"" + cc1 + "\"",
                          kF4 + ctrl('q'), plain);
-    check(onScreen(quiet, "does not say what it builds"),
-          "a project with no build entry says so plainly");
+    check(onScreen(quiet, "hold no source"),
+          "a project with no build entry builds its Sources, and says when that is empty");
 
     file::remove_all(dir);
     file::remove_all(plain);
