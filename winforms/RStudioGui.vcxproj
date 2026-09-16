@@ -94,6 +94,10 @@
     <ClInclude Include="MainForm.h" />
     <ClInclude Include="bridge.h" />
   </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="RStudioGui.rc" />
+    <None Include="ride.ico" />
+  </ItemGroup>
 
   <ItemGroup>
     <!-- The seam, and the editor's own rules. Native, because a /clr file that

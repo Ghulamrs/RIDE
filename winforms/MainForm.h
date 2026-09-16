@@ -381,6 +381,13 @@ private:
 
     void Lay() {
         RefreshTitle();
+        // The icon the exe carries (winforms/RStudioGui.rc), for the title
+        // bar and the taskbar; a build without it keeps the default.
+        try {
+            Icon^ mark = System::Drawing::Icon::ExtractAssociatedIcon(Application::ExecutablePath);
+            if (mark != nullptr) Icon = mark;
+        } catch (Exception^) {
+        }
         Width = 1100;
         Height = 760;
         MinimumSize = System::Drawing::Size(840, 560);

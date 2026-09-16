@@ -19,6 +19,7 @@ DefaultDirName={autopf}\{#MyName}
 DefaultGroupName={#MyName}
 DisableProgramGroupPage=yes
 UninstallDisplayIcon={app}\bin\RStudio.exe
+SetupIconFile=..\..\winforms\ride.ico
 OutputDir={#OutDir}
 OutputBaseFilename=RIDE-3.5-setup
 Compression=lzma2/max

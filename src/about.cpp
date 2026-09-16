@@ -47,20 +47,23 @@ std::string askVersion(const std::string& program) {
     FILE* pipe = POPEN(command.c_str(), "r");
     if (!pipe) return std::string();
 
+    // The first line is the banner, and the banner is what About shows:
+    // every one of the four opens with one, cxx1's version line beneath is
+    // detail. Its own copyright is taken off, since the box ends with it
+    // once - so a row reads "cxx1i - ISO C++ 11" beside "cc1i - ISO C 90".
     char buffer[256];
-    std::string first, versioned;
+    std::string first;
     while (std::fgets(buffer, sizeof buffer, pipe)) {
         std::string line = buffer;
         while (!line.empty() && (line[line.size() - 1] == '\n' || line[line.size() - 1] == '\r'))
             line.resize(line.size() - 1);
-        if (first.empty()) first = line;
-        if (line.find("ersion") != std::string::npos ||
-            line.find_first_of("0123456789") != std::string::npos)
-            versioned = line;
+        if (first.empty() && !line.empty()) first = line;
     }
     PCLOSE(pipe);
 
-    return versioned.empty() ? first : versioned;
+    const std::string owner = "\xC2\xA9""2026 G. R. Akhtar - ";
+    if (first.compare(0, owner.size(), owner) == 0) first.erase(0, owner.size());
+    return first;
 }
 
 // Named by the row when the answer does not name itself: cxx1's version line
@@ -68,10 +71,10 @@ std::string askVersion(const std::string& program) {
 // any of the four is a row that says nothing.
 std::string cell(const std::string& program) {
     const std::string answer = askVersion(program);
-    if (answer.empty()) return program + " - not beside this program";
     std::string stem = program;
     if (stem.size() > 4 && stem.compare(stem.size() - 4, 4, ".exe") == 0) stem.resize(stem.size() - 4);
-    return answer.find(stem) == std::string::npos ? stem + ": " + answer : answer;
+    if (answer.empty()) return stem + " - not beside this program";
+    return stem + " - " + answer;
 }
 
 // **One per line, since 3.0.** Three answers used to share a row, because the
@@ -90,16 +93,15 @@ void tool(std::vector<std::string>& said, const std::string& program) {
 std::vector<std::string> lines() {
     std::vector<std::string> said;
     said.push_back(std::string(name()) + " " + version());
-    said.push_back("A terminal editor and a window, over one core.");
-    // Asked one at a time, in the order the menus offer the languages. The
-    // list replaced a sentence naming the compilers, which said less: this
-    // says which ones are actually here, and which are not.
-    said.push_back("the compilers it drives, as they answer for themselves:");
+    // Asked one at a time; the heading is the user's wording. The list says
+    // which compilers are actually here, and which are not.
+    said.push_back("Compiler's version list as follows:");
     // The VM6747 line since 3.5 - what the editor actually looks for, so
-    // that a copy standing beside the sealed originals says so.
+    // that a copy standing beside the sealed originals says so. Shalimar
+    // first, the converter fourth: the user's order.
+    tool(said, "shci.exe");
     tool(said, "cc1i.exe");
     tool(said, "cxx1i.exe");
-    tool(said, "shci.exe");
     tool(said, "c2s.exe");
     said.push_back("");
     // The sign docked to the year, the word left out: the user's wording.
