@@ -10,9 +10,22 @@
 using namespace System;
 using namespace System::Windows::Forms;
 
+// The window's own log, and the fault log beside it, live in %TEMP% - not
+// in the working directory, which is wherever the shortcut said and used to
+// leave RStudioGui.log in bin\ and examples\ and nowhere when the start it
+// records failed before anything could be written there.
+// (Spelled through the environment: <windows.h> is included above, and its
+// GetTempPath macro would rewrite the .NET method's name.)
+static String^ LogPath(String^ leaf) {
+    String^ temp = Environment::GetEnvironmentVariable("TEMP");
+    if (temp == nullptr || temp->Length == 0) temp = Environment::GetEnvironmentVariable("TMP");
+    if (temp == nullptr || temp->Length == 0) temp = ".";
+    return System::IO::Path::Combine(temp, leaf);
+}
+
 static void Note(String^ what) {
     try {
-        System::IO::File::AppendAllText("RStudioGui.log",
+        System::IO::File::AppendAllText(LogPath("RStudioGui.log"),
                                         DateTime::Now.ToString("HH:mm:ss") + "  " + what +
                                             Environment::NewLine);
     } catch (Exception^) {
@@ -39,14 +52,22 @@ static void QuietConsoleForChildren() {
 
 [STAThreadAttribute]
 int main(array<String^>^ arguments) {
+    Note("main entered");
 
-    rstudio_watch_for_faults("RStudioGui-fault.log");
+    {
+        array<Byte>^ bytes = System::Text::Encoding::UTF8->GetBytes(LogPath("RStudioGui-fault.log") + "\0");
+        pin_ptr<Byte> pinned = &bytes[0];
+        rstudio_watch_for_faults(reinterpret_cast<const char*>(pinned));
+    }
+    Note("faults watched");
     QuietConsoleForChildren();
+    Note("console quiet");
     AppDomain::CurrentDomain->UnhandledException +=
         gcnew UnhandledExceptionEventHandler(OnUnhandled);
 
     try {
-        Note("starting, " + arguments->Length + " arguments");
+        Note("starting, " + arguments->Length + " arguments, in " +
+             System::IO::Directory::GetCurrentDirectory());
         editor::installPlatformDemangler();
         Application::EnableVisualStyles();
         Application::SetCompatibleTextRenderingDefault(false);

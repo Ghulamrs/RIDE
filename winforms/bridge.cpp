@@ -113,8 +113,13 @@ LONG CALLBACK onFault(EXCEPTION_POINTERS* info) {
 
     DWORD code = info->ExceptionRecord->ExceptionCode;
 
+    // 0xE0434352 is a managed exception, seen here first-chance - handled
+    // ones too - so the log holds every one and the last is the one that
+    // killed the window.
+    const DWORD kManaged = 0xE0434352;
     if (code != EXCEPTION_ACCESS_VIOLATION && code != STATUS_HEAP_CORRUPTION &&
-        code != EXCEPTION_STACK_OVERFLOW && code != EXCEPTION_ILLEGAL_INSTRUCTION) {
+        code != EXCEPTION_STACK_OVERFLOW && code != EXCEPTION_ILLEGAL_INSTRUCTION &&
+        code != kManaged) {
         inside = false;
         return EXCEPTION_CONTINUE_SEARCH;
     }
@@ -125,8 +130,9 @@ LONG CALLBACK onFault(EXCEPTION_POINTERS* info) {
         return EXCEPTION_CONTINUE_SEARCH;
     }
 
-    std::fprintf(f, "\nexception 0x%08lX at %p\n", static_cast<unsigned long>(code),
-                 info->ExceptionRecord->ExceptionAddress);
+    std::fprintf(f, "\nexception 0x%08lX at %p%s\n", static_cast<unsigned long>(code),
+                 info->ExceptionRecord->ExceptionAddress,
+                 code == kManaged ? " (managed, first chance)" : "");
     if (code == EXCEPTION_ACCESS_VIOLATION &&
         info->ExceptionRecord->NumberParameters >= 2) {
         std::fprintf(f, "  %s address %p\n",
@@ -275,15 +281,33 @@ extern "C" {
 
 void rstudio_watch_for_faults(const char* logPath) {
 #ifdef _WIN32
+    static bool watching = false;
     if (logPath && *logPath) {
         std::strncpy(faultLog, logPath, sizeof faultLog - 1);
         faultLog[sizeof faultLog - 1] = '\0';
     }
-    AddVectoredExceptionHandler(1, onFault);
+    if (!watching) AddVectoredExceptionHandler(1, onFault);
+    watching = true;
 #else
     (void)logPath;
 #endif
 }
+
+#ifdef _WIN32
+// Watching from the first native initialiser, before main - a window that
+// dies on the way to main leaves nothing otherwise, and one did.
+namespace {
+struct EarlyWatch {
+    EarlyWatch() {
+        char temp[MAX_PATH];
+        DWORD n = GetEnvironmentVariableA("TEMP", temp, MAX_PATH);
+        std::string where = (n > 0 && n < MAX_PATH) ? std::string(temp) + "\\RStudioGui-fault.log"
+                                                    : std::string("RStudioGui-fault.log");
+        rstudio_watch_for_faults(where.c_str());
+    }
+} earlyWatch;
+}
+#endif
 
 #ifdef _WIN32
 

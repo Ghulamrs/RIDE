@@ -138,10 +138,16 @@ bool rememberCodeFont(const std::string& described) {
 
 namespace {
 
-std::string pretended;
+// A pointer and never a std::string: this file is linked into the C++/CLI
+// window, where a native global with a destructor registers itself with
+// atexit during start-up and corrupts the onexit table before main - the
+// window died with STATUS_HEAP_CORRUPTION under register_onexit_function,
+// the same stack the README records for Json::get. `moved` above is a
+// pointer for the same reason.
+std::string* pretended = 0;
 
 std::string installDir() {
-    if (!pretended.empty()) return pretended;
+    if (pretended && !pretended->empty()) return *pretended;
     std::string where = path::programDirectory();
     return where.empty() ? std::string() : path::parent(where);
 }
@@ -193,7 +199,10 @@ std::string installedDir(const char* key) {
 
 }
 
-void pretendInstalledAt(const std::string& directory) { pretended = directory; }
+void pretendInstalledAt(const std::string& directory) {
+    if (!pretended) pretended = new std::string();
+    *pretended = directory;
+}
 
 std::string installFile() {
     std::string base = installDir();
