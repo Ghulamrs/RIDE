@@ -120,8 +120,12 @@ protected:
     virtual void OnShown(EventArgs^ e) override {
         Form::OnShown(e);
         Arrange();
-        text_->Select(0, 0);
-        text_->Focus();
+        // A start with nothing to open has no sheet to select - the
+        // genuinely empty environment CloseSheet leaves, from the first.
+        if (text_ != nullptr) {
+            text_->Select(0, 0);
+            text_->Focus();
+        }
         Recolour();
 
         for (int i = 0; i < sheets_->Count; ++i) {
@@ -1671,6 +1675,7 @@ private:
     }
 
     void OnReplace(Object^, EventArgs^) {
+        if (text_ == nullptr) { what_->Text = "no file is open"; return; }
 
         String^ want = Ask("Replace what", needle_);
         if (want == nullptr || want->Length == 0) {
