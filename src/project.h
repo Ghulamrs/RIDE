@@ -100,7 +100,7 @@ public:
     std::string fileToOpen() const;
     std::string mainFile() const;
 
-    void setIndent(const IndentStyle& style) { indent_ = style; }
+    void setIndent(const IndentStyle& style) { indent_ = style; indentSaid_ = true; }
     void setToolchain(ToolchainKind kind) { toolchain_ = kind; }
     void setArch(const std::string& arch) { arch_ = arch; }
 
@@ -139,6 +139,9 @@ private:
     std::vector<std::string> includes_;
     std::vector<std::string> libraries_;
     std::string open_;
+    // Whether the file names its own indentation; unsaid, the
+    // installation's settings.json answers and nothing is written.
+    bool indentSaid_ = false;
 };
 
 }

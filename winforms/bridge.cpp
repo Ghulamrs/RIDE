@@ -249,6 +249,10 @@ editor::Toolchain toolFrom(RStudioProject* project, const char* cc1, const char*
         tool.includes = project->project.absoluteIncludes();
         tool.libraries = project->project.absoluteLibraries();
     }
+    std::vector<std::string> shared = editor::settings::includes();
+    tool.includes.insert(tool.includes.end(), shared.begin(), shared.end());
+    shared = editor::settings::libraries();
+    tool.libraries.insert(tool.libraries.end(), shared.begin(), shared.end());
     return tool;
 }
 
@@ -684,6 +688,19 @@ int rstudio_project_set_libraries(RStudioProject* project, const char* line) {
     return project->last.ok ? 1 : 0;
 }
 
+const char* rstudio_includes(void) {
+    scratch() = joinedList(editor::settings::includes());
+    return scratch().c_str();
+}
+
+const char* rstudio_libraries(void) {
+    scratch() = joinedList(editor::settings::libraries());
+    return scratch().c_str();
+}
+
+int rstudio_set_includes(const char* line) { return editor::settings::rememberIncludes(splitList(line)) ? 1 : 0; }
+int rstudio_set_libraries(const char* line) { return editor::settings::rememberLibraries(splitList(line)) ? 1 : 0; }
+
 const char* rstudio_install_file(void) {
     scratch() = editor::settings::installFile();
     return scratch().c_str();
@@ -706,6 +723,9 @@ int rstudio_remember_header_dirs(const char* include, const char* lib) {
 int rstudio_default_compiler(void) {
     return static_cast<int>(editor::toolchainFrom(editor::settings::defaultCompiler()));
 }
+
+int rstudio_default_indent_width(void) { return static_cast<int>(editor::settings::indentWidth()); }
+int rstudio_default_indent_tabs(void) { return editor::settings::indentTabs() ? 1 : 0; }
 
 int rstudio_remember_default_compiler(int kind) {
     return editor::settings::rememberDefaultCompiler(

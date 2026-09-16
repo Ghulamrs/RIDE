@@ -6,6 +6,7 @@
 
 #include "json.h"
 #include "path.h"
+#include "settings.h"
 
 namespace editor {
 
@@ -34,7 +35,10 @@ const char* languageWord(Language lang) {
 
 Project::Project()
     : loaded_(false), toolchain_(ToolAuto),
-      arch_(hostArch()) {}
+      arch_(hostArch()) {
+    indent_.width = settings::indentWidth();
+    indent_.tabs = settings::indentTabs();
+}
 
 const char* Project::fileName() { return "RStudio.json"; }
 const char* Project::formerFileName() { return "ed1.json"; }
@@ -102,6 +106,9 @@ void Project::begin(const std::string& dir, const std::string& name) {
     includes_.clear();
     libraries_.clear();
     open_.clear();
+    indentSaid_ = false;
+    indent_.width = settings::indentWidth();
+    indent_.tabs = settings::indentTabs();
 
     Group all;
     all.name = "Sources";
@@ -237,9 +244,10 @@ bool Project::load(const std::string& dir, std::string& error) {
 
     arch_ = root.get("arch").text(hostArch());
 
-    indent_.width = static_cast<size_t>(root.get("indent").integer(4));
+    indentSaid_ = root.has("indent") || root.has("tabs");
+    indent_.width = static_cast<size_t>(root.get("indent").integer(static_cast<long>(settings::indentWidth())));
     if (indent_.width < 1 || indent_.width > 16) indent_.width = 4;
-    indent_.tabs = root.get("tabs").boolean(false);
+    indent_.tabs = root.get("tabs").boolean(settings::indentTabs());
 
     groups_.clear();
     const Json& groups = root.get("groups");
@@ -337,8 +345,10 @@ bool Project::save(std::string& error) {
     root.set("name", Json::fromText(name_));
     root.set("toolchain", Json::fromText(toolchainWord(toolchain_)));
     root.set("arch", Json::fromText(arch_));
-    root.set("indent", Json::fromNumber(static_cast<double>(indent_.width)));
-    root.set("tabs", Json::fromBool(indent_.tabs));
+    if (indentSaid_) {
+        root.set("indent", Json::fromNumber(static_cast<double>(indent_.width)));
+        root.set("tabs", Json::fromBool(indent_.tabs));
+    }
 
     Json groups = Json::object();
     for (size_t i = 0; i < groups_.size(); ++i) {

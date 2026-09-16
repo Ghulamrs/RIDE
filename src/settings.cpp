@@ -28,6 +28,9 @@ std::string formerFileName() {
 
 namespace {
 
+Json readInstall();
+bool writeInstall(const Json& root);
+
 std::string toRead() {
     std::string now = fileName();
     if (!now.empty() && path::exists(now)) return now;
@@ -128,12 +131,30 @@ bool rememberConfiguration(const std::string& which) {
     return writeAll(root);
 }
 
-std::string codeFont() { return readAll().get("font").text(std::string()); }
+std::string codeFont() {
+    std::string said = readInstall().get("font").text(std::string());
+    // Carried forward from the per-user file, where it lived before.
+    return said.empty() ? readAll().get("font").text(std::string()) : said;
+}
 
 bool rememberCodeFont(const std::string& described) {
-    Json root = readAll();
+    Json root = readInstall();
     root.set("font", Json::fromText(described));
-    return writeAll(root);
+    return writeInstall(root);
+}
+
+size_t indentWidth() {
+    long width = readInstall().get("indent").integer(4);
+    return (width < 1 || width > 16) ? 4 : static_cast<size_t>(width);
+}
+
+bool indentTabs() { return readInstall().get("tabs").boolean(false); }
+
+bool rememberIndent(size_t width, bool tabs) {
+    Json root = readInstall();
+    root.set("indent", Json::fromNumber(static_cast<double>(width)));
+    root.set("tabs", Json::fromBool(tabs));
+    return writeInstall(root);
 }
 
 namespace {
@@ -224,6 +245,39 @@ std::string vcvars() {
     return (!said.empty() && path::exists(said)) ? said : std::string();
 }
 
+namespace {
+
+std::vector<std::string> installedList(const char* key) {
+    std::vector<std::string> out;
+    std::string base = installDir();
+    // Held, not referenced off the temporary: a reference into
+    // readInstall()'s result dangles once the statement ends.
+    Json root = readInstall();
+    const Json& list = root.get(key);
+    for (size_t i = 0; i < list.size(); ++i) {
+        std::string said = list.at(i).text("");
+        if (said.empty()) continue;
+        bool rooted = said[0] == '/' || said[0] == '\\' || (said.size() > 1 && said[1] == ':');
+        out.push_back(rooted ? path::absolute(said) : path::absolute(path::join(base, said)));
+    }
+    return out;
+}
+
+bool rememberList(const char* key, const std::vector<std::string>& items) {
+    Json root = readInstall();
+    Json list = Json::array();
+    for (size_t i = 0; i < items.size(); ++i) list.push(Json::fromText(items[i]));
+    root.set(key, list);
+    return writeInstall(root);
+}
+
+}
+
+std::vector<std::string> includes() { return installedList("includes"); }
+std::vector<std::string> libraries() { return installedList("libraries"); }
+bool rememberIncludes(const std::vector<std::string>& dirs) { return rememberList("includes", dirs); }
+bool rememberLibraries(const std::vector<std::string>& files) { return rememberList("libraries", files); }
+
 std::string defaultCompiler() {
     std::string said = readInstall().get("compiler").text("auto");
     return said.empty() ? std::string("auto") : said;
@@ -256,6 +310,11 @@ bool writeInstallFileIfAbsent() {
     root.set("lib", Json::fromText("lib"));
     root.set("vcvars", Json::fromText(""));
     root.set("compiler", Json::fromText("auto"));
+    root.set("indent", Json::fromNumber(4));
+    root.set("tabs", Json::fromBool(false));
+    root.set("font", Json::fromText(""));
+    root.set("includes", Json::array());
+    root.set("libraries", Json::array());
     writeInstall(root);   // declined where there is no installation, rightly
     return true;
 }
@@ -276,7 +335,8 @@ std::vector<std::string> recentProjects() {
 
 std::vector<std::string> recentFiles() {
     std::vector<std::string> out;
-    const Json& recent = readAll().get("recentFiles");
+    Json root = readAll();
+    const Json& recent = root.get("recentFiles");
     for (size_t i = 0; i < recent.size() && out.size() < 3; ++i) {
         std::string one = recent.at(i).text("");
         if (!one.empty() && path::exists(one)) out.push_back(one);

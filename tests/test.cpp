@@ -1182,6 +1182,23 @@ void projects() {
                    "lib/ where cc1's are");
         check(editor::settings::vcvars().empty(), "and no vcvars until one is named");
         checkEqual(editor::settings::defaultCompiler(), "auto", "the compiler starts on automatic");
+        check(editor::settings::indentWidth() == 4 && !editor::settings::indentTabs(),
+              "and the indentation at four spaces");
+        check(editor::settings::rememberIndent(2, true) && editor::settings::indentWidth() == 2 &&
+              editor::settings::indentTabs(), "which can be changed there");
+        check(editor::settings::rememberCodeFont("Consolas 12") && editor::settings::codeFont() == "Consolas 12",
+              "and the window's font is kept there too");
+        editor::settings::rememberIndent(4, false);
+        std::vector<std::string> shared;
+        shared.push_back("common/include");
+        shared.push_back("/abs/elsewhere");
+        check(editor::settings::rememberIncludes(shared) && editor::settings::includes().size() == 2 &&
+              editor::settings::includes()[0] == editor::path::absolute((app / "common" / "include").string()),
+              "installation-wide include paths, relative to the file");
+        std::string shownShared = rstudio_shown_command(0, "cc1i", "cl", "shci", "cxx1i", editor::ToolCc1,
+                                                        "a.c", editor::LangC, kDarwin.c_str(), editor::ConfigDebug);
+        check(shownShared.find("common") != std::string::npos, "reach every compile");
+        editor::settings::rememberIncludes(std::vector<std::string>());
         check(editor::settings::rememberDefaultCompiler("cxx1") && editor::settings::defaultCompiler() == "cxx1",
               "and a choice from the menu is written");
         check(rstudio_default_compiler() == editor::ToolCxx1, "which the window reads back as its kind");

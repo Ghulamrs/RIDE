@@ -129,6 +129,9 @@ int main(int argc, char** argv) {
     editor::installPlatformDemangler();
 
     editor::Editor ed;
+    // The installation's indentation, before the command line's say.
+    ed.setIndentWidth(editor::settings::indentWidth());
+    if (editor::settings::indentTabs()) ed.setTabs(true);
 
     if (!file.empty() && project.empty() && editor::path::isDirectory(file)) {
         project = file;

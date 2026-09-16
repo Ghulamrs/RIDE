@@ -99,6 +99,12 @@ int rstudio_project_set_libraries(RStudioProject* project, const char* line);
 // The installation's settings.json, above bin/: where cxx1's headers
 // (include) and cc1's (lib) are, and the vcvars64.bat named there if any.
 const char* rstudio_install_file(void);
+// The installation's include directories and libraries, one ';'-separated
+// line each as settings.json has them; setting one writes the file.
+const char* rstudio_includes(void);
+const char* rstudio_libraries(void);
+int rstudio_set_includes(const char* line);
+int rstudio_set_libraries(const char* line);
 const char* rstudio_include_dir(void);
 const char* rstudio_lib_dir(void);
 int rstudio_remember_header_dirs(const char* include, const char* lib);
@@ -106,6 +112,8 @@ const char* rstudio_vcvars(void);
 // The default compiler in settings.json, as an RSTUDIO_TOOL_* number, and
 // the choice written back when one is made from the menu.
 int rstudio_default_compiler(void);
+int rstudio_default_indent_width(void);
+int rstudio_default_indent_tabs(void);
 int rstudio_remember_default_compiler(int kind);
 int rstudio_remember_vcvars(const char* file);
 

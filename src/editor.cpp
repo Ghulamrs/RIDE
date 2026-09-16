@@ -2021,33 +2021,39 @@ Toolchain Editor::toolFor() const {
         tool.includes = project_.absoluteIncludes();
         tool.libraries = project_.absoluteLibraries();
     }
+    std::vector<std::string> shared = settings::includes();
+    tool.includes.insert(tool.includes.end(), shared.begin(), shared.end());
+    shared = settings::libraries();
+    tool.libraries.insert(tool.libraries.end(), shared.begin(), shared.end());
     return tool;
 }
 
+// The installation's, in settings.json - every compile searches them after
+// a project's own, which a .pro may still carry.
 void Editor::editProjectIncludes() {
-    if (!project_.loaded()) { say("there is no project - make one first"); return; }
+    std::string file = settings::installFile();
+    if (file.empty()) { say("no installation directory to keep this in"); return; }
     bool cancelled = false;
-    std::string line = prompt("include paths, relative to " + project_.root() + ", ';' between [" +
-                              joined(project_.includes()) + "]: ", cancelled);
-    if (cancelled) { say("include paths unchanged"); return; }
-    if (line.empty()) { say("include paths unchanged"); return; }
-    project_.setIncludes(splitList(line == "-" ? std::string() : line));
-    Outcome done = editor::saveProject(project_);
-    say(done.ok ? "include paths: " + joined(project_.includes()) + " - " + done.message
-                : done.message);
+    std::string line = prompt("include paths, ';' between, '-' for none [" +
+                              joined(settings::includes()) + "]: ", cancelled);
+    if (cancelled || line.empty()) { say("include paths unchanged"); return; }
+    if (settings::rememberIncludes(splitList(line == "-" ? std::string() : line)))
+        say("include paths: " + joined(settings::includes()) + " - written to " + file);
+    else
+        say("cannot write " + file);
 }
 
 void Editor::editProjectLibraries() {
-    if (!project_.loaded()) { say("there is no project - make one first"); return; }
+    std::string file = settings::installFile();
+    if (file.empty()) { say("no installation directory to keep this in"); return; }
     bool cancelled = false;
-    std::string line = prompt("libraries, relative to " + project_.root() + ", ';' between [" +
-                              joined(project_.libraries()) + "]: ", cancelled);
-    if (cancelled) { say("libraries unchanged"); return; }
-    if (line.empty()) { say("libraries unchanged"); return; }
-    project_.setLibraries(splitList(line == "-" ? std::string() : line));
-    Outcome done = editor::saveProject(project_);
-    say(done.ok ? "libraries: " + joined(project_.libraries()) + " - " + done.message
-                : done.message);
+    std::string line = prompt("libraries, ';' between, '-' for none [" +
+                              joined(settings::libraries()) + "]: ", cancelled);
+    if (cancelled || line.empty()) { say("libraries unchanged"); return; }
+    if (settings::rememberLibraries(splitList(line == "-" ? std::string() : line)))
+        say("libraries: " + joined(settings::libraries()) + " - written to " + file);
+    else
+        say("cannot write " + file);
 }
 
 void Editor::editHeaderDirs() {

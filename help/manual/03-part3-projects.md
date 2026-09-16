@@ -15,7 +15,12 @@ directory above `bin\`, beside `include\` and `lib\`:
       "include": "include",
       "lib": "lib",
       "vcvars": "",
-      "compiler": "auto"
+      "compiler": "auto",
+      "indent": 4,
+      "tabs": false,
+      "font": "",
+      "includes": ["C:/work/common/include"],
+      "libraries": ["C:/work/common/lib/mathlib.lib"]
     }
 
 It is read for every compile, project or none. `include` is where `cxx1i`'s
@@ -27,7 +32,13 @@ empty until Visual Studio's tools could not be found by looking, and then
 names the `vcvars64.bat` to use. `compiler` is the one chosen when the editor
 starts - `auto` (the file's extension decides), `cc1`, `cxx1`, `shc`, `msvc`
 or `c++` - and choosing one from the Tools menu writes it here; a project
-that names its own compiler takes precedence while it is open. *Tools ▸
+that names its own compiler takes precedence while it is open. `indent` and
+`tabs` are how a file is laid out unless its project says otherwise, and
+`font` is the window's, written by *Tools ▸ Font...*. `includes` and
+`libraries` are header directories every compile searches and libraries every
+host link takes, for the whole installation - *Tools ▸ Include paths...* and
+*Tools ▸ Libraries...* write them; a project may still carry its own in its
+`.pro`, searched first. *Tools ▸
 Header directories...* and *Tools ▸ Locate vcvars64.bat...* write this file
 too; the editor writes it with the defaults on its first run where it finds
 none.
@@ -61,7 +72,9 @@ Field by field:
 - **`arch`** — the target the project builds for: one of `x86_64-windows`,
   `x86_64-linux`, `arm64-darwin`, `tms6747`. The editor's Target menu changes
   it; a project that names none gets this machine's host target.
-- **`indent`** / **`tabs`** — how the editor lays this project's files out.
+- **`indent`** / **`tabs`** — how the editor lays this project's files out;
+  absent, the installation's `settings.json` answers, and a new project
+  writes neither.
 - **`groups`** — a set of named groups, each a list of files. The names are the
   headings in the left pane. A file's group is a display and organisation
   convenience *and* the unit the build selects. A group may carry its own
@@ -71,14 +84,14 @@ Field by field:
   project's directory (an absolute path stays as written). Every compile of
   the project's sources searches them, in this order, before the shipped
   headers: `-I` to `cc1i`, `cxx1i` and the host's C++, `/I` to `cl`. Shalimar
-  has no include and `shci` is given none. Edited with *Tools ▸ Project
-  include paths...*, one line with `;` between the entries.
+  has no include and `shci` is given none. The installation's own, from
+  `settings.json`, are searched after these.
 - **`libraries`** — libraries linked into the program after its objects, each
   relative to the project's directory: `.lib` files under Windows, `.a` under
   Unix. A project that names any is built as objects and linked by the host's
   linker, whatever its compilers (`cc1i` and `cxx1i` take sources only). They
-  do not apply to `tms6747`, which is not linked. Edited with *Tools ▸
-  Project libraries...*.
+  do not apply to `tms6747`, which is not linked. The installation's own,
+  from `settings.json`, are linked after these.
 - **`open`** — the file that opens with the project, relative to its
   directory. Written by the editor from the file in front when the project is
   closed or the editor left. A project without it opens the file that defines

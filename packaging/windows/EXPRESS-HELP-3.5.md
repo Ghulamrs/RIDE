@@ -109,9 +109,9 @@ machine (none of TI's tools ship here); see `bin\ti\TI-BUILD.txt`.
     examples\ worked programs and a demo project (demo.pro)
     help\     the full help pages
 
-A project's own .pro may add `"include": [dirs]` and `"libraries": [files]`,
-relative to the project (Tools > Project include paths..., Tools > Project
-libraries...). The last three projects opened are at the end of the Project
+Include paths and libraries for every compile are in settings.json (Tools >
+Include paths..., Tools > Libraries...); a project's own .pro may add its own
+`"include": [dirs]` and `"libraries": [files]`, relative to the project. The last three projects opened are at the end of the Project
 menu; none is opened on its own at start.
 
 --------------------------------------------------------------------------

@@ -28,8 +28,14 @@ bool plainFrame();
 std::string configuration();
 bool rememberConfiguration(const std::string& which);
 
+// The window's font, "Consolas 11" style, and the indentation a file is
+// laid out with when its project says nothing - both in the installation's
+// settings.json since 2026-09-17, the Tools menu writing the font.
 std::string codeFont();
 bool rememberCodeFont(const std::string& described);
+size_t indentWidth();
+bool indentTabs();
+bool rememberIndent(size_t width, bool tabs);
 
 std::string setAside();
 bool rememberPlainFrame(bool plain);
@@ -49,6 +55,13 @@ std::string vcvars();
 // line says otherwise: auto, cc1, cxx1, shc, msvc or c++ - "compiler" in
 // the installation's settings.json. Choosing one from the menu writes it.
 std::string defaultCompiler();
+// Header directories every compile searches after a project's own, and
+// libraries every host link takes - "includes" and "libraries" in the
+// installation's settings.json, each relative to the file unless absolute.
+std::vector<std::string> includes();
+std::vector<std::string> libraries();
+bool rememberIncludes(const std::vector<std::string>& dirs);
+bool rememberLibraries(const std::vector<std::string>& files);
 bool rememberDefaultCompiler(const std::string& word);
 bool rememberHeaderDirs(const std::string& include, const std::string& lib);
 bool rememberVcvars(const std::string& file);

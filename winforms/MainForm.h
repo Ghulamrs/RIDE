@@ -339,8 +339,8 @@ private:
         codeFont_ = RememberedFont();
         numbers_ = true;
         ForgetError();
-        indentWidth_ = 4;
-        indentTabs_ = 0;
+        indentWidth_ = rstudio_default_indent_width();
+        indentTabs_ = rstudio_default_indent_tabs();
         indentCase_ = 0;
 
         Lay();
@@ -653,9 +653,9 @@ private:
         tools->DropDownItems->Add(gcnew ToolStripSeparator());
         tools->DropDownItems->Add("Header directories...", nullptr,
                                   gcnew EventHandler(this, &MainForm::OnHeaderDirs));
-        tools->DropDownItems->Add("Project include paths...", nullptr,
+        tools->DropDownItems->Add("Include paths...", nullptr,
                                   gcnew EventHandler(this, &MainForm::OnProjectIncludes));
-        tools->DropDownItems->Add("Project libraries...", nullptr,
+        tools->DropDownItems->Add("Libraries...", nullptr,
                                   gcnew EventHandler(this, &MainForm::OnProjectLibraries));
         tools->DropDownItems->Add("Locate vcvars64.bat...", nullptr,
                                   gcnew EventHandler(this, &MainForm::OnLocateVcvars));
@@ -2271,38 +2271,33 @@ private:
             FillTree();
     }
 
-    // The two lists a project keeps beside its groups, edited as one line
-    // each with ';' between the entries, and written back at once.
+    // The installation's include directories and libraries, in settings.json,
+    // edited as one line each with ';' between the entries; every compile
+    // searches them after a project's own.
     void OnProjectIncludes(Object^, EventArgs^) {
-        if (rstudio_project_loaded(project_) == 0) {
-            what_->Text = "there is no project - make one first";
-            return;
-        }
-        String^ line = Ask("Include paths", "relative to " + FromUtf8(rstudio_project_root(project_)) +
-                           ", ';' between them",
-                           FromUtf8(rstudio_project_includes(project_)));
+        String^ file = FromUtf8(rstudio_install_file());
+        if (file->Length == 0) { what_->Text = "no installation directory to keep this in"; return; }
+        String^ line = Ask("Include paths", "kept in " + file + ", ';' between them",
+                           FromUtf8(rstudio_includes()));
         if (line == nullptr) { what_->Text = "include paths unchanged"; return; }
         array<Byte>^ bytes = Utf8Of(line);
         pin_ptr<Byte> pinned = &bytes[0];
-        if (Did(rstudio_project_set_includes(project_, reinterpret_cast<const char*>(pinned))))
-            what_->Text = "include paths: " + FromUtf8(rstudio_project_includes(project_)) +
-                          " - " + what_->Text;
+        what_->Text = rstudio_set_includes(reinterpret_cast<const char*>(pinned)) != 0
+                          ? "include paths: " + FromUtf8(rstudio_includes()) + " - written to " + file
+                          : "cannot write " + file;
     }
 
     void OnProjectLibraries(Object^, EventArgs^) {
-        if (rstudio_project_loaded(project_) == 0) {
-            what_->Text = "there is no project - make one first";
-            return;
-        }
-        String^ line = Ask("Libraries", "relative to " + FromUtf8(rstudio_project_root(project_)) +
-                           ", ';' between them, linked after the objects",
-                           FromUtf8(rstudio_project_libraries(project_)));
+        String^ file = FromUtf8(rstudio_install_file());
+        if (file->Length == 0) { what_->Text = "no installation directory to keep this in"; return; }
+        String^ line = Ask("Libraries", "kept in " + file + ", ';' between them, linked after the objects",
+                           FromUtf8(rstudio_libraries()));
         if (line == nullptr) { what_->Text = "libraries unchanged"; return; }
         array<Byte>^ bytes = Utf8Of(line);
         pin_ptr<Byte> pinned = &bytes[0];
-        if (Did(rstudio_project_set_libraries(project_, reinterpret_cast<const char*>(pinned))))
-            what_->Text = "libraries: " + FromUtf8(rstudio_project_libraries(project_)) +
-                          " - " + what_->Text;
+        what_->Text = rstudio_set_libraries(reinterpret_cast<const char*>(pinned)) != 0
+                          ? "libraries: " + FromUtf8(rstudio_libraries()) + " - written to " + file
+                          : "cannot write " + file;
     }
 
     // The installation's settings.json: where the shipped headers are.
