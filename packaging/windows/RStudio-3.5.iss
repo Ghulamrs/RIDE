@@ -26,6 +26,8 @@ SolidCompression=yes
 ArchitecturesInstallIn64BitMode=x64compatible
 ArchitecturesAllowed=x64compatible
 WizardStyle=modern
+; Tell Explorer the environment changed, so a new console sees the PATH.
+ChangesEnvironment=yes
 LicenseFile={#Stage}\README.md
 
 [Files]
@@ -51,7 +53,13 @@ Name: "desktopicon"; Description: "Create a desktop shortcut"; Flags: unchecked
 Name: "addtopath"; Description: "Add the bin folder to PATH (cc1i, cxx1i, shci, vm6747, c2s on the command line)"; Flags: unchecked
 
 [Registry]
-Root: HKA; Subkey: "Environment"; ValueType: expandsz; ValueName: "Path"; ValueData: "{olddata};{app}\bin"; \
+; The user's own PATH, HKCU\Environment, on purpose. The machine-wide one is
+; not "HKLM\Environment" but HKLM\SYSTEM\CurrentControlSet\Control\Session
+; Manager\Environment, so with the installer elevated (Program Files) the
+; earlier "HKA" spelling wrote a key nothing reads and PATH never changed.
+; Every account that installs RIDE already has an HKCU Path, which is where a
+; per-user tool belongs anyway; NeedsAddPath reads the same hive.
+Root: HKCU; Subkey: "Environment"; ValueType: expandsz; ValueName: "Path"; ValueData: "{olddata};{app}\bin"; \
     Tasks: addtopath; Check: NeedsAddPath(ExpandConstant('{app}\bin'))
 
 [Run]
@@ -69,4 +77,32 @@ begin
   end;
   { true only if the bin folder is not already on PATH }
   Result := Pos(';' + Uppercase(Param) + ';', ';' + Uppercase(OrigPath) + ';') = 0;
+end;
+
+{ Take the bin folder back out of the user's PATH on uninstall; Inno restores
+  nothing on its own, and leaving a dead entry is what "addtopath" would
+  otherwise cost the next install into a different folder. At usUninstall,
+  not usPostUninstall: tried on the box, the later step never reached this
+  code and PATH kept the entry. The Log lines land in the uninstall log. }
+procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);
+var
+  Bin, Path: string;
+  P: Integer;
+begin
+  if CurUninstallStep <> usUninstall then exit;
+  Bin := ExpandConstant('{app}\bin');
+  if not RegQueryStringValue(HKEY_CURRENT_USER, 'Environment', 'Path', Path) then exit;
+  P := Pos(';' + Uppercase(Bin) + ';', ';' + Uppercase(Path) + ';');
+  Log('PATH entry ' + Bin + ' found at ' + IntToStr(P) + ' in ' + Path);
+  if P = 0 then exit;
+  { P counts from the leading ';' we added; the entry starts at P in Path
+    when it is first, else the ';' before it is at P-1 }
+  if P = 1 then
+    Delete(Path, 1, Length(Bin) + 1)   { "bin;" at the front, or all of it }
+  else
+    Delete(Path, P - 1, Length(Bin) + 1);  { ";bin" }
+  if RegWriteExpandStringValue(HKEY_CURRENT_USER, 'Environment', 'Path', Path) then
+    Log('PATH is now ' + Path)
+  else
+    Log('PATH could not be written');
 end;
