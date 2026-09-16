@@ -965,6 +965,11 @@ void jsonReading() {
           "a whole number is written whole");
 }
 
+void writeSource(const std::string& where, const char* text) {
+    std::ofstream out(where.c_str());
+    out << text;
+}
+
 void projects() {
     std::printf("the project\n");
 
@@ -1098,6 +1103,43 @@ void projects() {
     }
     check(read.includes().empty() && read.libraries().empty(),
           "a project that names none has none");
+
+    // Which file opens with the project: the one it names, else the one
+    // defining main, else the first. Headers and declarations do not count.
+    {
+        file::path where = dir / "opens";
+        file::create_directories(where);
+        writeSource((where / "util.c").string(),
+                    "/* once this held\nint main(void) { return 2; }\n*/\n// int main(void) {}\nint helper(void) { return 1; }\n");
+        writeSource((where / "util.h").string(), "int main(void);\n");
+        writeSource((where / "prog.c").string(), "/* main lives here */\nint main(void) { return 0; }\n");
+        writeSource((where / "run.shl").string(), "fun <> = main()\n{\n    ? \"hi\"\n}\n");
+        editor::Project opens;
+        opens.begin(where.string(), "Opens");
+        opens.addFile("util.h", "Headers");
+        opens.addFile("util.c", "Sources");
+        opens.addFile("prog.c", "Sources");
+        checkEqual(opens.mainFile(), "prog.c",
+                   "the file defining main is found, past a declaration and two commented ones");
+        checkEqual(opens.fileToOpen(), "prog.c", "and is the one to open");
+        opens.setOpenFile("util.c");
+        checkEqual(opens.fileToOpen(), "util.c", "unless the project names another");
+        check(opens.save(error), "which is written");
+        editor::Project back;
+        check(back.load(opens.file(), error) && back.openFile() == "util.c", "and read back");
+        std::remove(opens.file().c_str());
+
+        editor::Project shalimar;
+        shalimar.begin(where.string(), "Shl");
+        shalimar.addFile("run.shl", "Shalimar");
+        checkEqual(shalimar.mainFile(), "run.shl", "a Shalimar main is found too");
+
+        editor::Outcome kept = editor::rememberOpen(opens, (where / "prog.c").string());
+        check(kept.ok && opens.openFile() == "prog.c", "closing on a file of the project records it");
+        check(!editor::rememberOpen(opens, (where / "prog.c").string()).ok, "and not again when it is the same");
+        check(!editor::rememberOpen(opens, (where / "elsewhere.c").string()).ok, "nor for a file the project lacks");
+        std::remove(opens.file().c_str());
+    }
 
     // The installation's settings.json: include/ and lib/ above the binary,
     // written on first sight, read for every compile, and each compiler
@@ -1560,10 +1602,6 @@ std::string readWholeFile(const std::string& where) {
     return all.str();
 }
 
-void writeSource(const std::string& where, const char* text) {
-    std::ofstream out(where.c_str());
-    out << text;
-}
 
 // What the two debuggers say when they stop, which is the fiddly half of
 // driving them and needs neither a debugger nor a built program to check.

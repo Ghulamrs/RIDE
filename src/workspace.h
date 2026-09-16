@@ -31,6 +31,11 @@ std::string groupForFile(const std::string& name);
 // may not; nothing is said when it does not apply, and the file stays saved.
 Outcome adoptSaved(Project& project, const std::string& absolute);
 
+// The file in front when the project is closed or left is the one it opens
+// with next time: written into the project when it is one of its files and
+// not already the one recorded. Nothing is said either way.
+Outcome rememberOpen(Project& project, const std::string& absolute);
+
 Outcome addExisting(Project& project, const std::string& absolute,
                     const std::string& group);
 

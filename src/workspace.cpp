@@ -250,6 +250,19 @@ Outcome adoptSaved(Project& project, const std::string& absolute) {
     return andSave(project, relative + " saved, and added to " + group, absolute);
 }
 
+Outcome rememberOpen(Project& project, const std::string& absolute) {
+    Outcome quiet;
+    if (!project.loaded() || absolute.empty()) return quiet;
+    std::string relative = project.relative(absolute);
+    if (project.groupOf(relative) >= project.groups().size()) return quiet;
+    if (relative == project.openFile()) return quiet;
+    project.setOpenFile(relative);
+    std::string error;
+    quiet.ok = project.save(error);
+    quiet.message = quiet.ok ? relative + " opens with the project from now on" : error;
+    return quiet;
+}
+
 Outcome removeExisting(Project& project, const std::string& absolute) {
     std::string relative = project.relative(absolute);
 

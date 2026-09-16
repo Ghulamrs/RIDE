@@ -113,6 +113,7 @@ protected:
                 e->Cancel = true;
                 return;
             }
+        RememberOpen();
         Form::OnFormClosing(e);
     }
 
@@ -784,19 +785,23 @@ private:
         }
     }
 
+    // The project's own choice of file first, then the one that defines
+    // main, then the first file there is.
     void OpenFirstOfProject() {
-        int groups = rstudio_project_groups(project_);
-        for (int group = 0; group < groups; ++group) {
-            if (rstudio_project_files(project_, group) < 1) continue;
+        String^ relative = FromUtf8(rstudio_project_file_to_open(project_));
+        if (relative->Length == 0) return;
+        array<Byte>^ bytes = Utf8Of(relative);
+        pin_ptr<Byte> pinned = &bytes[0];
+        String^ full = FromUtf8(
+            rstudio_project_absolute(project_, reinterpret_cast<const char*>(pinned)));
+        if (full->Length > 0 && System::IO::File::Exists(full)) OpenPath(full);
+    }
 
-            String^ relative = FromUtf8(rstudio_project_file(project_, group, 0));
-            array<Byte>^ bytes = Utf8Of(relative);
-            pin_ptr<Byte> pinned = &bytes[0];
-            String^ full = FromUtf8(
-                rstudio_project_absolute(project_, reinterpret_cast<const char*>(pinned)));
-            if (full->Length > 0 && System::IO::File::Exists(full)) OpenPath(full);
-            return;
-        }
+    void RememberOpen() {
+        if (path_ == nullptr || path_->Length == 0) return;
+        array<Byte>^ bytes = Utf8Of(path_);
+        pin_ptr<Byte> pinned = &bytes[0];
+        rstudio_remember_open(project_, reinterpret_cast<const char*>(pinned));
     }
 
     String^ RootNow() {
@@ -2332,13 +2337,43 @@ private:
             return;
         }
         String^ was = FromUtf8(rstudio_project_name(project_));
+        RememberOpen();
+
+        // The project's files go with it - anything open from under its
+        // root - each unsaved one asking first, and one refusal keeps the
+        // project open with everything as it was.
+        String^ root = FromUtf8(rstudio_project_root(project_));
+        System::Collections::Generic::List<Sheet^>^ theirs = gcnew System::Collections::Generic::List<Sheet^>();
+        for (int i = 0; i < sheets_->Count; ++i)
+            if (sheets_[i]->path != nullptr && UnderRoot(sheets_[i]->path, root)) theirs->Add(sheets_[i]);
+        for (int i = 0; i < theirs->Count; ++i)
+            if (!MayDiscard(theirs[i])) { what_->Text = "not closed - " + System::IO::Path::GetFileName(theirs[i]->path) + " has unsaved changes"; return; }
+        int closed = theirs->Count;
+        for (int i = 0; i < theirs->Count; ++i) {
+            sheets_->Remove(theirs[i]);
+            files_->TabPages->Remove(theirs[i]->page);
+        }
+        if (sheets_->Count == 0) { text_ = nullptr; path_ = nullptr; }
+        else if (files_->SelectedTab != nullptr) {
+            Sheet^ now = SheetForPage(files_->SelectedTab);
+            if (now != nullptr) { text_ = now->box; path_ = now->path; }
+        }
+
         rstudio_project_close(project_);
 
         paneMode_ = PaneMode::PaneFiles;
         FillTree();
         RefreshTitle();
+        SayBuild();
         console_->Text = "";
-        what_->Text = was + " closed - the files it held are still open";
+        what_->Text = was + " closed" + (closed > 0 ? String::Format(", and its {0} file(s) with it", closed) : "");
+    }
+
+    static bool UnderRoot(String^ path, String^ root) {
+        if (root == nullptr || root->Length == 0) return false;
+        String^ full = System::IO::Path::GetFullPath(path)->Replace('/', '\\');
+        String^ base = System::IO::Path::GetFullPath(root)->Replace('/', '\\')->TrimEnd('\\') + "\\";
+        return full->StartsWith(base, StringComparison::OrdinalIgnoreCase);
     }
 
     void OnTreeOpen(Object^, TreeNodeMouseClickEventArgs^ e) {

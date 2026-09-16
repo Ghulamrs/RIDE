@@ -124,6 +124,11 @@ int rstudio_add_existing(RStudioProject* project, const char* absolute, const ch
 // A file just saved under the project's root joins it; 0 when that did not
 // apply, and nothing to say then.
 int rstudio_adopt_saved(RStudioProject* project, const char* absolute);
+// The file the project opens with, relative to its root - its own choice,
+// else the one defining main, else the first - and remembering the one in
+// front when the project is closed or the window left.
+const char* rstudio_project_file_to_open(RStudioProject* project);
+int rstudio_remember_open(RStudioProject* project, const char* absolute);
 
 int rstudio_remove_from_project(RStudioProject* project, const char* absolute);
 

@@ -1,6 +1,7 @@
 #include "project.h"
 
 #include <algorithm>
+#include <cctype>
 #include <cstdio>
 
 #include "json.h"
@@ -121,6 +122,7 @@ void Project::begin(const std::string& dir, const std::string& name) {
     groups_.clear();
     includes_.clear();
     libraries_.clear();
+    open_.clear();
 
     Group all;
     all.name = "Sources";
@@ -134,6 +136,70 @@ void Project::begin(const std::string& dir, const std::string& name) {
     target_.groups.push_back(all.name);
 
     loaded_ = true;
+}
+
+namespace {
+
+// The line with its comments taken out - a block comment carried across
+// lines by `inComment` - so that a `main(` inside one does not count.
+std::string uncommented(const std::string& line, Language lang, bool& inComment) {
+    std::string out;
+    for (size_t i = 0; i < line.size(); ++i) {
+        if (inComment) {
+            if (line.compare(i, 2, "*/") == 0) { inComment = false; ++i; }
+            continue;
+        }
+        if (lang != LangShalimar && line.compare(i, 2, "/*") == 0) { inComment = true; ++i; continue; }
+        if (lang != LangShalimar && line.compare(i, 2, "//") == 0) break;
+        out += line[i];
+    }
+    return out;
+}
+
+// Whether a line defines main: C and C++ spell it `main(` and not as a
+// declaration ending in ';'; Shalimar as `fun <> = main()`.
+bool definesMain(const std::string& line, Language lang) {
+    size_t at = line.find("main");
+    if (at == std::string::npos) return false;
+    if (lang == LangShalimar) return line.find("fun") != std::string::npos && line.find("main()", at) == at;
+
+    if (at > 0 && (std::isalnum(static_cast<unsigned char>(line[at - 1])) || line[at - 1] == '_')) return false;
+    size_t paren = line.find_first_not_of(" \t", at + 4);
+    if (paren == std::string::npos || line[paren] != '(') return false;
+    size_t last = line.find_last_not_of(" \t\r");
+    return last == std::string::npos || line[last] != ';';
+}
+
+}
+
+std::string Project::mainFile() const {
+    for (size_t i = 0; i < groups_.size(); ++i)
+        for (size_t j = 0; j < groups_[i].files.size(); ++j) {
+            const std::string& relative = groups_[i].files[j];
+            Language lang = languageOf(relative);
+            if (lang != LangC && lang != LangCpp && lang != LangShalimar) continue;
+            if (relative.size() > 2 && relative.compare(relative.size() - 2, 2, ".h") == 0) continue;
+
+            FILE* in = std::fopen(absolute(relative).c_str(), "rb");
+            if (!in) continue;
+            char line[1024];
+            bool found = false, inComment = false;
+            while (!found && std::fgets(line, sizeof line, in))
+                found = definesMain(uncommented(line, lang, inComment), lang);
+            std::fclose(in);
+            if (found) return relative;
+        }
+    return std::string();
+}
+
+std::string Project::fileToOpen() const {
+    if (!open_.empty() && path::exists(absolute(open_))) return open_;
+    std::string main = mainFile();
+    if (!main.empty()) return main;
+    for (size_t i = 0; i < groups_.size(); ++i)
+        for (size_t j = 0; j < groups_[i].files.size(); ++j)
+            if (path::exists(absolute(groups_[i].files[j]))) return groups_[i].files[j];
+    return std::string();
 }
 
 std::vector<std::string> Project::absoluteIncludes() const {
@@ -231,6 +297,8 @@ bool Project::load(const std::string& dir, std::string& error) {
         std::string named = withSlashes(includes.at(i).text());
         if (!named.empty()) includes_.push_back(named);
     }
+    open_ = withSlashes(root.get("open").text(std::string()));
+
     libraries_.clear();
     const Json& libraries = root.get("libraries");
     for (size_t i = 0; i < libraries.size(); ++i) {
@@ -320,6 +388,7 @@ bool Project::save(std::string& error) {
         for (size_t i = 0; i < libraries_.size(); ++i) files.push(Json::fromText(libraries_[i]));
         root.set("libraries", files);
     }
+    if (!open_.empty()) root.set("open", Json::fromText(open_));
 
     if (builds()) {
         Json target = Json::object();

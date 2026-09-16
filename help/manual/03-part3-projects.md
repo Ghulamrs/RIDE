@@ -74,6 +74,11 @@ Field by field:
   linker, whatever its compilers (`cc1i` and `cxx1i` take sources only). They
   do not apply to `tms6747`, which is not linked. Edited with *Project ▸
   Libraries...*.
+- **`open`** — the file that opens with the project, relative to its
+  directory. Written by the editor from the file in front when the project is
+  closed or the editor left. A project without it opens the file that defines
+  `main` (`int main(` in C and C++, `fun <> = main()` in Shalimar), and
+  failing that its first file.
 - **`build`** — what the project builds: `target` names the program, and
   `groups` lists which groups' sources compile into it. Files in un-named groups,
   and headers, are passed over. A project made in the editor gets one that

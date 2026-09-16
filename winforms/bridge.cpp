@@ -620,6 +620,16 @@ int rstudio_adopt_saved(RStudioProject* project, const char* absolute) {
     return joined.ok ? 1 : 0;
 }
 
+const char* rstudio_project_file_to_open(RStudioProject* project) {
+    scratch() = project ? project->project.fileToOpen() : std::string();
+    return scratch().c_str();
+}
+
+int rstudio_remember_open(RStudioProject* project, const char* absolute) {
+    if (!project) return 0;
+    return editor::rememberOpen(project->project, absolute ? absolute : "").ok ? 1 : 0;
+}
+
 int rstudio_remove_from_project(RStudioProject* project, const char* absolute) {
     project->last = editor::removeExisting(project->project, absolute ? absolute : "");
     return project->last.ok ? 1 : 0;

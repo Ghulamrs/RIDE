@@ -420,20 +420,17 @@ void Editor::applyProject() {
         if (project_.arch() == kArches[i]) arch_ = i;
 }
 
+// The project's own choice of file first, then the one that defines main,
+// then the first file there is - see Project::fileToOpen.
 void Editor::openFirstFile() {
     if (!buf_.path().empty()) return;
 
-    const std::vector<Group>& groups = project_.groups();
-    for (size_t i = 0; i < groups.size(); ++i)
-        for (size_t j = 0; j < groups[i].files.size(); ++j) {
-            std::string where = project_.absolute(groups[i].files[j]);
-            if (!path::exists(where)) continue;
+    std::string chosen = project_.fileToOpen();
+    if (chosen.empty()) return;
 
-            std::string already = message_;
-            open(where);
-            if (!already.empty()) say(already);
-            return;
-        }
+    std::string already = message_;
+    open(project_.absolute(chosen));
+    if (!already.empty()) say(already);
 }
 
 void Editor::refreshTree() {
@@ -461,6 +458,36 @@ void Editor::closeProject() {
     if (!project_.loaded()) { say("there is no project open"); return; }
 
     std::string was = project_.name();
+    editor::rememberOpen(project_, buf_.path());
+
+    // The project's files go with it - every document open from under its
+    // root - and one with unsaved changes keeps the project open.
+    stash();
+    for (size_t i = 0; i < docs_.size(); ++i) {
+        const std::string& at = docs_[i].buf.path();
+        if (!at.empty() && !path::relativeTo(at, project_.root()).empty() &&
+            path::relativeTo(at, project_.root()).compare(0, 2, "..") != 0 && docs_[i].buf.dirty()) {
+            restore();
+            say("not closed - " + path::filename(at) + " has unsaved changes");
+            return;
+        }
+    }
+    size_t closed = 0;
+    for (size_t i = 0; i < docs_.size();) {
+        const std::string& at = docs_[i].buf.path();
+        std::string rel = at.empty() ? std::string() : path::relativeTo(at, project_.root());
+        if (!rel.empty() && rel.compare(0, 2, "..") != 0) {
+            docs_.erase(docs_.begin() + static_cast<long>(i));
+            ++closed;
+        } else {
+            ++i;
+        }
+    }
+    if (docs_.empty()) docs_.push_back(Document());
+    doc_ = docs_.size() - 1;
+    for (size_t i = 0; i < docs_.size(); ++i)
+        if (!buf_.path().empty() && docs_[i].buf.path() == buf_.path()) { doc_ = i; break; }
+    restore();
     project_.close();
 
     paneMode_ = PaneFiles;
@@ -468,7 +495,7 @@ void Editor::closeProject() {
     treeSel_ = 0;
     treeOff_ = 0;
     console_.clear();
-    say(was + " closed - the files it held are still open");
+    say(was + " closed" + (closed ? ", and its " + std::to_string(closed) + " file(s) with it" : ""));
 }
 
 void Editor::openProject(const std::string& path) {
@@ -2963,7 +2990,12 @@ void Editor::perform(Action action) {
         case ActionOpen:         openPrompt(); break;
         case ActionSave:         save(); break;
         case ActionSaveAs:       saveAs(); break;
-        case ActionQuit:         if (mayLeave()) running_ = false; break;
+        case ActionQuit:
+            if (mayLeave()) {
+                editor::rememberOpen(project_, buf_.path());
+                running_ = false;
+            }
+            break;
         case ActionCloseFile:    closeDocument(); break;
         case ActionProjectNew:   newProject(); break;
         case ActionProjectOpen:  openProjectPrompt(); break;

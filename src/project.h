@@ -92,6 +92,14 @@ public:
     std::vector<std::string> absoluteIncludes() const;
     std::vector<std::string> absoluteLibraries() const;
 
+    // The file to open with the project, relative to the root: what the file
+    // says, else the one that defines main, else the first there is. Empty
+    // when the project holds no file at all.
+    const std::string& openFile() const { return open_; }
+    void setOpenFile(const std::string& relative) { open_ = relative; }
+    std::string fileToOpen() const;
+    std::string mainFile() const;
+
     void setIndent(const IndentStyle& style) { indent_ = style; }
     void setToolchain(ToolchainKind kind) { toolchain_ = kind; }
     void setArch(const std::string& arch) { arch_ = arch; }
@@ -130,6 +138,7 @@ private:
     std::string arch_;
     std::vector<std::string> includes_;
     std::vector<std::string> libraries_;
+    std::string open_;
 };
 
 }
