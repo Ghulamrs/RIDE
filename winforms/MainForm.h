@@ -695,19 +695,27 @@ private:
         outer_ = gcnew SplitContainer();
         outer_->Dock = DockStyle::Fill;
         outer_->Orientation = Orientation::Horizontal;
-        outer_->SplitterWidth = 5;
-        outer_->BackColor = System::Drawing::Color::FromArgb(222, 222, 222);
+        // Sunken edges on every pane and raised bars between them - the
+        // Windows look, at the user's request: a plain flat divider read as
+        // no border at all.
+        outer_->SplitterWidth = 7;
+        outer_->BorderStyle = System::Windows::Forms::BorderStyle::Fixed3D;
+        outer_->BackColor = System::Drawing::SystemColors::Control;
+        outer_->Panel1->BorderStyle = System::Windows::Forms::BorderStyle::Fixed3D;
+        outer_->Panel2->BorderStyle = System::Windows::Forms::BorderStyle::Fixed3D;
         SplitContainer^ outer = outer_;
 
         upper_ = gcnew SplitContainer();
         upper_->Dock = DockStyle::Fill;
-        upper_->SplitterWidth = 5;
-        upper_->BackColor = System::Drawing::Color::FromArgb(222, 222, 222);
+        upper_->SplitterWidth = 7;
+        upper_->BackColor = System::Drawing::SystemColors::Control;
+        upper_->Panel1->BorderStyle = System::Windows::Forms::BorderStyle::Fixed3D;
+        upper_->Panel2->BorderStyle = System::Windows::Forms::BorderStyle::Fixed3D;
         SplitContainer^ upper = upper_;
 
         tree_ = gcnew TreeView();
         tree_->Dock = DockStyle::Fill;
-        tree_->BorderStyle = System::Windows::Forms::BorderStyle::None;
+        tree_->BorderStyle = System::Windows::Forms::BorderStyle::Fixed3D;
         tree_->BackColor = System::Drawing::Color::FromArgb(250, 250, 250);
         tree_->ItemHeight = 20;
         tree_->FullRowSelect = true;
@@ -743,7 +751,7 @@ private:
         debug_->DoubleClick += gcnew EventHandler(this, &MainForm::OnDebugDoubleClick);
         assembly_ = gcnew RichTextBox();
         assembly_->Dock = DockStyle::Fill;
-        assembly_->BorderStyle = System::Windows::Forms::BorderStyle::None;
+        assembly_->BorderStyle = System::Windows::Forms::BorderStyle::Fixed3D;
         assembly_->Font = gcnew System::Drawing::Font("Consolas", 10.0f);
         assembly_->ReadOnly = true;
         assembly_->WordWrap = false;
@@ -1085,7 +1093,7 @@ private:
         sheet->box->WordWrap = false;
         sheet->box->AcceptsTab = true;
         sheet->box->HideSelection = false;
-        sheet->box->BorderStyle = System::Windows::Forms::BorderStyle::None;
+        sheet->box->BorderStyle = System::Windows::Forms::BorderStyle::Fixed3D;
         sheet->box->Text = contents == nullptr ? "" : contents;
         sheet->box->KeyDown += gcnew KeyEventHandler(this, &MainForm::OnKeyDown);
         sheet->box->KeyUp += gcnew KeyEventHandler(this, &MainForm::OnKeyUp);
@@ -1281,6 +1289,7 @@ private:
         box->ReadOnly = true;
         box->ScrollBars = ScrollBars::Both;
         box->WordWrap = false;
+        box->BorderStyle = System::Windows::Forms::BorderStyle::Fixed3D;
         box->Font = gcnew System::Drawing::Font("Consolas", 10.0f);
         return box;
     }

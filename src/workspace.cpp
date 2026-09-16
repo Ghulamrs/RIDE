@@ -313,6 +313,9 @@ Outcome removeExisting(Project& project, const std::string& absolute) {
 
 Outcome beginProject(Project& project, const std::string& directory,
                      const std::string& name, const std::string& firstFile) {
+    // A directory not yet there is made: a new project may name its home
+    // before its home exists.
+    path::makeDirectories(path::absolute(directory));
     project.begin(directory, name);
     if (!firstFile.empty()) {
         std::string relative = project.relative(firstFile);
