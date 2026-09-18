@@ -90,6 +90,16 @@ public:
 
     void console(const std::string& line);
 
+    // **Batch: the project built, and run, from a command line, with no
+    // terminal** - the same buildProject the menu runs, its console printed
+    // afterwards. What TriLab and a script drive; a person still uses the keys.
+    void setBatch(bool b) { batch_ = b; }
+    bool setArchNamed(const std::string& name);
+    void buildProjectBatch(bool andRun) { buildProject(andRun); }
+    const std::vector<std::string>& consoleLines() const { return console_; }
+    bool lastBuildOk() const { return lastBuildOk_; }
+    int lastRunStatus() const { return lastRunStatus_; }
+
 private:
     enum Focus { FocusText, FocusTree, FocusPanel };
     enum Tab { TabConsole, TabDebug, TabAssembly, TabCount };
@@ -277,6 +287,9 @@ private:
     std::string c2s_;
     Configuration config_;
     size_t arch_;
+    bool batch_ = false;
+    bool lastBuildOk_ = false;
+    int lastRunStatus_ = 0;
     bool numbers_;
 
     bool menuItemIsCurrent(Action action) const;

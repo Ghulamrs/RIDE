@@ -30,6 +30,8 @@ int main(int argc, char** argv) {
     std::string cxx;
     std::string cxx1;
     std::string c2s;
+    std::string arch;
+    bool build = false, runIt = false;
     long width = 0;
     int plain = 0;
     int tabs = -1;
@@ -57,6 +59,12 @@ int main(int argc, char** argv) {
         } else if (std::strcmp(argv[i], "--width") == 0 && i + 1 < argc) {
             long w = std::atol(argv[++i]);
             if (w >= 1 && w <= 16) width = w;
+        } else if (std::strcmp(argv[i], "--arch") == 0 && i + 1 < argc) {
+            arch = argv[++i];
+        } else if (std::strcmp(argv[i], "--build") == 0) {
+            build = true;
+        } else if (std::strcmp(argv[i], "--run") == 0) {
+            build = true; runIt = true;
         } else if (std::strcmp(argv[i], "--plain") == 0) {
             plain = 1;
         } else if (std::strcmp(argv[i], "--tabs") == 0) {
@@ -70,6 +78,7 @@ int main(int argc, char** argv) {
                 "           [--config debug|release] [--cc1 path] [--cxx1 path] [--cl path]\n"
                 "           [--shc path] [--cxx path] [--c2s path]\n"
                 "           [--width n] [--tabs] [--case-indent] [--plain]\n"
+                "       %s <project.pro or dir> [--arch a] --build | --run\n"
                 "  RStudio - the console half, which is RStudio.exe on Linux and\n"
                 "  macOS and RStudioConsole.exe on Windows. RStudioGui is the same\n"
                 "  editor in a window, over the same core.\n"
@@ -96,6 +105,10 @@ int main(int argc, char** argv) {
                 "                 a machine\n"
                 "  --project      what the pane on the left shows; the file's own\n"
                 "                 directory by default\n"
+                "  --build, --run build the project's program the way F4 does - and\n"
+                "                 run it, for --run - with no screen: the console is\n"
+                "                 printed and the status is 0 when it built (and ran).\n"
+                "                 --arch names the target, else the project's own\n"
                 "  --width n      columns per indent step (4)\n"
                 "  --tabs         indent with tabs instead of spaces\n"
                 "  --plain        frame the screen with - | + instead of the box\n"
@@ -108,7 +121,7 @@ int main(int argc, char** argv) {
                 "  F4 build the project's program   Ctrl-A lay out\n"
                 "  F9 breakpoint   F8 debug   F7/F6 step over/into\n"
                 "  F1 keys    Ctrl-Q quit\n",
-                me.c_str());
+                me.c_str(), me.c_str());
             return 0;
         } else if (argv[i][0] == '-' && argv[i][1] != '\0') {
             std::fprintf(stderr, "%s: unknown option %s\n", me.c_str(), argv[i]);
@@ -137,6 +150,13 @@ int main(int argc, char** argv) {
         project = file;
         file.clear();
     }
+    // A .pro named on the line is the project, for --build and --run.
+    if (build && !file.empty() && project.empty() && file.size() > 4 &&
+        file.compare(file.size() - 4, 4, ".pro") == 0) {
+        project = file;
+        file.clear();
+    }
+    if (build) ed.setBatch(true);
 
     bool onItsOwn = false;
     if (project.empty() && !file.empty()) {
@@ -190,6 +210,19 @@ int main(int argc, char** argv) {
         if (fromEnv && *fromEnv) cxx = fromEnv;
     }
     if (!cxx.empty()) ed.setCxx(cxx);
+
+    if (build) {
+        if (project.empty()) { std::fprintf(stderr, "%s: --build needs a project\n", me.c_str()); return 2; }
+        if (!arch.empty() && !ed.setArchNamed(arch)) {
+            std::fprintf(stderr, "%s: unknown target %s\n", me.c_str(), arch.c_str());
+            return 2;
+        }
+        ed.buildProjectBatch(runIt);
+        const std::vector<std::string>& lines = ed.consoleLines();
+        for (size_t i = 0; i < lines.size(); ++i) std::printf("%s\n", lines[i].c_str());
+        if (!ed.lastBuildOk()) return 1;
+        return runIt ? (ed.lastRunStatus() == 0 ? 0 : 3) : 0;
+    }
 
     if (!file.empty()) ed.open(file);
     else ed.openFirstFile();

@@ -503,6 +503,12 @@ void Editor::closeProject() {
     say(was + " closed" + (closed ? ", and its " + std::to_string(closed) + " file(s) with it" : ""));
 }
 
+bool Editor::setArchNamed(const std::string& name) {
+    for (size_t i = 0; i < kArchCount; ++i)
+        if (name == kArches[i]) { arch_ = i; return true; }
+    return false;
+}
+
 void Editor::openProject(const std::string& path) {
     projectDir_ = path;
 
@@ -1203,6 +1209,7 @@ void Editor::placeCursor(std::string& out) const {
 }
 
 void Editor::refresh() {
+    if (batch_) return;         // no terminal to draw on
     layout();
     clampCursor();
     scroll();
@@ -2584,6 +2591,8 @@ void Editor::buildProject(bool andRun) {
     const std::string compilers = compilersNamed(parts);
 
     lastDiag_ = made.diag;
+    lastBuildOk_ = made.ok && !made.diag.present;
+    lastRunStatus_ = 0;
 
     if (made.diag.present) {
 
@@ -2609,6 +2618,7 @@ void Editor::buildProject(bool andRun) {
         console_.push_back("");
         // What was built, which for the emulated target is <program>.vm.
         Ran result = runBuilt(made.program, consoleSink, this, made.shalimar);
+        lastRunStatus_ = result.status;
         console_.push_back("[program returned " + number(static_cast<size_t>(result.status)) + "]");
         say("ran " + project_.relative(program) + " - it returned " +
             number(static_cast<size_t>(result.status)));
