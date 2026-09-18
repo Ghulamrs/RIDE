@@ -767,11 +767,12 @@ bool prepareFor(ToolchainKind kind) {
     if (kind == ToolMsvc) return importMsvcEnvironment();
 
     importMsvcEnvironment();
-    // The project's assembler, where one is named: both compilers read the
-    // variable, and cxx1i also needs -masm=masm - see assemblerFlag.
+    // The project's assembler, where one is named: all three compilers read
+    // the variable, and cxx1i also needs -masm=masm - see assemblerFlag.
     std::string as = settings::assembler();
     _putenv_s("CC1_AS", as.c_str());
     _putenv_s("CXX1_AS", as.c_str());
+    _putenv_s("SHC_AS", as.c_str());
     return true;
 #else
     (void)kind;
