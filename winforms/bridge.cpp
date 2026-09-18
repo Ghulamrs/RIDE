@@ -750,6 +750,20 @@ int rstudio_remember_assembler(const char* file) {
     return editor::settings::rememberAssembler(file ? file : "") ? 1 : 0;
 }
 
+const char* rstudio_ti(void) {
+    scratch() = editor::settings::ti();
+    return scratch().c_str();
+}
+
+const char* rstudio_tilib(void) {
+    scratch() = editor::settings::tilib();
+    return scratch().c_str();
+}
+
+int rstudio_remember_ti(const char* dir, const char* lib) {
+    return editor::settings::rememberTi(dir ? dir : "", lib ? lib : "") ? 1 : 0;
+}
+
 int rstudio_save_project(RStudioProject* project) {
     project->last = editor::saveProject(project->project);
     return project->last.ok ? 1 : 0;

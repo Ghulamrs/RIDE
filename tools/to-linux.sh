@@ -84,6 +84,7 @@ pack cc1i   ../VM6747/Compiler-Ci   src lib tools tests examples Makefile README
 pack cxx1i  ../VM6747/Compiler-Cppi src include lib tools tests Makefile README.md
 pack shci   ../VM6747/Compiler-Si   src runtime tests examples Makefile README.md
 pack vm6747 ../VM6747/Emulator      src tests Makefile README.md
+pack asm6x  ../ASM6x                src tests Makefile README.md
 pack c2s    ../Converter-C2S        src tests Makefile README.md
 
 # Where they land: the shape workspace.mk assumes, ../VM6747/<name> and
@@ -95,10 +96,11 @@ there() {
         cxx1i)  echo 'VM6747/Compiler-Cppi' ;;
         shci)   echo 'VM6747/Compiler-Si' ;;
         vm6747) echo 'VM6747/Emulator' ;;
+        asm6x)  echo 'ASM6x' ;;
         c2s)    echo 'Converter-C2S' ;;
     esac
 }
-NAMES="cc1i cxx1i shci vm6747 c2s"
+NAMES="cc1i cxx1i shci vm6747 asm6x c2s"
 
 say "copying to $BOX"
 dirs=""; for name in $NAMES; do dirs="$dirs ~/$(there $name)"; done

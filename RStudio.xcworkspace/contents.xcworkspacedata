@@ -17,6 +17,9 @@
       location = "group:../VM6747/Emulator/vm6747.xcodeproj">
    </FileRef>
    <FileRef
+      location = "group:../ASM6x/asm6x.xcodeproj">
+   </FileRef>
+   <FileRef
       location = "group:../Converter-C2S/c2s.xcodeproj">
    </FileRef>
 </Workspace>

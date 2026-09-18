@@ -1200,6 +1200,23 @@ void emulatedTarget(const std::string& rstudio, const std::string& cc1,
                         kF10 + times(kRight, 3) + times(kDown, 3) + kEnter + ctrl('q'), dir);
     check(wasShown(ran2, "answer 42"), "and Run project hands it to vm6747, which runs it");
 
+    // **asm6x beside the editor turns that assembly into TI objects** - the
+    // project's own C6000 assembler, built with the editor - and with TI's
+    // compiler directory named, lnk6x links them into a .out. Without one
+    // named, the objects are made and the console says what is missing.
+    if (editor::path::exists(editor::path::parent(rstudio) + "/asm6x.exe")) {
+        check(wasShown(built, "$ asm6x 2 sources"), "and with asm6x beside the editor the two .s are assembled");
+        check(editor::path::exists((dir / "sums.vm" / "main.obj").string()) &&
+              editor::path::exists((dir / "sums.vm" / "sum.obj").string()),
+              "into TI objects beside the assembly");
+        check(wasShown(built, "2 TI objects made; a .out needs TI's linker"),
+              "and the console says a .out needs TI's linker, named under Tools");
+        Screen noTi = drive(rstudio, arguments + " --ti \"" + dir.string() + "\"", kF4 + ctrl('q'), dir);
+        check(wasShown(noTi, "no lnk6x under"), "a TI directory without lnk6x is refused by name");
+    } else {
+        std::printf("  (no asm6x beside the editor, so the TI object cases are not tried)\n");
+    }
+
     file::remove_all(dir);
 }
 
@@ -1232,6 +1249,25 @@ void emulatedShalimar(const std::string& rstudio, const std::string& shc) {
     check(wasShown(ran, "gcd is 6"),
           "F5 on a Shalimar file for the C6000 builds with shci --target=tms6747 and runs on vm6747 with the runtime");
     check(wasShown(ran, "[program returned 0]"), "and what it returned is said as a number");
+
+    // A Shalimar project of two files, one of them a library with no main():
+    // shc compiles them as one, so the project is one compilation and one
+    // .s, not one per file - a file alone is refused for having no main().
+    writeFile(dir / "src" / "twice.shl", "fun <int> = twice(n: int) {\n  return n * 2\n}\n");
+    writeFile(dir / "src" / "prog.shl", "fun <> = main() {\n  ? \"twice\" twice(21)\n}\n");
+    writeFile(dir / "RStudio.json",
+              "{\n  \"name\": \"pair\",\n  \"indent\": 4,\n  \"arch\": \"tms6747\",\n"
+              "  \"groups\": { \"Sources\": [\"src/prog.shl\", \"src/twice.shl\"] },\n"
+              "  \"build\": { \"target\": \"prog\", \"groups\": [\"Sources\"] }\n}\n");
+    std::string project = "--project \"" + dir.string() + "\" --shc \"" + shc + "\"";
+    Screen built = drive(rstudio, project, kF4 + ctrl('q'), dir);
+    check(editor::path::exists((dir / "prog.vm" / "prog.s").string()),
+          "F4 on a two-file Shalimar project for the C6000 compiles them as one .s");
+    Screen ran2 = drive(rstudio, project, kF10 + times(kRight, 3) + times(kDown, 3) + kEnter + ctrl('q'), dir);
+    check(wasShown(ran2, "twice 42"), "and Run project runs it on vm6747 with the runtime");
+    if (editor::path::exists(editor::path::parent(rstudio) + "/asm6x.exe"))
+        check(editor::path::exists((dir / "prog.vm" / "shmrt" / "Runtime.obj").string()),
+              "and with asm6x beside the editor the runtime's assembly is assembled beside the program's");
 
     file::remove_all(dir);
 }

@@ -43,6 +43,7 @@ CC1I_DIR="$VM_ROOT\\Compiler-Ci"
 CXX1_DIR="$VM_ROOT\\Compiler-Cppi"
 SHCI_DIR="$VM_ROOT\\Compiler-Si"
 EMU_DIR="$VM_ROOT\\Emulator"
+ASM_DIR="$ROOT\\ASM6x"
 WHAT="${1:-check}"
 TMP="${TMPDIR:-/tmp}"
 
@@ -71,6 +72,9 @@ tar --no-mac-metadata \
     -czf "$TMP/cxx1-src.tgz" src include lib msvc tests Makefile cxx1.vcxproj README.md ) || exit 2
 ( cd ../VM6747/Emulator && tar --no-mac-metadata --exclude '* 2.*' --exclude '*.exe' \
     -czf "$TMP/vm6747-src.tgz" src msvc tests Makefile vm6747.vcxproj README.md ) || exit 2
+# asm6x: the C6000 assembler, beside this checkout as ../ASM6x, its own repository.
+( cd ../ASM6x && tar --no-mac-metadata --exclude '* 2.*' --exclude '*.exe' --exclude 'build' \
+    -czf "$TMP/asm6x-src.tgz" src tests Makefile asm6x.vcxproj README.md ) || exit 2
 # shci: what shc.vcxproj compiles - src and the runtime it builds beside the
 # binary - and nothing built here; lib/ holds this machine's archives.
 ( cd ../VM6747/Compiler-Si && tar --no-mac-metadata --exclude '* 2.*' --exclude '*.exe' --exclude 'lib' --exclude 'out-*' \
@@ -79,13 +83,14 @@ tar --no-mac-metadata \
 say "copying to $BOX:$DIR and $VM_ROOT"
 # One directory per call: in cmd, `if not exist X mkdir X & if ...` makes the
 # second `if` part of the first one's body, so it runs only when X was missing.
-for d in "$DIR" "$CC1I_DIR" "$CXX1_DIR" "$SHCI_DIR" "$EMU_DIR"; do
+for d in "$DIR" "$CC1I_DIR" "$CXX1_DIR" "$SHCI_DIR" "$EMU_DIR" "$ASM_DIR"; do
   ssh -n "$BOX" "if not exist \"$d\" mkdir \"$d\"" || exit 2
 done
 scp -q "$TMP/rstudio-src.tgz" "$BOX:$DIR\\rstudio-src.tgz" || exit 2
 scp -q "$TMP/cc1i-src.tgz" "$BOX:$CC1I_DIR\\cc1i-src.tgz" || exit 2
 scp -q "$TMP/cxx1-src.tgz" "$BOX:$CXX1_DIR\\cxx1-src.tgz" || exit 2
 scp -q "$TMP/vm6747-src.tgz" "$BOX:$EMU_DIR\\vm6747-src.tgz" || exit 2
+scp -q "$TMP/asm6x-src.tgz" "$BOX:$ASM_DIR\\asm6x-src.tgz" || exit 2
 scp -q "$TMP/shci-src.tgz" "$BOX:$SHCI_DIR\\shci-src.tgz" || exit 2
 
 # ---- the script that does the work there -----------------------------------
@@ -109,6 +114,9 @@ BIN="$DIR\\bin"
   printf 'cd /d "%s" || exit /b 2\r\n' "$EMU_DIR"
   printf 'tar -xzf vm6747-src.tgz || exit /b 2\r\n'
   printf 'del /q vm6747-src.tgz\r\n'
+  printf 'cd /d "%s" || exit /b 2\r\n' "$ASM_DIR"
+  printf 'tar -xzf asm6x-src.tgz || exit /b 2\r\n'
+  printf 'del /q asm6x-src.tgz\r\n'
   printf 'cd /d "%s" || exit /b 2\r\n' "$SHCI_DIR"
   printf 'tar -xzf shci-src.tgz || exit /b 2\r\n'
   printf 'del /q shci-src.tgz\r\n'

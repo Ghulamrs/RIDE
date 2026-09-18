@@ -119,6 +119,11 @@ int rstudio_remember_vcvars(const char* file);
 // The assembler named for x86_64-windows, and the choice written back.
 const char* rstudio_assembler(void);
 int rstudio_remember_assembler(const char* file);
+// TI's C6000 compiler directory and the runtime directory beside it, for a
+// tms6747 build's .out, and the choice written back.
+const char* rstudio_ti(void);
+const char* rstudio_tilib(void);
+int rstudio_remember_ti(const char* dir, const char* lib);
 
 int rstudio_project_save_as(RStudioProject* project, const char* file,
                             char* why, int whySize);

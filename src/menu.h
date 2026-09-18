@@ -95,6 +95,7 @@ enum Action {
     ActionHeaderDirs,
     ActionLocateVcvars,
     ActionLocateAssembler,
+    ActionLocateTi,
     ActionProjectRecent,
     ActionProjectRecent2,
     ActionProjectRecent3,

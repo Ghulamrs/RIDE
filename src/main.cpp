@@ -32,6 +32,7 @@ int main(int argc, char** argv) {
     std::string c2s;
     std::string arch;
     std::string assembler;
+    std::string ti, tilib;
     bool build = false, runIt = false;
     long width = 0;
     int plain = 0;
@@ -64,6 +65,10 @@ int main(int argc, char** argv) {
             arch = argv[++i];
         } else if (std::strcmp(argv[i], "--assembler") == 0 && i + 1 < argc) {
             assembler = argv[++i];
+        } else if (std::strcmp(argv[i], "--ti") == 0 && i + 1 < argc) {
+            ti = argv[++i];
+        } else if (std::strcmp(argv[i], "--tilib") == 0 && i + 1 < argc) {
+            tilib = argv[++i];
         } else if (std::strcmp(argv[i], "--build") == 0) {
             build = true;
         } else if (std::strcmp(argv[i], "--run") == 0) {
@@ -81,7 +86,7 @@ int main(int argc, char** argv) {
                 "           [--config debug|release] [--cc1 path] [--cxx1 path] [--cl path]\n"
                 "           [--shc path] [--cxx path] [--c2s path]\n"
                 "           [--width n] [--tabs] [--case-indent] [--plain]\n"
-                "       %s <project.pro or dir> [--arch a] [--assembler path] --build | --run\n"
+                "       %s <project.pro or dir> [--arch a] [--assembler path] [--ti dir [--tilib dir]] --build | --run\n"
                 "  RStudio - the console half, which is RStudio.exe on Linux and\n"
                 "  macOS and RStudioConsole.exe on Windows. RStudioGui is the same\n"
                 "  editor in a window, over the same core.\n"
@@ -113,7 +118,10 @@ int main(int argc, char** argv) {
                 "                 printed and the status is 0 when it built (and ran).\n"
                 "                 --arch names the target, else the project's own;\n"
                 "                 --assembler names the project's assembler for\n"
-                "                 x86_64-windows for this run (Tools keeps one)\n"
+                "                 x86_64-windows for this run (Tools keeps one);\n"
+                "                 --ti names TI's C6000 compiler directory, whose\n"
+                "                 lnk6x links a tms6747 build into a .out, and\n"
+                "                 --tilib a directory with rts6740_elf_eh.lib\n"
                 "  --width n      columns per indent step (4)\n"
                 "  --tabs         indent with tabs instead of spaces\n"
                 "  --plain        frame the screen with - | + instead of the box\n"
@@ -163,6 +171,8 @@ int main(int argc, char** argv) {
     }
     if (build) ed.setBatch(true);
     if (!assembler.empty()) editor::settings::overrideAssembler(assembler);
+    if (!ti.empty()) editor::settings::overrideTi(ti);
+    if (!tilib.empty()) editor::settings::overrideTilib(tilib);
 
     bool onItsOwn = false;
     if (project.empty() && !file.empty()) {

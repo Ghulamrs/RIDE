@@ -88,6 +88,9 @@ const char* programOf(const Toolchain& tool, ToolchainKind kind);
 // link: the program is the .s file, or a directory of them for a project.
 bool isEmulated(const std::string& arch);
 std::string emulatorProgram();
+// The C6000 assembler beside the editor (ASM6x's asm6x.exe, built with it),
+// or empty when it is not there; $ASM6X names one elsewhere.
+std::string c6xAssembler();
 // The command that runs a built program: the program itself, or the emulator
 // with it.
 std::string launchCommand(const std::string& program, bool shalimar = false);

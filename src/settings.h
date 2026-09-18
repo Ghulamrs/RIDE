@@ -57,6 +57,17 @@ std::string vcvars();
 // -masm=masm. Empty, and the compilers choose as they always did.
 std::string assembler();
 void overrideAssembler(const std::string& path);   // --assembler, for this run only
+// **TI's C6000 compiler directory**, for tms6747: CCS's ti-cgt-c6000 root,
+// whose bin\lnk6x links what asm6x - the project's own assembler, beside the
+// editor - made of a tms6747 build into a real .out, against the runtime in
+// its lib\ (and in "tilib", a second directory, for the exception-handling
+// build of it that CCS does not ship). Empty, and a tms6747 build stops at
+// the objects; without asm6x beside the editor it stops at the assembly the
+// emulator runs, as it always did.
+std::string ti();
+std::string tilib();
+void overrideTi(const std::string& dir);           // --ti, for this run only
+void overrideTilib(const std::string& dir);        // --tilib, for this run only
 // The compiler chosen when the editor starts and no project or command
 // line says otherwise: auto, cc1, cxx1, shc, msvc or c++ - "compiler" in
 // the installation's settings.json. Choosing one from the menu writes it.
@@ -72,6 +83,7 @@ bool rememberDefaultCompiler(const std::string& word);
 bool rememberHeaderDirs(const std::string& include, const std::string& lib);
 bool rememberVcvars(const std::string& file);
 bool rememberAssembler(const std::string& file);
+bool rememberTi(const std::string& dir, const std::string& lib);
 // Writes the file with the two directories when there is none yet, so that a
 // person opening the installation sees what is in force.
 bool writeInstallFileIfAbsent();

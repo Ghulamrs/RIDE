@@ -254,6 +254,24 @@ std::string assembler() {
     return (!said.empty() && path::exists(said)) ? said : std::string();
 }
 
+static std::string tiForThisRun;
+void overrideTi(const std::string& d) { tiForThisRun = d; }
+
+std::string ti() {
+    if (!tiForThisRun.empty()) return tiForThisRun;
+    std::string said = readInstall().get("ti").text(std::string());
+    return (!said.empty() && path::isDirectory(said)) ? said : std::string();
+}
+
+static std::string tilibForThisRun;
+void overrideTilib(const std::string& d) { tilibForThisRun = d; }
+
+std::string tilib() {
+    if (!tilibForThisRun.empty()) return tilibForThisRun;
+    std::string said = readInstall().get("tilib").text(std::string());
+    return (!said.empty() && path::isDirectory(said)) ? said : std::string();
+}
+
 namespace {
 
 std::vector<std::string> installedList(const char* key) {
@@ -317,6 +335,13 @@ bool rememberAssembler(const std::string& file) {
     return writeInstall(root);
 }
 
+bool rememberTi(const std::string& dir, const std::string& lib) {
+    Json root = readInstall();
+    root.set("ti", Json::fromText(dir));
+    root.set("tilib", Json::fromText(lib));
+    return writeInstall(root);
+}
+
 bool writeInstallFileIfAbsent() {
     std::string file = installFile();
     if (file.empty() || path::exists(file)) return true;
@@ -325,6 +350,8 @@ bool writeInstallFileIfAbsent() {
     root.set("lib", Json::fromText("lib"));
     root.set("vcvars", Json::fromText(""));
     root.set("assembler", Json::fromText(""));
+    root.set("ti", Json::fromText(""));
+    root.set("tilib", Json::fromText(""));
     root.set("compiler", Json::fromText("auto"));
     root.set("indent", Json::fromNumber(4));
     root.set("tabs", Json::fromBool(false));

@@ -1,6 +1,7 @@
 #include "compile.h"
 
 #include "path.h"
+#include "settings.h"
 
 #include <cstdio>
 #include <cstdlib>
@@ -332,6 +333,136 @@ Built buildProgram(const Toolchain& tool, ToolchainKind kind, const std::string&
     return result;
 }
 
+namespace {
+
+std::string q(const std::string& s) { return "\"" + s + "\""; }
+
+bool copyText(const std::string& from, const std::string& to) {
+    std::FILE* in = std::fopen(from.c_str(), "rb");
+    if (!in) return false;
+    std::FILE* out = std::fopen(to.c_str(), "wb");
+    if (!out) { std::fclose(in); return false; }
+    char buffer[4096];
+    size_t got;
+    bool ok = true;
+    while ((got = std::fread(buffer, 1, sizeof buffer, in)) > 0)
+        if (std::fwrite(buffer, 1, got, out) != got) { ok = false; break; }
+    std::fclose(in);
+    if (std::fclose(out) != 0) ok = false;
+    return ok;
+}
+
+// The linker command file lnk6x needs: one flat memory for the C6747 with
+// every section the compilers and TI's runtime write placed in it - the
+// same file VM6747/Emulator/tests/ti.sh links the corpus with.
+const char* const kTiLinkCmd =
+    "/* one flat memory for the C6747 and every section in it - written by RIDE */\n"
+    "--rom_model\n--stack_size=0x4000\n--heap_size=0x100000\n"
+    "MEMORY\n{\n    RAM : origin = 0xC0000000, length = 0x04000000\n}\n"
+    "SECTIONS\n{\n"
+    "    .text        > RAM\n    .const       > RAM\n    .data        > RAM\n    .bss         > RAM\n"
+    "    .far         > RAM\n    .fardata     > RAM\n    .neardata    > RAM\n    .rodata      > RAM\n"
+    "    .cinit       > RAM\n    .init_array  > RAM\n    .switch      > RAM\n    .cio         > RAM\n"
+    "    .stack       > RAM\n    .sysmem      > RAM\n    .vm6747.eh   > RAM\n}\n";
+
+std::vector<std::string> assemblyIn(const std::string& dir) {
+    std::vector<std::string> found;
+    std::vector<path::Entry> all = path::entries(dir);
+    for (size_t i = 0; i < all.size(); ++i) {
+        const std::string& n = all[i].name;
+        if (!all[i].directory && n.size() > 2 && n.compare(n.size() - 2, 2, ".s") == 0 && n.find(' ') == std::string::npos)
+            found.push_back(path::join(dir, n));
+    }
+    return found;
+}
+
+// **A tms6747 build made a real TI program too.** What the emulator runs is
+// the assembly in <program>.vm; with asm6x beside the editor each .s of it
+// becomes a TI object, and with TI's compiler directory named under Tools
+// lnk6x links them - the Shalimar runtime's objects beside a Shalimar
+// program's - against TI's runtime into <program>.out, the file CCS would
+// load onto a C6747. Neither step is needed to run on the emulator, which
+// reads the assembly, and neither runs here: the .out is for the board. An
+// assembler that refuses, or a link that fails, fails the build - what the
+// emulator runs must be a TI program, or the emulator is proving nothing.
+void makeTiProgram(Built& result, const std::string& program, LineSink sink, void* context) {
+    if (!result.ok) return;
+    std::string as = c6xAssembler();
+    if (as.empty()) return;
+    std::string dir = result.program;
+    std::vector<std::string> sources = assemblyIn(dir);
+    if (sources.empty()) return;
+    std::string say;
+    if (result.shalimar) {
+        // the runtime's assembly, copied in and assembled here rather than
+        // beside the editor, which is the installation's to keep
+        std::string runtime = shalimarRuntimeDir();
+        std::string into = path::join(dir, "shmrt");
+        path::makeDirectories(into);
+        std::vector<std::string> theirs = assemblyIn(runtime);
+        for (size_t i = 0; i < theirs.size(); ++i) {
+            std::string to = path::join(into, path::filename(theirs[i]));
+            if (!copyText(theirs[i], to)) { say = "cannot copy the Shalimar runtime's " + path::filename(theirs[i]); break; }
+            sources.push_back(to);
+        }
+        if (!say.empty()) { result.ok = false; result.output += say + "\n"; if (sink) sink(context, say); return; }
+    }
+    std::string command = q(as);
+    for (size_t i = 0; i < sources.size(); ++i) command += " " + q(sources[i]);
+    if (sink) sink(context, "$ asm6x " + std::to_string(sources.size()) + " sources");
+    if (runCaptured(command, result.output, sink, context) != 0) {
+        result.ok = false;
+        std::string hint = "asm6x refused the assembly - the emulator would run it, but it is not a TI program";
+        result.output += hint + "\n";
+        if (sink) sink(context, hint);
+        return;
+    }
+    std::vector<std::string> objects;
+    for (size_t i = 0; i < sources.size(); ++i)
+        objects.push_back(sources[i].substr(0, sources[i].size() - 2) + ".obj");
+
+    std::string ti = settings::ti();
+    if (ti.empty()) {
+        if (sink) sink(context, "[" + std::to_string(objects.size()) + " TI objects made; a .out needs TI's linker, named under Tools]");
+        return;
+    }
+    std::string lnk = path::join(path::join(ti, "bin"), "lnk6x.exe");
+    if (!path::exists(lnk)) lnk = path::join(path::join(ti, "bin"), "lnk6x");
+    if (!path::exists(lnk)) {
+        result.ok = false;
+        std::string hint = "no lnk6x under " + ti + " - Tools names TI's C6000 compiler directory, the one with bin\\lnk6x";
+        result.output += hint + "\n";
+        if (sink) sink(context, hint);
+        return;
+    }
+    std::string cmdfile = path::join(dir, "ti-link.cmd");
+    if (std::FILE* f = std::fopen(cmdfile.c_str(), "wb")) { std::fputs(kTiLinkCmd, f); std::fclose(f); }
+    // the exception-handling build of TI's runtime where there is one (CCS
+    // ships the other; the C++ programs need this one), else the shipped one
+    std::string lib = path::join(ti, "lib"), extra = settings::tilib();
+    std::string rts = "rts6740_elf.lib";
+    if (path::exists(path::join(lib, "rts6740_elf_eh.lib")) || (!extra.empty() && path::exists(path::join(extra, "rts6740_elf_eh.lib"))))
+        rts = "rts6740_elf_eh.lib";
+    std::string out = program;
+    if (out.size() > 4 && out.compare(out.size() - 4, 4, ".exe") == 0) out.resize(out.size() - 4);
+    out += ".out";
+    std::string link = q(lnk) + " -mv6740 --abi=eabi -i " + q(lib) + (extra.empty() ? std::string() : " -i " + q(extra)) +
+                       " " + q(cmdfile);
+    for (size_t i = 0; i < objects.size(); ++i) link += " " + q(objects[i]);
+    link += " -l " + rts + " -o " + q(out);
+    if (sink) sink(context, "$ lnk6x " + std::to_string(objects.size()) + " objects, " + rts + " -o " + path::filename(out));
+    if (runCaptured(link, result.output, sink, context) != 0) {
+        result.ok = false;
+        std::string hint = "lnk6x did not link it - see its messages above";
+        result.output += hint + "\n";
+        if (sink) sink(context, hint);
+        return;
+    }
+    if (sink) sink(context, "[linked " + out + "]");
+}
+
+}
+
 Built buildTarget(const Toolchain& tool, ToolchainKind kind,
                   const std::vector<std::string>& sources, Language lang,
                   const std::string& arch, Configuration config,
@@ -373,6 +504,7 @@ Built buildTarget(const Toolchain& tool, ToolchainKind kind,
     for (size_t i = 0; i < result.leftovers.size(); ++i)
         std::remove(result.leftovers[i].c_str());
     result.leftovers.clear();
+    if (isEmulated(arch)) makeTiProgram(result, program, sink, context);
     return result;
 }
 
@@ -448,6 +580,7 @@ Built buildParts(const Toolchain& tool, const std::vector<Part>& parts,
         result.ok = true;
         for (size_t i = 0; i < parts.size(); ++i)
             if (toolchainOf(tool, parts[i]) == ToolShc) result.shalimar = true;
+        makeTiProgram(result, program, sink, context);
         return result;
     }
 

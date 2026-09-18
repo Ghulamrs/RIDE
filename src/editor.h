@@ -209,6 +209,7 @@ private:
     void editHeaderDirs();
     void locateVcvars();
     void locateAssembler();
+    void locateTi();
 
     // tool_ with the header directories and the project's paths filled in,
     // which is what every build is given.

@@ -272,6 +272,12 @@ std::string emulatorProgram() {
     return beside.empty() ? std::string("vm6747") : beside;
 }
 
+std::string c6xAssembler() {
+    const char* fromEnv = std::getenv("ASM6X");
+    if (fromEnv && *fromEnv) return fromEnv;
+    return path::besideProgram("asm6x.exe");
+}
+
 std::string emulatedProgram(const std::string& program) {
     std::string name = program;
     if (name.size() > 4 && name.compare(name.size() - 4, 4, ".exe") == 0) name.resize(name.size() - 4);
@@ -515,6 +521,15 @@ Recipe targetRecipe(const Toolchain& tool, ToolchainKind kind,
         path::removeTree(dir);
         path::makeDirectories(dir);
         recipe.assemblyPath = dir;
+        if (kind == ToolShc) {
+            // A Shalimar program is one compilation: the file with main() and
+            // the files beside it that it calls into, which shc compiles as one
+            // - a library file on its own has no main() and is refused. So all
+            // the sources go in one command, and one .s comes out.
+            recipe.command = quote(programOf(tool, kind)) + named + " -S" + archFlag(kind, arch) + " -o " +
+                             quote(path::join(dir, path::filename(program) + ".s")) + configFlags(kind, config, arch);
+            return recipe;
+        }
         for (size_t i = 0; i < sources.size(); ++i) {
             if (i > 0) recipe.command += " && ";
             recipe.command += quote(programOf(tool, kind)) + " -S" + archFlag(kind, arch) +

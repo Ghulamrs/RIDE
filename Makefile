@@ -237,7 +237,7 @@ check: test session
 # the TMS320C6747 as a fourth target, shci.exe the same Shalimar compiler with
 # its three - and vm6747.exe, the emulator that runs the fourth target's
 # programs, found beside the editor like the compilers.
-DEPENDENCIES := cc1i.exe cxx1i.exe vm6747.exe shci.exe c2s.exe \
+DEPENDENCIES := cc1i.exe cxx1i.exe vm6747.exe asm6x.exe shci.exe c2s.exe \
        lib/shmrt-$(SHM_TARGET).a lib/shmrt-$(SHM_TARGET)-debug.a \
        lib/shmrt-tms6747/Runtime.s
 

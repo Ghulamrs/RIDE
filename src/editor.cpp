@@ -2096,6 +2096,31 @@ void Editor::locateVcvars() {
 // The project's own assembler in place of ml64 and clang, for x86_64-windows:
 // named by its path and kept in settings.json; `-` puts the compilers' own
 // choice back. See settings::assembler.
+// TI's C6000 compiler directory (CCS's ti-cgt-c6000_x.y.z), whose lnk6x links
+// what asm6x made of a tms6747 build into a .out; a second directory may hold
+// the exception-handling runtime CCS does not ship. `-` clears it. See
+// settings::ti.
+void Editor::locateTi() {
+    std::string file = settings::installFile();
+    if (file.empty()) { say("no installation directory to keep this in"); return; }
+    bool cancelled = false;
+    std::string dir = prompt("TI C6000 compiler directory, the one with bin/lnk6x [" + settings::ti() + "]: ", cancelled);
+    if (cancelled || dir.empty()) { say("TI compiler unchanged"); return; }
+    if (dir == "-") {
+        if (settings::rememberTi(std::string(), std::string())) say("written to " + file + " - a tms6747 build stops at the objects");
+        else say("cannot write " + file);
+        return;
+    }
+    if (!path::isDirectory(dir)) { say("no such directory: " + dir); return; }
+    std::string lib = prompt("a directory with rts6740_elf_eh.lib, or none [" + settings::tilib() + "]: ", cancelled);
+    if (cancelled) { say("TI compiler unchanged"); return; }
+    if (!lib.empty() && lib != "-" && !path::isDirectory(lib)) { say("no such directory: " + lib); return; }
+    if (settings::rememberTi(dir, lib == "-" ? std::string() : lib))
+        say("written to " + file + " - a tms6747 build links a .out with " + dir);
+    else
+        say("cannot write " + file);
+}
+
 void Editor::locateAssembler() {
     std::string file = settings::installFile();
     if (file.empty()) { say("no installation directory to keep this in"); return; }
@@ -3104,6 +3129,7 @@ void Editor::perform(Action action) {
         case ActionHeaderDirs:   editHeaderDirs(); break;
         case ActionLocateVcvars: locateVcvars(); break;
         case ActionLocateAssembler: locateAssembler(); break;
+        case ActionLocateTi:     locateTi(); break;
         case ActionFileCreate:   createFile(); break;
         case ActionFileRename:   renameFile(); break;
         case ActionFileDelete:   deleteFile(); break;

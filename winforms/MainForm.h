@@ -661,6 +661,8 @@ private:
                                   gcnew EventHandler(this, &MainForm::OnLocateVcvars));
         tools->DropDownItems->Add("Assembler for x86_64-windows...", nullptr,
                                   gcnew EventHandler(this, &MainForm::OnLocateAssembler));
+        tools->DropDownItems->Add("TI compiler for tms6747...", nullptr,
+                                  gcnew EventHandler(this, &MainForm::OnLocateTi));
         bar->Items->Add(tools);
         bar->Items->Add(target);
 
@@ -2376,6 +2378,39 @@ private:
             return;
         }
         what_->Text = "cc1i and cxx1i assemble through " + pick->FileName + " - written to " + file;
+    }
+
+    // TI's C6000 compiler directory (CCS's ti-cgt-c6000_x.y.z), whose lnk6x
+    // links what asm6x made of a tms6747 build into a .out - and a second
+    // directory, asked for next, for the exception-handling runtime CCS does
+    // not ship (Cancel there keeps none). The console front end's `-` clears
+    // the setting; here, clear it by hand in settings.json.
+    void OnLocateTi(Object^, EventArgs^) {
+        String^ file = FromUtf8(rstudio_install_file());
+        if (file->Length == 0) { what_->Text = "no installation directory to keep this in"; return; }
+        FolderBrowserDialog^ pick = gcnew FolderBrowserDialog();
+        pick->Description = "TI's C6000 compiler directory - the one with bin\\lnk6x.exe";
+        String^ now = FromUtf8(rstudio_ti());
+        if (now->Length > 0) pick->SelectedPath = now;
+        if (pick->ShowDialog(this) != System::Windows::Forms::DialogResult::OK) {
+            what_->Text = "TI compiler unchanged";
+            return;
+        }
+        String^ dir = pick->SelectedPath;
+        FolderBrowserDialog^ lib = gcnew FolderBrowserDialog();
+        lib->Description = "A directory with rts6740_elf_eh.lib, the exception-handling runtime (Cancel for none)";
+        String^ nowLib = FromUtf8(rstudio_tilib());
+        if (nowLib->Length > 0) lib->SelectedPath = nowLib;
+        String^ libDir = lib->ShowDialog(this) == System::Windows::Forms::DialogResult::OK ? lib->SelectedPath : "";
+        array<Byte>^ bytes = Utf8Of(dir);
+        array<Byte>^ libBytes = Utf8Of(libDir);
+        pin_ptr<Byte> pinned = &bytes[0];
+        pin_ptr<Byte> pinnedLib = &libBytes[0];
+        if (rstudio_remember_ti(reinterpret_cast<const char*>(pinned), reinterpret_cast<const char*>(pinnedLib)) == 0) {
+            what_->Text = "cannot write " + file;
+            return;
+        }
+        what_->Text = "a tms6747 build links a .out with " + dir + " - written to " + file;
     }
 
     // The last three projects remembered, named at the end of the Project
