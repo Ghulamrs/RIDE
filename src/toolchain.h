@@ -132,6 +132,8 @@ std::string shownProgramCommand(const Toolchain& tool, ToolchainKind kind,
                                 const std::string& source, Language lang,
                                 const std::string& arch, Configuration config);
 
+// " -masm=masm" for cxx1i on x86_64-windows when settings name an assembler.
+std::string assemblerFlag(ToolchainKind kind, const std::string& arch);
 Recipe targetRecipe(const Toolchain& tool, ToolchainKind kind,
                     const std::vector<std::string>& sources, Language lang,
                     const std::string& arch, Configuration config,

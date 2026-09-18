@@ -245,6 +245,15 @@ std::string vcvars() {
     return (!said.empty() && path::exists(said)) ? said : std::string();
 }
 
+static std::string assemblerForThisRun;
+void overrideAssembler(const std::string& p) { assemblerForThisRun = p; }
+
+std::string assembler() {
+    if (!assemblerForThisRun.empty()) return assemblerForThisRun;
+    std::string said = readInstall().get("assembler").text(std::string());
+    return (!said.empty() && path::exists(said)) ? said : std::string();
+}
+
 namespace {
 
 std::vector<std::string> installedList(const char* key) {
@@ -302,6 +311,12 @@ bool rememberVcvars(const std::string& file) {
     return writeInstall(root);
 }
 
+bool rememberAssembler(const std::string& file) {
+    Json root = readInstall();
+    root.set("assembler", Json::fromText(file));
+    return writeInstall(root);
+}
+
 bool writeInstallFileIfAbsent() {
     std::string file = installFile();
     if (file.empty() || path::exists(file)) return true;
@@ -309,6 +324,7 @@ bool writeInstallFileIfAbsent() {
     root.set("include", Json::fromText("include"));
     root.set("lib", Json::fromText("lib"));
     root.set("vcvars", Json::fromText(""));
+    root.set("assembler", Json::fromText(""));
     root.set("compiler", Json::fromText("auto"));
     root.set("indent", Json::fromNumber(4));
     root.set("tabs", Json::fromBool(false));

@@ -527,7 +527,7 @@ Recipe targetRecipe(const Toolchain& tool, ToolchainKind kind,
 
     recipe.command = quote(programOf(tool, kind)) + languageFlag(kind, lang) +
                      named + " -o " + quote(program) + configFlags(kind, config, arch) +
-                     includeFlags(tool, kind);
+                     assemblerFlag(kind, arch) + includeFlags(tool, kind);
     return recipe;
 }
 
@@ -608,7 +608,8 @@ Recipe objectRecipe(const Toolchain& tool, ToolchainKind kind,
     recipe.command = "cd " + quote(objectDir) + " && " +
                      quote(programOf(tool, kind)) + " -c" +
                      languageFlag(kind, lang) + named +
-                     configFlags(kind, config, arch) + includeFlags(tool, kind);
+                     configFlags(kind, config, arch) + assemblerFlag(kind, arch) +
+                     includeFlags(tool, kind);
 
     for (size_t i = 0; i < sources.size(); ++i)
         objects.push_back(objectFor(objectDir, sources[i], ".o"));
@@ -766,11 +767,22 @@ bool prepareFor(ToolchainKind kind) {
     if (kind == ToolMsvc) return importMsvcEnvironment();
 
     importMsvcEnvironment();
+    // The project's assembler, where one is named: both compilers read the
+    // variable, and cxx1i also needs -masm=masm - see assemblerFlag.
+    std::string as = settings::assembler();
+    _putenv_s("CC1_AS", as.c_str());
+    _putenv_s("CXX1_AS", as.c_str());
     return true;
 #else
     (void)kind;
     return true;
 #endif
+}
+
+std::string assemblerFlag(ToolchainKind kind, const std::string& arch) {
+    if (kind == ToolCxx1 && arch == "x86_64-windows" && !settings::assembler().empty())
+        return " -masm=masm";
+    return std::string();
 }
 
 }

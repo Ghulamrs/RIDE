@@ -31,6 +31,7 @@ int main(int argc, char** argv) {
     std::string cxx1;
     std::string c2s;
     std::string arch;
+    std::string assembler;
     bool build = false, runIt = false;
     long width = 0;
     int plain = 0;
@@ -61,6 +62,8 @@ int main(int argc, char** argv) {
             if (w >= 1 && w <= 16) width = w;
         } else if (std::strcmp(argv[i], "--arch") == 0 && i + 1 < argc) {
             arch = argv[++i];
+        } else if (std::strcmp(argv[i], "--assembler") == 0 && i + 1 < argc) {
+            assembler = argv[++i];
         } else if (std::strcmp(argv[i], "--build") == 0) {
             build = true;
         } else if (std::strcmp(argv[i], "--run") == 0) {
@@ -78,7 +81,7 @@ int main(int argc, char** argv) {
                 "           [--config debug|release] [--cc1 path] [--cxx1 path] [--cl path]\n"
                 "           [--shc path] [--cxx path] [--c2s path]\n"
                 "           [--width n] [--tabs] [--case-indent] [--plain]\n"
-                "       %s <project.pro or dir> [--arch a] --build | --run\n"
+                "       %s <project.pro or dir> [--arch a] [--assembler path] --build | --run\n"
                 "  RStudio - the console half, which is RStudio.exe on Linux and\n"
                 "  macOS and RStudioConsole.exe on Windows. RStudioGui is the same\n"
                 "  editor in a window, over the same core.\n"
@@ -108,7 +111,9 @@ int main(int argc, char** argv) {
                 "  --build, --run build the project's program the way F4 does - and\n"
                 "                 run it, for --run - with no screen: the console is\n"
                 "                 printed and the status is 0 when it built (and ran).\n"
-                "                 --arch names the target, else the project's own\n"
+                "                 --arch names the target, else the project's own;\n"
+                "                 --assembler names the project's assembler for\n"
+                "                 x86_64-windows for this run (Tools keeps one)\n"
                 "  --width n      columns per indent step (4)\n"
                 "  --tabs         indent with tabs instead of spaces\n"
                 "  --plain        frame the screen with - | + instead of the box\n"
@@ -157,6 +162,7 @@ int main(int argc, char** argv) {
         file.clear();
     }
     if (build) ed.setBatch(true);
+    if (!assembler.empty()) editor::settings::overrideAssembler(assembler);
 
     bool onItsOwn = false;
     if (project.empty() && !file.empty()) {

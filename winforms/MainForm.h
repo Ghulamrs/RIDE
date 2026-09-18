@@ -659,6 +659,8 @@ private:
                                   gcnew EventHandler(this, &MainForm::OnProjectLibraries));
         tools->DropDownItems->Add("Locate vcvars64.bat...", nullptr,
                                   gcnew EventHandler(this, &MainForm::OnLocateVcvars));
+        tools->DropDownItems->Add("Assembler for x86_64-windows...", nullptr,
+                                  gcnew EventHandler(this, &MainForm::OnLocateAssembler));
         bar->Items->Add(tools);
         bar->Items->Add(target);
 
@@ -2351,6 +2353,29 @@ private:
             return;
         }
         what_->Text = "Visual Studio's tools come from " + pick->FileName + " - written to " + file;
+    }
+
+    // The project's own assembler in place of ml64 and clang - Cancel with
+    // one named keeps it; the console front end's `-` clears it.
+    void OnLocateAssembler(Object^, EventArgs^) {
+        String^ file = FromUtf8(rstudio_install_file());
+        if (file->Length == 0) { what_->Text = "no installation directory to keep this in"; return; }
+        OpenFileDialog^ pick = gcnew OpenFileDialog();
+        pick->Title = "The assembler for x86_64-windows (asm.exe)";
+        pick->Filter = "Programs (*.exe)|*.exe";
+        String^ now = FromUtf8(rstudio_assembler());
+        if (now->Length > 0) pick->InitialDirectory = System::IO::Path::GetDirectoryName(now);
+        if (pick->ShowDialog(this) != System::Windows::Forms::DialogResult::OK) {
+            what_->Text = "assembler unchanged";
+            return;
+        }
+        array<Byte>^ bytes = Utf8Of(pick->FileName);
+        pin_ptr<Byte> pinned = &bytes[0];
+        if (rstudio_remember_assembler(reinterpret_cast<const char*>(pinned)) == 0) {
+            what_->Text = "cannot write " + file;
+            return;
+        }
+        what_->Text = "cc1i and cxx1i assemble through " + pick->FileName + " - written to " + file;
     }
 
     // The last three projects remembered, named at the end of the Project

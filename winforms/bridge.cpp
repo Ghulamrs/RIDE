@@ -741,6 +741,15 @@ int rstudio_remember_vcvars(const char* file) {
     return editor::settings::rememberVcvars(file ? file : "") ? 1 : 0;
 }
 
+const char* rstudio_assembler(void) {
+    scratch() = editor::settings::assembler();
+    return scratch().c_str();
+}
+
+int rstudio_remember_assembler(const char* file) {
+    return editor::settings::rememberAssembler(file ? file : "") ? 1 : 0;
+}
+
 int rstudio_save_project(RStudioProject* project) {
     project->last = editor::saveProject(project->project);
     return project->last.ok ? 1 : 0;

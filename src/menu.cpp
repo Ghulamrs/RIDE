@@ -117,6 +117,7 @@ Menu::Menu() : active_(false), dropped_(false), column_(0), item_(0) {
     tools.items.push_back({"Include paths...", "", ActionProjectIncludes});
     tools.items.push_back({"Libraries...", "", ActionProjectLibraries});
     tools.items.push_back({"Locate vcvars64.bat...", "", ActionLocateVcvars});
+    tools.items.push_back({"Assembler for x86_64-windows...", "", ActionLocateAssembler});
     columns_.push_back(tools);
 
     MenuColumn target;

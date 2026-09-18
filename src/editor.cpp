@@ -2093,6 +2093,23 @@ void Editor::locateVcvars() {
         say("cannot write " + file);
 }
 
+// The project's own assembler in place of ml64 and clang, for x86_64-windows:
+// named by its path and kept in settings.json; `-` puts the compilers' own
+// choice back. See settings::assembler.
+void Editor::locateAssembler() {
+    std::string file = settings::installFile();
+    if (file.empty()) { say("no installation directory to keep this in"); return; }
+    bool cancelled = false;
+    std::string as = prompt("assembler for x86_64-windows, full path [" + settings::assembler() + "]: ", cancelled);
+    if (cancelled || as.empty()) { say("assembler unchanged"); return; }
+    if (as != "-" && !path::exists(as)) { say("no such file: " + as); return; }
+    if (settings::rememberAssembler(as == "-" ? std::string() : as))
+        say("written to " + file + (as == "-" ? " - cc1i and cxx1i assemble as they choose again"
+                                             : " - cc1i and cxx1i assemble through " + as));
+    else
+        say("cannot write " + file);
+}
+
 void Editor::removeFromProject() {
     if (!project_.loaded()) { say("there is no project open"); return; }
     if (buf_.path().empty()) { say("this buffer has no name to look for"); return; }
@@ -3086,6 +3103,7 @@ void Editor::perform(Action action) {
         case ActionProjectLibraries: editProjectLibraries(); break;
         case ActionHeaderDirs:   editHeaderDirs(); break;
         case ActionLocateVcvars: locateVcvars(); break;
+        case ActionLocateAssembler: locateAssembler(); break;
         case ActionFileCreate:   createFile(); break;
         case ActionFileRename:   renameFile(); break;
         case ActionFileDelete:   deleteFile(); break;

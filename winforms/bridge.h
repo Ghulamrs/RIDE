@@ -116,6 +116,9 @@ int rstudio_default_indent_width(void);
 int rstudio_default_indent_tabs(void);
 int rstudio_remember_default_compiler(int kind);
 int rstudio_remember_vcvars(const char* file);
+// The assembler named for x86_64-windows, and the choice written back.
+const char* rstudio_assembler(void);
+int rstudio_remember_assembler(const char* file);
 
 int rstudio_project_save_as(RStudioProject* project, const char* file,
                             char* why, int whySize);
