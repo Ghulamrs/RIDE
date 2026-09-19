@@ -34,7 +34,6 @@ enum Action {
     ActionTogglePlain,
     ActionProjectNew,
     ActionProjectOpen,
-    ActionProjectSave,
     ActionProjectSaveAs,
     ActionProjectClose,
     ActionProjectAdd,
@@ -101,7 +100,11 @@ enum Action {
     ActionProjectRecent3,
     ActionFileRecent,
     ActionFileRecent2,
-    ActionFileRecent3
+    ActionFileRecent3,
+    // The open project's own header directories and libraries, in its .pro
+    // - beside the installation's two above, which every project shares.
+    ActionOwnIncludes,
+    ActionOwnLibraries
 };
 
 struct MenuItem {

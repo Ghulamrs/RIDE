@@ -380,9 +380,10 @@ void addAndRemoveFile(const std::string& rstudio) {
     // menu and when New File was put back at the head of the three, which is
     // what this comment is here to make findable the next time one moves.
     const std::string toProject = kF10 + times(kRight, 2);
-    const std::string newFile = toProject + times(kDown, 5) + kEnter;
-    const std::string addFile = toProject + times(kDown, 6) + kEnter;
-    const std::string removeFile = toProject + times(kDown, 7) + kEnter;
+    const std::string newFile = toProject + times(kDown, 4) + kEnter;
+    // Add File asks which file first, and the empty answer is the one in front
+    const std::string addFile = toProject + times(kDown, 5) + kEnter + kEnter;
+    const std::string removeFile = toProject + times(kDown, 6) + kEnter;
 
     // New File makes one and puts it in the project in the same breath, which
     // is the difference between it and Add File below.
@@ -730,7 +731,7 @@ void closingTheProject(const std::string& rstudio) {
     std::string opened = "\"" + (dir / "src" / "one.c").string() + "\"" + project;
 
     // Project menu, third item.
-    const std::string closeProject = kF10 + times(kRight, 2) + times(kDown, 4) + kEnter;
+    const std::string closeProject = kF10 + times(kRight, 2) + times(kDown, 3) + kEnter;
 
     Screen before = drive(rstudio, opened, ctrl('q'), dir);
     check(onScreen(before, "- First"), "the group is shown while the project is open");
@@ -750,9 +751,9 @@ void closingTheProject(const std::string& rstudio) {
     check(readFile(dir / "RStudio.json").find("src/two.c") != std::string::npos,
           "and RStudio.json still says everything it said before");
 
-    // File menu, fifth item - Close. No kRight: the menu reopens on the column
-    // it was left on, so walking right again would land somewhere else.
-    const std::string closeFile = kF10 + times(kLeft, 2) + times(kDown, 4) + kEnter;
+    // File menu, fifth item - Close. The menu opens on File every time since
+    // the audit of 2026-09-19; it used to reopen on the column it was left on.
+    const std::string closeFile = kF10 + times(kDown, 4) + kEnter;
 
     Screen empty = drive(rstudio, opened, closeProject + closeFile + ctrl('q'), dir);
     check(!onScreen(empty, "one.c"), "closing the last open file empties the pane");
@@ -917,7 +918,7 @@ void thePaneDrawsOneOfTwoThings(const std::string& rstudio) {
     check(onScreen(made, "outside.c"), "the file already open is listed beside it");
 
     // Project > Close is the fifth item on the Project menu.
-    const std::string closeProject = kF10 + times(kRight, 2) + times(kDown, 4) + kEnter;
+    const std::string closeProject = kF10 + times(kRight, 2) + times(kDown, 3) + kEnter;
     Screen closed = drive(rstudio, outside, closeProject + ctrl('q'), dir);
     check(!onScreen(closed, "Sources"), "closing the project takes its groups with it");
     check(onScreen(closed, "outside.c"), "and leaves what is open on the pane when it is not one of its files");
@@ -1523,9 +1524,9 @@ void configurations(const std::string& rstudio, const std::string& cc1) {
 // editor's own words about a compiler it has not run, so this needs no cc1 and
 // runs on every machine.
 //
-// The menu reopens on the column it was left on, and on that column's first
-// item. So the second F10 in each of these is one step right of Build, not four
-// steps right of File - which cost an hour of believing the panel was broken.
+// The menu opens on File every time (since the audit of 2026-09-19; it used to
+// reopen on the column it was left on, which once cost an hour of believing
+// the panel was broken), so every walk here starts from File.
 void debugPanelPerTarget(const std::string& rstudio) {
     std::printf("what the Debug panel says about each target\n");
 
@@ -1539,14 +1540,13 @@ void debugPanelPerTarget(const std::string& rstudio) {
     // added moves the items below it. Build is the fourth column, its Debug
     // panel the sixth item, and Target is two columns further on now that
     // Debug sits between them.
-    const int kBuildColumn = 3;
-    const int kTargetColumn = 7;
-    // Seventh in Build now: Build project and Run project went in above it,
-    // beneath the two that compile the file in front of you.
-    const int kDebugPanelItem = 7;
+    const int kBuildColumn = 5;      // View, since 2026-09-19: the panel's tabs are there
+    const int kTargetColumn = 8;
+    // Fourth in View: Project pane, Bottom panel, a rule, Console, Debug.
+    const int kDebugPanelItem = 3;
     const std::string showDebugTab =
         kF10 + times(kRight, kBuildColumn) + times(kDown, kDebugPanelItem) + kEnter;
-    const std::string toTarget = kF10 + times(kRight, kTargetColumn - kBuildColumn);
+    const std::string toTarget = kF10 + times(kRight, kTargetColumn);
 
     Screen linux = drive(rstudio, common,
                          showDebugTab + toTarget + kDown + kEnter + ctrl('q'), dir);
@@ -1565,12 +1565,10 @@ void debugPanelPerTarget(const std::string& rstudio) {
 
     // Switching the target under an open panel refills it, rather than leaving
     // what was true of the target before.
-    // The third F10 needs no Right at all: the menu is already on Target,
-    // which is the last column before Help now that the three settings menus
-    // are in the order Language, Tools, Target.
+    // The third F10 walks to Target again, as the menu opens on File.
     Screen switched = drive(rstudio, common,
                             showDebugTab + toTarget + kDown + kEnter +
-                                kF10 + kEnter + ctrl('q'),
+                                toTarget + kEnter + ctrl('q'),
                             dir);
     check(onScreen(switched, "no debug information") && !onScreen(switched, "DWARF"),
           "and switching target changes what the open panel already said");
@@ -1619,7 +1617,7 @@ void runningTheProgram(const std::string& rstudio, const std::string& cc1) {
     // It gets a project of its own because a chosen target is remembered in the
     // project file, and a second editor started on the same one would open on
     // the target this left behind rather than on the host.
-    const int kTargetColumn = 7;   // File, Edit, Project, Build, Debug, Language, Tools, Target
+    const int kTargetColumn = 8;   // File, Edit, Project, Build, Debug, View, Language, Tools, Target
 #ifdef _WIN32
     const std::string toElsewhere = kF10 + times(kRight, kTargetColumn) + kDown + kEnter;
 #else
@@ -1951,7 +1949,7 @@ void aDirectoryWithNoProject(const std::string& rstudio) {
     // count of the columns and of the items, written down in the one place
     // that walks them.
     Screen about = drive(rstudio, "--project \"" + dir.string() + "\"",
-                         kF10 + times(kRight, 8) + times(kDown, 2) + kEnter + ctrl('q'), dir);
+                         kF10 + times(kRight, 9) + times(kDown, 2) + kEnter + ctrl('q'), dir);
     check(onScreen(about, "RIDE 3.5"), "About names the product and version");
     check(onScreen(about, "cxx1"), "and the fourth compiler is on its list");
     check(onScreen(about, "G. R. Akhtar"), "and who it belongs to");
@@ -1992,7 +1990,7 @@ void convertingFromTheMenu(const std::string& rstudio, const std::string& c2s) {
     // The separator above it costs nothing to walk past, stepTo skipping
     // whatever cannot be landed on. These counts move if the column does,
     // which is what this comment is here to make findable.
-    const std::string toLanguage = kF10 + times(kRight, 5);
+    const std::string toLanguage = kF10 + times(kRight, 6);
     const std::string convert = toLanguage + times(kDown, 6) + kEnter;
     const std::string asC = toLanguage + times(kDown, 1) + kEnter;
 
@@ -2059,10 +2057,8 @@ void convertingFromTheMenu(const std::string& rstudio, const std::string& c2s) {
     check(onScreen(refused, "between C and Shalimar"),
           "and it says what it converts between instead");
 
-    // No kRight on the second F10: the menu reopens on the column it was
-    // last used from, which is Language, and only the item resets. Walking
-    // right five more from there lands five columns further on.
-    const std::string convertAgain = kF10 + times(kDown, 6) + kEnter;
+    // From File again, as the menu opens there every time now.
+    const std::string convertAgain = kF10 + times(kRight, 6) + times(kDown, 6) + kEnter;
     drive(rstudio, arguments, asC + convertAgain + ctrl('q'), dir);
     check(file::exists(dir / "src" / "hidden.shl"),
           "but the same file read as C converts");
@@ -2195,7 +2191,7 @@ void compilingShalimar(const std::string& rstudio, const std::string& shc) {
                               // Language is the seventh column, and its first
                               // item is already selected when the menu opens -
                               // so three downs reach the fourth, not four.
-                              kF10 + times(kRight, 5) + times(kDown, 3) +
+                              kF10 + times(kRight, 6) + times(kDown, 3) +
                                   kEnter + ctrl('b') + ctrl('q'),
                               dir);
     check(wasShown(asShalimar, "language: Shalimar"),
@@ -2571,7 +2567,7 @@ void theMenuSaysWhereYouAre(const std::string& rstudio) {
 
     // Tools is the seventh column. Nothing has been overridden, so "By
     // language" is the one marked.
-    const std::string toTools = kF10 + times(kRight, 6);
+    const std::string toTools = kF10 + times(kRight, 7);
     Screen fresh = drive(rstudio, arguments, toTools + ctrl('q'), dir);
     check(onScreen(fresh, "\xe2\x80\xa2 By language"), "the compiler nobody chose is marked");
     check(onScreen(fresh, "  cc1"), "and the ones nobody is on are not");
@@ -2580,18 +2576,18 @@ void theMenuSaysWhereYouAre(const std::string& rstudio) {
     // The second F10 is bare. A menu reopens on the column it was left on, so
     // walking right again from Tools lands somewhere else entirely - which is
     // the hazard this suite has been caught by more than once.
-    Screen chose = drive(rstudio, arguments, toTools + kDown + kEnter + kF10 + ctrl('q'), dir);
+    Screen chose = drive(rstudio, arguments, toTools + kDown + kEnter + toTools + ctrl('q'), dir);
     check(onScreen(chose, "\xe2\x80\xa2 cc1"), "choosing one marks it");
     check(!onScreen(chose, "\xe2\x80\xa2 By language"), "and unmarks what it replaced");
 
     // The Language menu is the sixth column, and this is the case the status
     // bar cannot show: the file is C either way, and only the mark says
     // whether that was its name or a choice.
-    const std::string toLanguage = kF10 + times(kRight, 5);
+    const std::string toLanguage = kF10 + times(kRight, 6);
     Screen byName = drive(rstudio, arguments, toLanguage + ctrl('q'), dir);
     check(onScreen(byName, "\xe2\x80\xa2 By extension"), "a language nobody chose is marked too");
 
-    Screen byHand = drive(rstudio, arguments, toLanguage + kDown + kEnter + kF10 + ctrl('q'), dir);
+    Screen byHand = drive(rstudio, arguments, toLanguage + kDown + kEnter + toLanguage + ctrl('q'), dir);
     check(onScreen(byHand, "\xe2\x80\xa2 C"), "and choosing C marks C");
     check(!onScreen(byHand, "\xe2\x80\xa2 By extension"),
           "which the status bar cannot tell you - it says C either way");
@@ -2663,7 +2659,7 @@ void theHelpMenu(const std::string& rstudio) {
 
     // Help is the ninth column and Contents its first item, which is already
     // selected when the menu opens - so no downs.
-    const std::string toContents = kF10 + times(kRight, 8) + kEnter;
+    const std::string toContents = kF10 + times(kRight, 9) + kEnter;
     Screen shown = drive(rstudio, arguments, toContents + ctrl('q'), dir);
     check(onScreen(shown, "the manual"), "Help > Contents shows the manual's contents");
     check(onScreen(shown, "What it is"), "with the first page in it");
@@ -2674,7 +2670,7 @@ void theHelpMenu(const std::string& rstudio) {
     // about::version() for it. A contents and an About that disagreed about
     // which version this is would be the sort of thing nobody notices for a
     // year.
-    Screen about = drive(rstudio, arguments, kF10 + times(kRight, 8) + times(kDown, 2) + kEnter +
+    Screen about = drive(rstudio, arguments, kF10 + times(kRight, 9) + times(kDown, 2) + kEnter +
                                              ctrl('q'), dir);
     check(onScreen(about, "RIDE"), "Help > About still names the product");
 
@@ -2707,8 +2703,8 @@ void theAuditMends(const std::string& rstudio, const std::string& shc) {
     const std::string toProject = kF10 + "p";
 
     // F9: New project, New File prog.shl, a main, F4 - built, not "no source".
-    std::string keys = toProject + kEnter + "Proj" + kEnter;
-    keys += toProject + times(kDown, 5) + kEnter + "prog.shl" + kEnter;
+    std::string keys = toProject + kEnter + "Proj" + kEnter + kEnter;   // New: the name, then here
+    keys += toProject + times(kDown, 4) + kEnter + "prog.shl" + kEnter;
     keys += "fun <> = main()\n{\n}\n" + ctrl('s');
     if (!shc.empty()) keys += kF4;
     Screen made = driveIn(rstudio, "", keys + ctrl('q') + ctrl('q'), dir, dir);
@@ -2739,14 +2735,14 @@ void theAuditMends(const std::string& rstudio, const std::string& shc) {
     check(pro.find("\"open\": \"prog.shl\"") != std::string::npos, "Ctrl-Q remembers the file in front");
 
     // F8: Rename, Delete and Move to group, from the Project menu.
-    keys = toProject + times(kDown, 8) + kEnter + "main.shl" + kEnter + ctrl('q') + ctrl('q');
+    keys = toProject + times(kDown, 7) + kEnter + "main.shl" + kEnter + ctrl('q') + ctrl('q');
     Screen renamed = driveIn(rstudio, "prog.shl", keys, dir, dir);
     check(file::exists(dir / "main.shl") && !file::exists(dir / "prog.shl"), "Rename File renames it on disk");
     check(readFile(dir / "Proj.pro").find("main.shl") != std::string::npos, "and in the project");
-    keys = toProject + times(kDown, 10) + kEnter + "Programs" + kEnter + ctrl('q') + ctrl('q');
+    keys = toProject + times(kDown, 9) + kEnter + "Programs" + kEnter + ctrl('q') + ctrl('q');
     Screen moved = driveIn(rstudio, "main.shl", keys, dir, dir);
     check(readFile(dir / "Proj.pro").find("\"Programs\"") != std::string::npos, "Move to Group makes the group and puts it there");
-    keys = toProject + times(kDown, 9) + kEnter + "yes" + kEnter + ctrl('q') + ctrl('q');
+    keys = toProject + times(kDown, 8) + kEnter + "yes" + kEnter + ctrl('q') + ctrl('q');
     Screen deleted = driveIn(rstudio, "main.shl", keys, dir, dir);
     check(!file::exists(dir / "main.shl"), "Delete File, after 'yes', deletes it");
     check(readFile(dir / "Proj.pro").find("main.shl") == std::string::npos, "and takes it out of the project");

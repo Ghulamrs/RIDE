@@ -269,12 +269,22 @@ void markShalimar(const std::string& line, std::vector<unsigned char>& kind) {
 
 }
 
-Language languageFor(const std::string& path) {
+// .shl is the editor's one spelling of a Shalimar file (decided 2026-08-23:
+// .shm, the phone app's, is not taken everywhere a Shalimar file has to go, so
+// the Language menu is what opens one of those); the audit of 2026-09-19
+// weighed reopening that and kept it.
+Language sourceLanguageFor(const std::string& path) {
     if (endsWith(path, ".shl")) return LangShalimar;
     if (endsWith(path, ".c")) return LangC;
+    if (endsWith(path, ".cpp") || endsWith(path, ".cc") || endsWith(path, ".cxx")) return LangCpp;
+    return LangPlain;
+}
+
+Language languageFor(const std::string& path) {
+    Language source = sourceLanguageFor(path);
+    if (source != LangPlain) return source;
     if (endsWith(path, ".h")) return LangC;
-    if (endsWith(path, ".cpp") || endsWith(path, ".cc") || endsWith(path, ".cxx") ||
-        endsWith(path, ".hpp") || endsWith(path, ".hh") || endsWith(path, ".hxx") ||
+    if (endsWith(path, ".hpp") || endsWith(path, ".hh") || endsWith(path, ".hxx") ||
         endsWith(path, ".ipp"))
         return LangCpp;
     if (endsWith(path, ".s") || endsWith(path, ".asm")) return LangAsm;

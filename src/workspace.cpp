@@ -52,7 +52,7 @@ std::string withExtension(const Project& project, const std::string& relative,
     const std::vector<Group>& groups = project.groups();
     for (size_t i = 0; i < groups.size(); ++i)
         for (size_t j = 0; j < groups[i].files.size(); ++j)
-            counts[languageFor(groups[i].files[j])]++;
+            counts[sourceLanguageFor(groups[i].files[j])]++;
     Language most = LangC;
     if (counts[LangCpp] > counts[most]) most = LangCpp;
     if (counts[LangShalimar] > counts[most]) most = LangShalimar;
@@ -137,10 +137,7 @@ bool endsWith(const std::string& name, const std::string& suffix) {
 // build's to state, when it happens, not the pane's to prevent by default.
 std::string groupForNamed(const std::string& name) {
     if (endsWith(name, ".h") || endsWith(name, ".hpp")) return "Headers";
-
-    const char* const sources[6] = {".c", ".cpp", ".cc", ".cxx", ".shl", ".s"};
-    for (size_t i = 0; i < 6; ++i)
-        if (endsWith(name, sources[i])) return "Sources";
+    if (sourceLanguageFor(name) != LangPlain || endsWith(name, ".s")) return "Sources";
 
     return std::string();
 }

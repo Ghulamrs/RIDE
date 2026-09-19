@@ -29,6 +29,10 @@ enum Language {
 };
 
 Language languageFor(const std::string& path);
+// The language a *source* is compiled as - a header, an assembly file or
+// anything else that is not compiled answers LangPlain. The one list the
+// project's build, the pane's grouping and the colouring all read.
+Language sourceLanguageFor(const std::string& path);
 const char* languageName(Language lang);
 
 const char* languageSuffix(Language lang);

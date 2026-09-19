@@ -24,19 +24,29 @@
 In the project pane, Enter opens. In the bottom panel, left/right change tab and
 shift+up/down resize it; on Console, Enter jumps to the line the compiler named.
 
-**The Windows window (`RStudio.exe`) differs deliberately on ten keys** — most
-importantly **`Ctrl+PageDown`/`Ctrl+PageUp` move between files** there, because
-`F2`/`F3` are Rename and Find-next in a Windows application. New File is
-`Ctrl-N`; menus are reached with `Alt`+the underlined letter.
+**The Windows window (`RStudio.exe`) differs deliberately on nine keys**, keeping
+what a Windows application means by them: `Ctrl+PageDown`/`Ctrl+PageUp` move
+between files (`F2`/`F3` are Rename and Find-next there), so **`F3` is Find next
+and `Shift-F3` Find previous**; **`Ctrl-W` closes the file** (next pane in the
+console); **`Ctrl-A` selects all** and **`Ctrl-L` re-indents** (in the console
+`Ctrl-A` re-indents and `Ctrl-L` is line numbers); **`Ctrl-H` is Replace**;
+**`Ctrl-N` is New File**; the View menu's `Ctrl-0`…`Ctrl-4` pick the pane and the
+tab. Menus are reached with `Alt`+the underlined letter. In the console a
+letter typed while the menu is open goes to the next column whose title starts
+with it - `T` is Tools, `T` again Target - and F10 opens on File every time.
 
-**The menus:** File, Edit, Project (New / Open / Save / Save as / Close, then New
-File / Add File / Remove File / Rename File / Delete File / Move to Group - the
-last three act on the file in front, or on the one picked in the project pane,
-and the project follows the file), Build (Compile / Run / Build project / Run
-project / Debug / Release / and the Console/Debug/Assembly tabs), Debug,
-Language (By extension / C / C++ / Shalimar / JSON / Plain text), Tools (By
-language / cc1 / cxx1 / shc / MSVC (cl) / C++ (host)), Target (the architectures),
-Help. The last three — Language, Tools, Target — are one chain: what the file
+**The menus:** File, Edit, Project (New / Open / Save as / Close, then New File /
+Add File / Remove File / Rename File / Delete File / Move to Group - the last
+three act on the file in front, or on the one picked in the project pane, and
+the project follows the file; there is no Save, since every change is written
+as it is made), Build (Compile / Run / Build project / Run project / Debug /
+Release), Debug, View (Project pane / Bottom panel / Console / Debug / Assembly
+/ Line numbers / Plain frame), Language (By extension / C / C++ / Shalimar /
+JSON / Plain text / Convert), Tools (By language / cc1 / cxx1 / shc / MSVC (cl)
+/ C++ (host), then Header directories, the *shared* include paths and libraries
+of the installation, the *project's* include paths and libraries in its `.pro`,
+and where vcvars64, the assembler and TI's compiler are), Target (the
+architectures), Help. The last three — Language, Tools, Target — are one chain: what the file
 **is**, which **compiler** reads it, which **machine** it runs on.
 
 --------------------------------------------------------------------------------

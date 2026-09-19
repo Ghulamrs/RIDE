@@ -34,18 +34,15 @@ Menu::Menu() : active_(false), dropped_(false), column_(0), item_(0) {
     edit.items.push_back({"Find previous", "", ActionFindPrevious});
     edit.items.push_back({"Replace...", "Ctrl-R", ActionReplace});
     edit.items.push_back({"Re-indent", "Ctrl-A", ActionLayOut});
-    edit.items.push_back({"Project pane", "Ctrl-P", ActionToggleTree});
-    edit.items.push_back({"Bottom panel", "Ctrl-E", ActionTogglePanel});
-    edit.items.push_back({"Line numbers", "Ctrl-L", ActionToggleNumbers});
-    edit.items.push_back({"Plain frame", "", ActionTogglePlain});
     columns_.push_back(edit);
 
     MenuColumn project;
     project.title = "Project";
 
+    // No Save: every change to a project is written as it is made, so a Save
+    // had nothing left to do (the audit of 2026-09-19); Save as names another file.
     project.items.push_back({"New", "", ActionProjectNew});
     project.items.push_back({"Open...", "", ActionProjectOpen});
-    project.items.push_back({"Save", "", ActionProjectSave});
     project.items.push_back({"Save as...", "", ActionProjectSaveAs});
     project.items.push_back({"Close", "", ActionProjectClose});
 
@@ -70,9 +67,6 @@ Menu::Menu() : active_(false), dropped_(false), column_(0), item_(0) {
     build.items.push_back({"Run project", "", ActionRunProject});
     build.items.push_back({"Debug", "Ctrl-D", ActionConfigDebug});
     build.items.push_back({"Release", "Ctrl-D", ActionConfigRelease});
-    build.items.push_back({"Console", "", ActionShowConsole});
-    build.items.push_back({"Debug", "", ActionShowDebug});
-    build.items.push_back({"Assembly", "", ActionShowAssembly});
     columns_.push_back(build);
 
     MenuColumn debug;
@@ -92,6 +86,21 @@ Menu::Menu() : active_(false), dropped_(false), column_(0), item_(0) {
     debug.items.push_back(separator());
     debug.items.push_back({"Stop debugging", "", ActionDebugStop});
     columns_.push_back(debug);
+
+    // What is shown, in one place and in the window's order - the panes and
+    // the panel's three tabs used to sit under Edit and Build.
+    MenuColumn view;
+    view.title = "View";
+    view.items.push_back({"Project pane", "Ctrl-P", ActionToggleTree});
+    view.items.push_back({"Bottom panel", "Ctrl-E", ActionTogglePanel});
+    view.items.push_back(separator());
+    view.items.push_back({"Console", "", ActionShowConsole});
+    view.items.push_back({"Debug", "", ActionShowDebug});
+    view.items.push_back({"Assembly", "", ActionShowAssembly});
+    view.items.push_back(separator());
+    view.items.push_back({"Line numbers", "Ctrl-L", ActionToggleNumbers});
+    view.items.push_back({"Plain frame", "", ActionTogglePlain});
+    columns_.push_back(view);
 
     MenuColumn language;
     language.title = "Language";
@@ -117,8 +126,10 @@ Menu::Menu() : active_(false), dropped_(false), column_(0), item_(0) {
     tools.items.push_back({"C++ (host)", "", ActionToolCxx});
     tools.items.push_back(separator());
     tools.items.push_back({"Header directories...", "", ActionHeaderDirs});
-    tools.items.push_back({"Include paths...", "", ActionProjectIncludes});
-    tools.items.push_back({"Libraries...", "", ActionProjectLibraries});
+    tools.items.push_back({"Shared include paths...", "", ActionProjectIncludes});
+    tools.items.push_back({"Shared libraries...", "", ActionProjectLibraries});
+    tools.items.push_back({"Project include paths...", "", ActionOwnIncludes});
+    tools.items.push_back({"Project libraries...", "", ActionOwnLibraries});
     tools.items.push_back({"Locate vcvars64.bat...", "", ActionLocateVcvars});
     tools.items.push_back({"Assembler for x86_64-windows...", "", ActionLocateAssembler});
     tools.items.push_back({"TI compiler for tms6747...", "", ActionLocateTi});
@@ -174,9 +185,12 @@ void Menu::open() {
     item_ = firstSelectable(columns_[column_], *this);
 }
 
+// Closed, the menu forgets where it was: F10 opens on File every time, so a
+// key sequence means the same thing whatever was chosen last.
 void Menu::close() {
     active_ = false;
     dropped_ = false;
+    column_ = 0;
     item_ = 0;
 }
 
@@ -263,14 +277,17 @@ Action Menu::key(int k) {
     }
 
     if (k >= 32 && k < 127) {
+        // A letter goes to the next column, after the one open, whose title
+        // starts with it - so T reaches Tools, and T again Target.
         char want = static_cast<char>(k);
         if (want >= 'A' && want <= 'Z') want = static_cast<char>(want - 'A' + 'a');
-        for (size_t i = 0; i < columns_.size(); ++i) {
+        for (size_t step = 1; step <= columns_.size(); ++step) {
+            size_t i = (column_ + step) % columns_.size();
             char first = columns_[i].title.empty() ? 0 : columns_[i].title[0];
             if (first >= 'A' && first <= 'Z') first = static_cast<char>(first - 'A' + 'a');
             if (first == want) {
                 column_ = i;
-                item_ = 0;
+                item_ = firstSelectable(columns_[i], *this);
                 return ActionNone;
             }
         }

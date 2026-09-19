@@ -14,15 +14,6 @@ namespace {
 
 std::string withSlashes(const std::string& text) { return path::withSlashes(text); }
 
-Language languageOf(const std::string& relative) {
-    size_t dot = relative.find_last_of('.');
-    if (dot == std::string::npos) return LangPlain;
-    std::string suffix = relative.substr(dot);
-    if (suffix == ".c") return LangC;
-    if (suffix == ".cpp" || suffix == ".cc" || suffix == ".cxx") return LangCpp;
-    if (suffix == ".shl") return LangShalimar;
-    return LangPlain;
-}
 
 const char* languageWord(Language lang) {
     if (lang == LangC) return "C";
@@ -162,9 +153,8 @@ std::string Project::mainFile() const {
     for (size_t i = 0; i < groups_.size(); ++i)
         for (size_t j = 0; j < groups_[i].files.size(); ++j) {
             const std::string& relative = groups_[i].files[j];
-            Language lang = languageOf(relative);
-            if (lang != LangC && lang != LangCpp && lang != LangShalimar) continue;
-            if (relative.size() > 2 && relative.compare(relative.size() - 2, 2, ".h") == 0) continue;
+            Language lang = sourceLanguageFor(relative);
+            if (lang == LangPlain) continue;
 
             FILE* in = std::fopen(absolute(relative).c_str(), "rb");
             if (!in) continue;
@@ -603,7 +593,7 @@ bool Project::targetParts(std::vector<Part>& parts, std::string& why,
         std::vector<std::string> byLanguage[LangCount];
         bool sawShalimar = false, sawOther = false;
         for (size_t f = 0; f < group.files.size(); ++f) {
-            Language lang = languageOf(group.files[f]);
+            Language lang = sourceLanguageFor(group.files[f]);
             if (lang == LangPlain) continue;
             if (lang == LangShalimar) sawShalimar = true; else sawOther = true;
             std::string full = absolute(group.files[f]);

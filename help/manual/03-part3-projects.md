@@ -38,9 +38,10 @@ is open. `indent` and
 `tabs` are how a file is laid out unless its project says otherwise, and
 `font` is the window's, written by *Tools ▸ Font...*. `includes` and
 `libraries` are header directories every compile searches and libraries every
-host link takes, for the whole installation - *Tools ▸ Include paths...* and
-*Tools ▸ Libraries...* write them; a project may still carry its own in its
-`.pro`, searched first. *Tools ▸
+host link takes, for the whole installation - *Tools ▸ Shared include paths...*
+and *Tools ▸ Shared libraries...* write them; a project carries its own in its
+`.pro`, searched first, written by *Tools ▸ Project include paths...* and
+*Tools ▸ Project libraries...* while it is open. *Tools ▸
 Header directories...* and *Tools ▸ Locate vcvars64.bat...* write this file
 too; the editor writes it with the defaults on its first run where it finds
 none.

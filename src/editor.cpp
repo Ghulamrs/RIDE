@@ -1709,9 +1709,9 @@ std::vector<std::string> Editor::whatIsIn(const std::string& directory) const {
             continue;
         }
 
-        const char* const kinds[8] = {".c", ".h", ".cpp", ".hpp", ".cc",
+        const char* const kinds[9] = {".c", ".h", ".cpp", ".hpp", ".cc", ".cxx",
                                       ".s", ".shl", ".json"};
-        for (size_t k = 0; k < 8; ++k) {
+        for (size_t k = 0; k < 9; ++k) {
             const std::string suffix = kinds[k];
             if (here[i].name.size() < suffix.size()) continue;
             if (here[i].name.compare(here[i].name.size() - suffix.size(),
@@ -1946,21 +1946,52 @@ void Editor::regroupFile() {
     if (done.ok) refreshTree();
 }
 
+// Which file, then which group. The files under the project's root that are
+// not in it yet are offered, one directory deep as the project allows; the
+// file in front is the answer when nothing is typed. The window's Add File
+// asks the same with an Open dialog.
 void Editor::addToProject() {
     if (!project_.loaded()) { say("there is no project - make one first"); return; }
-    if (buf_.path().empty()) { say("save the file first, so it has a name"); return; }
 
-    std::string wanted = groupForFile(path::filename(buf_.path()));
-    if (wanted.empty()) wanted = "Sources";
+    std::vector<std::string> offered;
+    std::vector<std::string> top = whatIsIn(project_.root());
+    for (size_t i = 0; i < top.size(); ++i) {
+        if (top[i].empty()) continue;
+        if (top[i][top[i].size() - 1] != '/') {
+            if (project_.groupOf(top[i]) >= project_.groups().size()) offered.push_back(top[i]);
+            continue;
+        }
+        std::vector<std::string> under = whatIsIn(path::join(project_.root(), top[i].substr(0, top[i].size() - 1)));
+        for (size_t j = 0; j < under.size(); ++j) {
+            if (under[j].empty() || under[j][under[j].size() - 1] == '/') continue;
+            std::string relative = top[i] + under[j];
+            if (project_.groupOf(relative) >= project_.groups().size()) offered.push_back(relative);
+        }
+    }
+    std::string inFront = buf_.path().empty() ? std::string() : project_.relative(buf_.path());
+    if (!inFront.empty() && project_.groupOf(inFront) >= project_.groups().size()) {
+        // first, so that Enter alone takes it
+        for (size_t i = 0; i < offered.size(); ++i)
+            if (offered[i] == inFront) { offered.erase(offered.begin() + static_cast<long>(i)); break; }
+        offered.insert(offered.begin(), inFront);
+    }
 
     bool cancelled = false;
-    std::string group =
-        prompt("add " + project_.relative(buf_.path()) + " to group [" + wanted + "]: ",
-               cancelled);
+    std::string chosen = prompt("add file" + (inFront.empty() ? std::string() : " [" + inFront + "]") + ": ",
+                                cancelled, offered);
+    if (cancelled) { say("not added"); return; }
+    if (chosen.empty()) chosen = inFront;
+    if (chosen.empty()) { say("no file named - save the one in front, or type a name"); return; }
+    bool rooted = chosen[0] == '/' || (chosen.size() > 1 && chosen[1] == ':');
+    std::string absolute = rooted ? chosen : path::join(project_.root(), chosen);
+
+    std::string wanted = groupForFile(path::filename(absolute));
+    if (wanted.empty()) wanted = "Sources";
+    std::string group = prompt("add " + project_.relative(absolute) + " to group [" + wanted + "]: ", cancelled);
     if (cancelled) { say("not added"); return; }
     if (group.empty()) group = wanted;
 
-    Outcome done = editor::addExisting(project_, buf_.path(), group);
+    Outcome done = editor::addExisting(project_, absolute, group);
     say(done.message);
     if (done.ok) refreshTree();
 }
@@ -2041,11 +2072,11 @@ void Editor::editProjectIncludes() {
     std::string file = settings::installFile();
     if (file.empty()) { say("no installation directory to keep this in"); return; }
     bool cancelled = false;
-    std::string line = prompt("include paths, ';' between, '-' for none [" +
+    std::string line = prompt("shared include paths, ';' between, '-' for none [" +
                               joined(settings::includes()) + "]: ", cancelled);
-    if (cancelled || line.empty()) { say("include paths unchanged"); return; }
+    if (cancelled || line.empty()) { say("shared include paths unchanged"); return; }
     if (settings::rememberIncludes(splitList(line == "-" ? std::string() : line)))
-        say("include paths: " + joined(settings::includes()) + " - written to " + file);
+        say("shared include paths: " + joined(settings::includes()) + " - written to " + file);
     else
         say("cannot write " + file);
 }
@@ -2054,13 +2085,40 @@ void Editor::editProjectLibraries() {
     std::string file = settings::installFile();
     if (file.empty()) { say("no installation directory to keep this in"); return; }
     bool cancelled = false;
-    std::string line = prompt("libraries, ';' between, '-' for none [" +
+    std::string line = prompt("shared libraries, ';' between, '-' for none [" +
                               joined(settings::libraries()) + "]: ", cancelled);
-    if (cancelled || line.empty()) { say("libraries unchanged"); return; }
+    if (cancelled || line.empty()) { say("shared libraries unchanged"); return; }
     if (settings::rememberLibraries(splitList(line == "-" ? std::string() : line)))
-        say("libraries: " + joined(settings::libraries()) + " - written to " + file);
+        say("shared libraries: " + joined(settings::libraries()) + " - written to " + file);
     else
         say("cannot write " + file);
+}
+
+// The open project's own header directories and libraries, relative to its
+// root, written to its .pro - searched and linked before the installation's.
+// The window has the same over rstudio_project_set_includes/libraries.
+void Editor::editOwnIncludes() {
+    if (!project_.loaded()) { say("there is no project open - these are a project's own; Tools > Shared include paths... is the installation's"); return; }
+    bool cancelled = false;
+    std::string line = prompt("the project's include paths, ';' between, '-' for none [" +
+                              joined(project_.includes()) + "]: ", cancelled);
+    if (cancelled || line.empty()) { say("the project's include paths are unchanged"); return; }
+    project_.setIncludes(splitList(line == "-" ? std::string() : line));
+    Outcome done = editor::saveProject(project_);
+    say(done.ok ? "the project's include paths: " + joined(project_.includes()) + " - written to " + path::filename(project_.file())
+                : done.message);
+}
+
+void Editor::editOwnLibraries() {
+    if (!project_.loaded()) { say("there is no project open - these are a project's own; Tools > Shared libraries... is the installation's"); return; }
+    bool cancelled = false;
+    std::string line = prompt("the project's libraries, ';' between, '-' for none [" +
+                              joined(project_.libraries()) + "]: ", cancelled);
+    if (cancelled || line.empty()) { say("the project's libraries are unchanged"); return; }
+    project_.setLibraries(splitList(line == "-" ? std::string() : line));
+    Outcome done = editor::saveProject(project_);
+    say(done.ok ? "the project's libraries: " + joined(project_.libraries()) + " - written to " + path::filename(project_.file())
+                : done.message);
 }
 
 void Editor::editHeaderDirs() {
@@ -2144,15 +2202,36 @@ void Editor::removeFromProject() {
     if (done.ok) refreshTree();
 }
 
+// Name, then where: the directory offered is the open project's, or the one
+// the editor stands in, and a new name under it is made. The window asks the
+// same two with a folder picker. A project already open is closed first, its
+// files with it, as Project > Close would.
 void Editor::newProject() {
     bool cancelled = false;
     std::string name = prompt("project name: ", cancelled);
     if (cancelled || name.empty()) { say("no project made"); return; }
 
-    Outcome done = editor::beginProject(project_, projectDir_.empty() ? "." : projectDir_,
-                                        name, buf_.path());
+    std::string offered = path::absolute(projectDir_.empty() ? "." : projectDir_);
+    std::string where = prompt("in directory [" + offered + "]: ", cancelled);
+    if (cancelled) { say("no project made"); return; }
+    if (where.empty()) where = offered;
+    else if (where[0] != '/' && !(where.size() > 1 && where[1] == ':')) where = path::join(offered, where);
+
+    if (project_.loaded()) {
+        std::string was = project_.name();
+        closeProject();
+        if (project_.loaded()) return;      // an unsaved file kept it open, and said so
+        say(was + " closed");
+    }
+    projectDir_ = where;
+    Outcome done = editor::beginProject(project_, where, name, buf_.path());
     say(done.message);
-    if (done.ok) refreshTree();
+    if (done.ok) {
+        paneMode_ = PaneProject;
+        refreshTree();
+        settings::rememberProject(project_.file());
+        refreshRecent();
+    }
 }
 
 void Editor::saveProjectAs() {
@@ -2177,11 +2256,6 @@ void Editor::saveProjectAs() {
     settings::rememberProject(project_.file());
         refreshRecent();
     say(name + " written - the project is saved there from now on");
-}
-
-void Editor::saveProject() {
-    Outcome done = editor::saveProject(project_);
-    say(done.message);
 }
 
 // The target and the compiler are the project's while one is open - written
@@ -3149,7 +3223,6 @@ void Editor::perform(Action action) {
         case ActionCloseFile:    closeDocument(); break;
         case ActionProjectNew:   newProject(); break;
         case ActionProjectOpen:  openProjectPrompt(); break;
-        case ActionProjectSave:  saveProject(); break;
         case ActionProjectSaveAs: saveProjectAs(); break;
         case ActionProjectClose: closeProject(); break;
         case ActionProjectAdd:   addToProject(); break;
@@ -3165,6 +3238,8 @@ void Editor::perform(Action action) {
             break;
         }
         case ActionProjectLibraries: editProjectLibraries(); break;
+        case ActionOwnIncludes:  editOwnIncludes(); break;
+        case ActionOwnLibraries: editOwnLibraries(); break;
         case ActionHeaderDirs:   editHeaderDirs(); break;
         case ActionLocateVcvars: locateVcvars(); break;
         case ActionLocateAssembler: locateAssembler(); break;

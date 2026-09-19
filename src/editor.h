@@ -205,6 +205,8 @@ private:
     void addToProject();
     void removeFromProject();
     void editProjectIncludes();
+    void editOwnIncludes();
+    void editOwnLibraries();
     void editProjectLibraries();
     void editHeaderDirs();
     void locateVcvars();
@@ -218,7 +220,6 @@ private:
 
     enum PaneMode { PaneProject, PaneFiles };
     void newProject();
-    void saveProject();
     void resetDebug();
     void chooseArch(size_t which);
     void chooseTool(ToolchainKind kind, const std::string& named);

@@ -463,8 +463,6 @@ private:
                                     gcnew EventHandler(this, &MainForm::OnNewProject));
         project->DropDownItems->Add("Open...", nullptr,
                                     gcnew EventHandler(this, &MainForm::OnOpenProjectFile));
-        project->DropDownItems->Add("Save", nullptr,
-                                    gcnew EventHandler(this, &MainForm::OnSaveProject));
         project->DropDownItems->Add("Save as...", nullptr,
                                     gcnew EventHandler(this, &MainForm::OnSaveProjectAs));
         project->DropDownItems->Add("Close", nullptr,
@@ -661,9 +659,13 @@ private:
         tools->DropDownItems->Add(gcnew ToolStripSeparator());
         tools->DropDownItems->Add("Header directories...", nullptr,
                                   gcnew EventHandler(this, &MainForm::OnHeaderDirs));
-        tools->DropDownItems->Add("Include paths...", nullptr,
+        tools->DropDownItems->Add("Shared include paths...", nullptr,
+                                  gcnew EventHandler(this, &MainForm::OnSharedIncludes));
+        tools->DropDownItems->Add("Shared libraries...", nullptr,
+                                  gcnew EventHandler(this, &MainForm::OnSharedLibraries));
+        tools->DropDownItems->Add("Project include paths...", nullptr,
                                   gcnew EventHandler(this, &MainForm::OnProjectIncludes));
-        tools->DropDownItems->Add("Libraries...", nullptr,
+        tools->DropDownItems->Add("Project libraries...", nullptr,
                                   gcnew EventHandler(this, &MainForm::OnProjectLibraries));
         tools->DropDownItems->Add("Locate vcvars64.bat...", nullptr,
                                   gcnew EventHandler(this, &MainForm::OnLocateVcvars));
@@ -2295,30 +2297,61 @@ private:
     // The installation's include directories and libraries, in settings.json,
     // edited as one line each with ';' between the entries; every compile
     // searches them after a project's own.
-    void OnProjectIncludes(Object^, EventArgs^) {
+    void OnSharedIncludes(Object^, EventArgs^) {
         String^ file = FromUtf8(rstudio_install_file());
         if (file->Length == 0) { what_->Text = "no installation directory to keep this in"; return; }
-        String^ line = Ask("Include paths", "kept in " + file + ", ';' between them",
+        String^ line = Ask("Shared include paths", "kept in " + file + ", ';' between them",
                            FromUtf8(rstudio_includes()));
-        if (line == nullptr) { what_->Text = "include paths unchanged"; return; }
+        if (line == nullptr) { what_->Text = "shared include paths unchanged"; return; }
         array<Byte>^ bytes = Utf8Of(line);
         pin_ptr<Byte> pinned = &bytes[0];
         what_->Text = rstudio_set_includes(reinterpret_cast<const char*>(pinned)) != 0
-                          ? "include paths: " + FromUtf8(rstudio_includes()) + " - written to " + file
+                          ? "shared include paths: " + FromUtf8(rstudio_includes()) + " - written to " + file
                           : "cannot write " + file;
     }
 
-    void OnProjectLibraries(Object^, EventArgs^) {
+    void OnSharedLibraries(Object^, EventArgs^) {
         String^ file = FromUtf8(rstudio_install_file());
         if (file->Length == 0) { what_->Text = "no installation directory to keep this in"; return; }
-        String^ line = Ask("Libraries", "kept in " + file + ", ';' between them, linked after the objects",
+        String^ line = Ask("Shared libraries", "kept in " + file + ", ';' between them, linked after the objects",
                            FromUtf8(rstudio_libraries()));
-        if (line == nullptr) { what_->Text = "libraries unchanged"; return; }
+        if (line == nullptr) { what_->Text = "shared libraries unchanged"; return; }
         array<Byte>^ bytes = Utf8Of(line);
         pin_ptr<Byte> pinned = &bytes[0];
         what_->Text = rstudio_set_libraries(reinterpret_cast<const char*>(pinned)) != 0
-                          ? "libraries: " + FromUtf8(rstudio_libraries()) + " - written to " + file
+                          ? "shared libraries: " + FromUtf8(rstudio_libraries()) + " - written to " + file
                           : "cannot write " + file;
+    }
+
+    // The open project's own, in its .pro, relative to its root - searched
+    // and linked before the installation's. The bridge calls were there
+    // from the start; the audit of 2026-09-19 found nothing calling them.
+    void OnProjectIncludes(Object^, EventArgs^) {
+        if (project_ == nullptr || rstudio_project_loaded(project_) == 0) {
+            what_->Text = "there is no project open - these are a project's own; Shared include paths... is the installation's";
+            return;
+        }
+        String^ line = Ask("Project include paths", "kept in the project's .pro, relative to it, ';' between them",
+                           FromUtf8(rstudio_project_includes(project_)));
+        if (line == nullptr) { what_->Text = "the project's include paths are unchanged"; return; }
+        array<Byte>^ bytes = Utf8Of(line);
+        pin_ptr<Byte> pinned = &bytes[0];
+        if (Did(rstudio_project_set_includes(project_, reinterpret_cast<const char*>(pinned))))
+            what_->Text = "the project's include paths: " + FromUtf8(rstudio_project_includes(project_)) + " - written";
+    }
+
+    void OnProjectLibraries(Object^, EventArgs^) {
+        if (project_ == nullptr || rstudio_project_loaded(project_) == 0) {
+            what_->Text = "there is no project open - these are a project's own; Shared libraries... is the installation's";
+            return;
+        }
+        String^ line = Ask("Project libraries", "kept in the project's .pro, relative to it, ';' between them, linked before the shared ones",
+                           FromUtf8(rstudio_project_libraries(project_)));
+        if (line == nullptr) { what_->Text = "the project's libraries are unchanged"; return; }
+        array<Byte>^ bytes = Utf8Of(line);
+        pin_ptr<Byte> pinned = &bytes[0];
+        if (Did(rstudio_project_set_libraries(project_, reinterpret_cast<const char*>(pinned))))
+            what_->Text = "the project's libraries: " + FromUtf8(rstudio_project_libraries(project_)) + " - written";
     }
 
     // The installation's settings.json: where the shipped headers are.
@@ -2505,8 +2538,6 @@ private:
         }
     }
 
-    void OnSaveProject(Object^, EventArgs^) { Did(rstudio_save_project(project_)); }
-
     void OnOpenProjectFile(Object^, EventArgs^) {
         String^ suffix = FromUtf8(rstudio_project_suffix());
 
@@ -2638,7 +2669,8 @@ private:
 
         paneMode_ = PaneMode::PaneFiles;
         OpenFileDialog^ pick = gcnew OpenFileDialog();
-        pick->Filter = "C and C++|*.c;*.h;*.cpp;*.hpp|All files|*.*";
+        pick->Filter = "Sources|*.c;*.h;*.cpp;*.hpp;*.cc;*.cxx;*.shl;*.s;*.json;*.pro"
+                       "|C and C++|*.c;*.h;*.cpp;*.hpp;*.cc;*.cxx|Shalimar|*.shl|All files|*.*";
         if (pick->ShowDialog() != System::Windows::Forms::DialogResult::OK) {
             what_->Text = "not opened";
             return;
@@ -2761,7 +2793,8 @@ private:
         if (sheet == nullptr) return;
 
         SaveFileDialog^ pick = gcnew SaveFileDialog();
-        pick->Filter = "C and C++|*.c;*.h;*.cpp;*.hpp|All files|*.*";
+        pick->Filter = "Sources|*.c;*.h;*.cpp;*.hpp;*.cc;*.cxx;*.shl;*.s;*.json;*.pro"
+                       "|C and C++|*.c;*.h;*.cpp;*.hpp;*.cc;*.cxx|Shalimar|*.shl|All files|*.*";
         if (sheet->path != nullptr) {
             pick->InitialDirectory = System::IO::Path::GetDirectoryName(sheet->path);
             pick->FileName = System::IO::Path::GetFileName(sheet->path);

@@ -182,8 +182,10 @@ check-tools:
 	    echo "  Name one that exists, or leave it unset - unset skips those cases on purpose." >&2; \
 	    exit 1; }
 
+# The compilers are handed to the suites absolutely: a build runs them from
+# another directory, where `bin/cc1i.exe` names nothing.
 test: tests/test check-tools
-	./tests/test
+	CC1="$(abspath $(CC1))" CXX1="$(abspath $(CXX1))" SHC="$(abspath $(SHC))" C2S="$(abspath $(C2S))" ./tests/test
 
 tests/test: tests/test.cpp src/compile.cpp src/indent.cpp src/syntax.cpp \
             src/toolchain.cpp src/json.cpp src/project.cpp src/find.cpp \
@@ -205,7 +207,7 @@ tests/test: tests/test.cpp src/compile.cpp src/indent.cpp src/syntax.cpp \
 # for the Language menu's Convert; without them those cases are skipped rather
 # than failed.
 session: tests/session $(EDITOR) check-tools
-	CC1="$(CC1)" CXX1="$(CXX1)" SHC="$(SHC)" C2S="$(C2S)" ./tests/session $(EDITOR)
+	CC1="$(abspath $(CC1))" CXX1="$(abspath $(CXX1))" SHC="$(abspath $(SHC))" C2S="$(abspath $(C2S))" ./tests/session $(EDITOR)
 
 tests/session: tests/session.cpp src/path.cpp src/path.h
 	$(CXX) $(CXXFLAGS) -Isrc -o $@ tests/session.cpp src/path.cpp
