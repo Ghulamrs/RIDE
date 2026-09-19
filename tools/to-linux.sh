@@ -88,7 +88,8 @@ pack vm6747 ../VM6747/Emulator      src tests Makefile README.md
 # (2026-09-19): the three directories it reads travel, without the review's own outputs.
 pack asm6x  ../ASM6x                src tests Makefile README.md \
     review-probes-2026-09-19/recheck.sh review-probes-2026-09-19/known.txt \
-    review-probes-2026-09-19/edge review-probes-2026-09-19/linkcheck review-probes-2026-09-19/fresh
+    review-probes-2026-09-19/edge review-probes-2026-09-19/linkcheck review-probes-2026-09-19/fresh \
+    review-probes-2026-09-19/labeldiff
 pack c2s    ../Converter-C2S        src tests Makefile README.md
 
 # Where they land: the shape workspace.mk assumes, ../VM6747/<name> and
