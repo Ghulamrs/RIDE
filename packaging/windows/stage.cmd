@@ -8,7 +8,7 @@ set CC=%~4
 if "%CC%"=="" set "CC=%CPP%\..\Compiler-Ci"
 if exist "%STAGE%" rmdir /s /q "%STAGE%"
 mkdir "%STAGE%\bin" "%STAGE%\bin\lib" "%STAGE%\examples"
-for %%f in (RStudio.exe RStudioConsole.exe cc1i.exe cxx1i.exe shci.exe vm6747.exe c2s.exe) do (
+for %%f in (RStudio.exe RStudioConsole.exe cc1i.exe cxx1i.exe shci.exe vm6747.exe asm6x.exe c2s.exe) do (
   if exist "%SRC%\bin\%%f" copy /y "%SRC%\bin\%%f" "%STAGE%\bin\" >nul
 )
 if exist "%SRC%\bin\lib\*.lib" copy /y "%SRC%\bin\lib\*.lib" "%STAGE%\bin\lib\" >nul
@@ -24,6 +24,9 @@ if exist "%CC%\lib" xcopy /e /i /q "%CC%\lib" "%STAGE%\lib" >nul
   echo   "include": "include",
   echo   "lib": "lib",
   echo   "vcvars": "",
+  echo   "assembler": "",
+  echo   "ti": "",
+  echo   "tilib": "",
   echo   "compiler": "auto",
   echo   "indent": 4,
   echo   "tabs": false,

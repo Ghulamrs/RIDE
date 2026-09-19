@@ -2,9 +2,13 @@ Real TMS320C674x build (.out and .hex)
 ======================================
 
 RIDE runs tms6747 programs on the built-in vm6747 emulator - no TI tools
-needed. To instead produce a REAL linked .out and Intel .hex for the silicon,
-use ti-build, which uses a Texas Instruments Code Generation Tools install
-already on this machine (none of TI's tools are shipped with RIDE):
+needed. Since 3.5 (2026-09-19) RIDE also assembles tms6747 code itself, with
+its own asm6x beside the compilers, and links a real .out from the editor
+when settings.json names a TI Code Generation Tools install: "ti" is the CGT
+folder and "tilib" the folder holding rts6740_elf_eh.lib (the EH runtime
+mklib builds). To produce a .out and an Intel .hex from the command line
+instead, use ti-build, which uses a CGT install already on this machine
+(none of TI's tools are shipped with RIDE):
 
     bin\ti\ti-build.cmd  path\to\program.c        (or .cpp, or .shl)
 

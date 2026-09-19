@@ -47,7 +47,7 @@ adjust the `Stage` define for another machine.
 
 ## Layout the installer lays down
 
-    <install>\bin\     RStudio.exe, RStudioConsole.exe, the compilers, (3.5) vm6747, c2s
+    <install>\bin\     RStudio.exe, RStudioConsole.exe, the compilers, (3.5) vm6747, asm6x, c2s
     <install>\bin\lib\ Shalimar runtime (.lib) and (3.5) shmrt-tms6747\*.s
     <install>\bin\ti\  (3.5) ti-build.cmd - real-silicon TI build path
     <install>\include\ C++ headers      <install>\lib\ C headers
