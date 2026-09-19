@@ -124,8 +124,11 @@ done
 {
     printf '#!/bin/sh\nset -u\n'
     # tests/ is emptied before the archive lands: a case retired here would
-    # otherwise stay there and fail as "compiled, and should not have".
-    printf 'unpack() { cd "$1" && rm -rf tests && tar xzf "$2" && rm -f "$2" && find . -name "._*" -delete || exit 2; }\n'
+    # otherwise stay there and fail as "compiled, and should not have". The
+    # review's probe directory goes the same way, for the same reason: a
+    # probe renamed here (899673b renamed two) stayed on the box under its
+    # old name, with no recorded object beside it, and read as a disagreement.
+    printf 'unpack() { cd "$1" && rm -rf tests review-probes-* && tar xzf "$2" && rm -f "$2" && find . -name "._*" -delete || exit 2; }\n'
     printf 'unpack ~/%s rstudio-src.tgz\n' "$DIR"
     for name in $NAMES; do
         printf 'unpack ~/%s %s-src.tgz\n' "$(there $name)" "$name"
