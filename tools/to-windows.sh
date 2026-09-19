@@ -102,24 +102,20 @@ scp -q "$TMP/shci-src.tgz" "$BOX:$SHCI_DIR\\shci-src.tgz" || exit 2
 BIN="$DIR\\bin"
 {
   printf '@echo off\r\n'
-  printf 'cd /d "%s" || exit /b 2\r\n' "$DIR"
-  printf 'tar -xzf rstudio-src.tgz || exit /b 2\r\n'
-  printf 'del /q rstudio-src.tgz\r\n'
-  printf 'cd /d "%s" || exit /b 2\r\n' "$CC1I_DIR"
-  printf 'tar -xzf cc1i-src.tgz || exit /b 2\r\n'
-  printf 'del /q cc1i-src.tgz\r\n'
-  printf 'cd /d "%s" || exit /b 2\r\n' "$CXX1_DIR"
-  printf 'tar -xzf cxx1-src.tgz || exit /b 2\r\n'
-  printf 'del /q cxx1-src.tgz\r\n'
-  printf 'cd /d "%s" || exit /b 2\r\n' "$EMU_DIR"
-  printf 'tar -xzf vm6747-src.tgz || exit /b 2\r\n'
-  printf 'del /q vm6747-src.tgz\r\n'
-  printf 'cd /d "%s" || exit /b 2\r\n' "$ASM_DIR"
-  printf 'tar -xzf asm6x-src.tgz || exit /b 2\r\n'
-  printf 'del /q asm6x-src.tgz\r\n'
-  printf 'cd /d "%s" || exit /b 2\r\n' "$SHCI_DIR"
-  printf 'tar -xzf shci-src.tgz || exit /b 2\r\n'
-  printf 'del /q shci-src.tgz\r\n'
+  # tests\ is emptied before each archive lands, as to-linux.sh empties it: a
+  # case retired or renamed here would otherwise stay there under its old
+  # name and be found by whatever globs the directory - which is how the
+  # Linux box reported two probes the Mac no longer has (RStudio 19c73e6).
+  # Only tests\: the rest is laid over, since these directories also hold
+  # hand-run experiments that are not ours.
+  for pair in "$DIR rstudio" "$CC1I_DIR cc1i" "$CXX1_DIR cxx1" \
+              "$EMU_DIR vm6747" "$ASM_DIR asm6x" "$SHCI_DIR shci"; do
+    set -- $pair
+    printf 'cd /d "%s" || exit /b 2\r\n' "$1"
+    printf 'if exist tests rmdir /s /q tests\r\n'
+    printf 'tar -xzf %s-src.tgz || exit /b 2\r\n' "$2"
+    printf 'del /q %s-src.tgz\r\n' "$2"
+  done
   printf 'cd /d "%s"\r\n' "$DIR"
   printf 'set CC1=%s\\cc1i.exe\r\n' "$BIN"
   printf 'set CXX1=%s\\cxx1i.exe\r\n' "$BIN"
