@@ -52,6 +52,15 @@ static void QuietConsoleForChildren() {
 
 [STAThreadAttribute]
 int main(array<String^>^ arguments) {
+    // **`--version` answers and exits before any window.** It is the smoke test
+    // build.bat's check runs on the box, where an ssh session has no desktop:
+    // the mixed-mode start-up is what dies when a native global with a
+    // destructor gets into this program (settings.cpp says how), and that death
+    // comes before main - so reaching this line and leaving is the whole test.
+    if (arguments->Length == 1 && arguments[0] == "--version") {
+        Console::WriteLine("RIDE " + gcnew String(rstudio_version()));
+        return 0;
+    }
     Note("main entered");
 
     {

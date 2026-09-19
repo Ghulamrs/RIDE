@@ -245,29 +245,37 @@ std::string vcvars() {
     return (!said.empty() && path::exists(said)) ? said : std::string();
 }
 
-static std::string assemblerForThisRun;
-void overrideAssembler(const std::string& p) { assemblerForThisRun = p; }
+// **Pointers, never std::string globals** - the trap `pretended` above names:
+// linked into the C++/CLI window, a native global with a destructor corrupted
+// the onexit table before main, and the window died with STATUS_HEAP_CORRUPTION
+// on every start from 2026-09-18 until these three were found on the 19th.
+static std::string* assemblerForThisRun = 0;
+static std::string* tiForThisRun = 0;
+static std::string* tilibForThisRun = 0;
+static void overrideWith(std::string*& slot, const std::string& value) {
+    if (!slot) slot = new std::string();
+    *slot = value;
+}
+void overrideAssembler(const std::string& p) { overrideWith(assemblerForThisRun, p); }
 
 std::string assembler() {
-    if (!assemblerForThisRun.empty()) return assemblerForThisRun;
+    if (assemblerForThisRun && !assemblerForThisRun->empty()) return *assemblerForThisRun;
     std::string said = readInstall().get("assembler").text(std::string());
     return (!said.empty() && path::exists(said)) ? said : std::string();
 }
 
-static std::string tiForThisRun;
-void overrideTi(const std::string& d) { tiForThisRun = d; }
+void overrideTi(const std::string& d) { overrideWith(tiForThisRun, d); }
 
 std::string ti() {
-    if (!tiForThisRun.empty()) return tiForThisRun;
+    if (tiForThisRun && !tiForThisRun->empty()) return *tiForThisRun;
     std::string said = readInstall().get("ti").text(std::string());
     return (!said.empty() && path::isDirectory(said)) ? said : std::string();
 }
 
-static std::string tilibForThisRun;
-void overrideTilib(const std::string& d) { tilibForThisRun = d; }
+void overrideTilib(const std::string& d) { overrideWith(tilibForThisRun, d); }
 
 std::string tilib() {
-    if (!tilibForThisRun.empty()) return tilibForThisRun;
+    if (tilibForThisRun && !tilibForThisRun->empty()) return *tilibForThisRun;
     std::string said = readInstall().get("tilib").text(std::string());
     return (!said.empty() && path::isDirectory(said)) ? said : std::string();
 }

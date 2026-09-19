@@ -259,6 +259,15 @@ if errorlevel 1 goto :fail
 session.exe %BINDIR%\RStudioConsole.exe %CC1%
 if errorlevel 1 goto :fail
 
+rem The window has to reach main. Its start-up is mixed-mode, and a native
+rem global with a destructor anywhere in what it links kills it before main
+rem with STATUS_HEAP_CORRUPTION - which no suite saw from 2026-09-18 to the
+rem 19th, because none of them ran the window. --version exits before a form.
+if exist %BINDIR%\RStudio.exe (
+  %BINDIR%\RStudio.exe --version
+  if errorlevel 1 goto :fail
+)
+
 :done
 echo built %BINDIR%\RStudioConsole.exe
 exit /b 0
