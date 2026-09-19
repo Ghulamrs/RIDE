@@ -478,6 +478,14 @@ private:
                                     gcnew EventHandler(this, &MainForm::OnAddThisFile));
         project->DropDownItems->Add("Remove File", nullptr,
                                     gcnew EventHandler(this, &MainForm::OnRemoveFromProject));
+        // Rename, Delete and Move to group: the handlers were here from the
+        // start and nothing reached them until the audit of 2026-09-19.
+        project->DropDownItems->Add("Rename File...", nullptr,
+                                    gcnew EventHandler(this, &MainForm::OnRenameFile));
+        project->DropDownItems->Add("Delete File...", nullptr,
+                                    gcnew EventHandler(this, &MainForm::OnDeleteFile));
+        project->DropDownItems->Add("Move to Group...", nullptr,
+                                    gcnew EventHandler(this, &MainForm::OnMoveToGroup));
         // The last three projects, most recent first, to recall one by name.
         project->DropDownItems->Add(gcnew ToolStripSeparator());
         recentItems_ = gcnew System::Collections::Generic::List<ToolStripMenuItem^>();
@@ -3978,47 +3986,42 @@ private:
         ShowChoices();
         what_->Text = "release";
     }
+    // The target and the compiler are the project's while one is open -
+    // written to its .pro, as the manual promised - and the installation's
+    // default otherwise. Until 2026-09-19 the Target menu wrote nothing and
+    // the Tools menu wrote settings.json whatever was open.
+    String^ WrittenToProject(int outcome) {
+        if (outcome != 0) return " - written to " + System::IO::Path::GetFileName(OutcomePath());
+        return " - but " + FromUtf8(rstudio_outcome_message(project_));
+    }
     void OnTarget(Object^ sender, EventArgs^) {
         arch_ = safe_cast<ToolStripMenuItem^>(sender)->Text;
+        String^ said = "target: " + arch_;
+        if (project_ != nullptr && rstudio_project_loaded(project_) != 0) {
+            array<Byte>^ bytes = Utf8Of(arch_);
+            pin_ptr<Byte> pinned = &bytes[0];
+            said += WrittenToProject(rstudio_project_set_arch(project_, reinterpret_cast<const char*>(pinned)));
+        }
         ShowChoices();
         RefreshDebugTab();
-        what_->Text = "target: " + arch_;
+        what_->Text = said;
     }
-    void OnToolAuto(Object^, EventArgs^) {
-        toolKind_ = RSTUDIO_TOOL_AUTO;
-        rstudio_remember_default_compiler(toolKind_);
+    void ChooseTool(int kind, String^ said) {
+        toolKind_ = kind;
+        if (project_ != nullptr && rstudio_project_loaded(project_) != 0) {
+            said += WrittenToProject(rstudio_project_set_toolchain(project_, kind));
+        } else {
+            rstudio_remember_default_compiler(kind);
+        }
         ShowChoices();
         RefreshDebugTab();
-        what_->Text = "compiler: chosen by the file";
+        what_->Text = said;
     }
-    void OnToolCc1(Object^, EventArgs^) {
-        toolKind_ = RSTUDIO_TOOL_CC1;
-        rstudio_remember_default_compiler(toolKind_);
-        ShowChoices();
-        RefreshDebugTab();
-        what_->Text = "compiler: cc1";
-    }
-    void OnToolCl(Object^, EventArgs^) {
-        toolKind_ = RSTUDIO_TOOL_MSVC;
-        rstudio_remember_default_compiler(toolKind_);
-        ShowChoices();
-        RefreshDebugTab();
-        what_->Text = "compiler: cl";
-    }
-    void OnToolCxx1(Object^, EventArgs^) {
-        toolKind_ = RSTUDIO_TOOL_CXX1;
-        rstudio_remember_default_compiler(toolKind_);
-        ShowChoices();
-        RefreshDebugTab();
-        what_->Text = "compiler: cxx1";
-    }
-    void OnToolShc(Object^, EventArgs^) {
-        toolKind_ = RSTUDIO_TOOL_SHC;
-        rstudio_remember_default_compiler(toolKind_);
-        ShowChoices();
-        RefreshDebugTab();
-        what_->Text = "compiler: shc";
-    }
+    void OnToolAuto(Object^, EventArgs^) { ChooseTool(RSTUDIO_TOOL_AUTO, "compiler: chosen by the file"); }
+    void OnToolCc1(Object^, EventArgs^) { ChooseTool(RSTUDIO_TOOL_CC1, "compiler: cc1"); }
+    void OnToolCl(Object^, EventArgs^) { ChooseTool(RSTUDIO_TOOL_MSVC, "compiler: cl"); }
+    void OnToolCxx1(Object^, EventArgs^) { ChooseTool(RSTUDIO_TOOL_CXX1, "compiler: cxx1"); }
+    void OnToolShc(Object^, EventArgs^) { ChooseTool(RSTUDIO_TOOL_SHC, "compiler: shc"); }
 
     void ChooseLanguage(int language, String^ said) {
         languageChoice_ = language;

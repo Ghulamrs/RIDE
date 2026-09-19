@@ -31,8 +31,10 @@ there themselves, so the command line works without the editor. `vcvars` is
 empty until Visual Studio's tools could not be found by looking, and then
 names the `vcvars64.bat` to use. `compiler` is the one chosen when the editor
 starts - `auto` (the file's extension decides), `cc1`, `cxx1`, `shc`, `msvc`
-or `c++` - and choosing one from the Tools menu writes it here; a project
-that names its own compiler takes precedence while it is open. `indent` and
+or `c++` - and choosing one from the Tools menu with no project open writes
+it here; with a project open the choice is the project's and goes to its
+`.pro`, and a project that names its own compiler takes precedence while it
+is open. `indent` and
 `tabs` are how a file is laid out unless its project says otherwise, and
 `font` is the window's, written by *Tools ▸ Font...*. `includes` and
 `libraries` are header directories every compile searches and libraries every
@@ -68,10 +70,11 @@ Field by field:
 - **`toolchain`** — the project-wide compiler choice: `auto` (the file's suffix
   decides), or a named one: `cc1`, `cxx1`, `shc`, or `msvc` (the host's `cl`).
   `auto` is almost always right; a named one forces every auto group to that
-  compiler.
+  compiler. The Tools menu (and Ctrl-K) writes it while the project is open.
 - **`arch`** — the target the project builds for: one of `x86_64-windows`,
-  `x86_64-linux`, `arm64-darwin`, `tms6747`. The editor's Target menu changes
-  it; a project that names none gets this machine's host target.
+  `x86_64-linux`, `arm64-darwin`, `tms6747`. The Target menu (and Ctrl-T)
+  changes it and writes it while the project is open; a project that names
+  none gets this machine's host target.
 - **`indent`** / **`tabs`** — how the editor lays this project's files out;
   absent, the installation's `settings.json` answers, and a new project
   writes neither.
@@ -94,7 +97,8 @@ Field by field:
   from `settings.json`, are linked after these.
 - **`open`** — the file that opens with the project, relative to its
   directory. Written by the editor from the file in front when the project is
-  closed or the editor left. A project without it opens the file that defines
+  closed or the editor left, by the menu or by Ctrl-Q alike; a file removed or
+  deleted from the project is forgotten here too. A project without it opens the file that defines
   `main` (`int main(` in C and C++, `fun <> = main()` in Shalimar), and
   failing that its first file.
 - **`build`** — what the project builds: `target` names the program, and

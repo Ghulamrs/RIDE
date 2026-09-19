@@ -541,6 +541,20 @@ const char* rstudio_project_arch(RStudioProject* project) {
     return project->answer.c_str();
 }
 
+int rstudio_project_set_arch(RStudioProject* project, const char* arch) {
+    if (!project || !project->project.loaded() || !arch) return 0;
+    project->project.setArch(arch);
+    project->last = editor::saveProject(project->project);
+    return project->last.ok ? 1 : 0;
+}
+
+int rstudio_project_set_toolchain(RStudioProject* project, int kind) {
+    if (!project || !project->project.loaded()) return 0;
+    project->project.setToolchain(static_cast<editor::ToolchainKind>(kind));
+    project->last = editor::saveProject(project->project);
+    return project->last.ok ? 1 : 0;
+}
+
 int rstudio_project_allows(const char* relative, char* why, int whySize) {
     std::string reason;
     bool fine = editor::Project::allows(relative ? relative : "", reason);

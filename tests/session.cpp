@@ -1933,14 +1933,14 @@ void aDirectoryWithNoProject(const std::string& rstudio) {
     check(file::exists(dir / named), "opening there writes one, under the directory's name");
     check(!file::exists(dir / "RStudio.json"),
           "and not under the whole-directory name it used to use");
-    check(wasShown(made, "so one was made"), "and says that is what it did");
+    check(wasShown(made, "no project here, so"), "and says that is what it did");
     check(onScreen(made, "one.c"), "the source it found is in the pane");
     check(!onScreen(made, "notes.txt"), "and what is not source is not");
 
     // Opened again, the file that was written is the file that is read - no
     // second one, and nothing said about making anything.
     Screen again = drive(rstudio, "--project \"" + dir.string() + "\"", ctrl('q'), dir);
-    check(!wasShown(again, "so one was made"), "opening it again makes nothing");
+    check(!wasShown(again, "no project here, so"), "opening it again makes nothing");
     check(onScreen(again, "one.c"), "and reads back what was written");
     check(wasShown(again, "ready"), "and says it is ready, having nothing to do first");
 
@@ -1962,7 +1962,7 @@ void aDirectoryWithNoProject(const std::string& rstudio) {
     Screen broken = drive(rstudio, "--project \"" + dir.string() + "\"", ctrl('q'), dir);
     check(readFile(dir / "RStudio.json").find("not json") != std::string::npos,
           "a project file that will not parse is not written over");
-    check(!wasShown(broken, "so one was made"), "and nothing is made in its place");
+    check(!wasShown(broken, "no project here, so"), "and nothing is made in its place");
 
     file::remove_all(dir);
 }
@@ -2692,6 +2692,69 @@ void theHelpMenu(const std::string& rstudio) {
     file::remove_all(dir);
 }
 
+
+// The audit of 2026-09-19, and what it mended: a Shalimar file made in the
+// editor builds (F9); Rename, Delete and Move to group are on the Project
+// menu (F8); the Target and Tools choices are the project's while one is
+// open and reach its .pro (F1, F2); Ctrl-Q leaves the way File > Quit does,
+// the front file remembered (F10).
+void theAuditMends(const std::string& rstudio, const std::string& shc) {
+    std::printf("the audit's mends: Shalimar in the build, the three file operations, "
+                "the project's target and compiler\n");
+    file::path dir = file::temp_directory_path() / "rstudio-session-audit";
+    file::remove_all(dir);
+    file::create_directories(dir);
+    const std::string toProject = kF10 + "p";
+
+    // F9: New project, New File prog.shl, a main, F4 - built, not "no source".
+    std::string keys = toProject + kEnter + "Proj" + kEnter;
+    keys += toProject + times(kDown, 5) + kEnter + "prog.shl" + kEnter;
+    keys += "fun <> = main()\n{\n}\n" + ctrl('s');
+    if (!shc.empty()) keys += kF4;
+    Screen made = driveIn(rstudio, "", keys + ctrl('q') + ctrl('q'), dir, dir);
+    std::string pro = readFile(dir / "Proj.pro");
+    check(pro.find("\"Sources\"") != std::string::npos && pro.find("prog.shl") != std::string::npos &&
+          pro.find("\"Shalimar\"") == std::string::npos,
+          "a .shl made in the editor goes to Sources, the group the project builds");
+    if (!shc.empty())
+        check(wasShown(made, "built Proj"), "and F4 builds it");
+    check(wasShown(made, "Proj.pro written"), "and Project > New names the file it wrote");
+
+    // F1, F2: Ctrl-T and Tools > cxx1 with the project open reach the .pro.
+    std::string hostArch;
+    {
+        size_t at = pro.find("\"arch\": \"");
+        if (at != std::string::npos) { at += 9; hostArch = pro.substr(at, pro.find('"', at) - at); }
+    }
+    keys = ctrl('t') + kF10 + "t" + times(kDown, 2) + kEnter + ctrl('q') + ctrl('q');
+    Screen chosen = driveIn(rstudio, "prog.shl", keys, dir, dir);
+    pro = readFile(dir / "Proj.pro");
+    check(wasShown(chosen, "written to Proj.pro"), "the target and the compiler say they were written");
+    check(pro.find("\"toolchain\": \"cxx1\"") != std::string::npos, "Tools > cxx1 is the project's compiler now");
+    // Ctrl-T steps the target on from the host's; a new project wrote the
+    // host's, so the line has changed.
+    check(pro.find("\"arch\": \"") != std::string::npos && pro.find("\"arch\": \"" + hostArch + "\"") == std::string::npos,
+          "and Ctrl-T moved the project's target off the host's");
+    // F10: the file in front is remembered on Ctrl-Q, as on File > Quit.
+    check(pro.find("\"open\": \"prog.shl\"") != std::string::npos, "Ctrl-Q remembers the file in front");
+
+    // F8: Rename, Delete and Move to group, from the Project menu.
+    keys = toProject + times(kDown, 8) + kEnter + "main.shl" + kEnter + ctrl('q') + ctrl('q');
+    Screen renamed = driveIn(rstudio, "prog.shl", keys, dir, dir);
+    check(file::exists(dir / "main.shl") && !file::exists(dir / "prog.shl"), "Rename File renames it on disk");
+    check(readFile(dir / "Proj.pro").find("main.shl") != std::string::npos, "and in the project");
+    keys = toProject + times(kDown, 10) + kEnter + "Programs" + kEnter + ctrl('q') + ctrl('q');
+    Screen moved = driveIn(rstudio, "main.shl", keys, dir, dir);
+    check(readFile(dir / "Proj.pro").find("\"Programs\"") != std::string::npos, "Move to Group makes the group and puts it there");
+    keys = toProject + times(kDown, 9) + kEnter + "yes" + kEnter + ctrl('q') + ctrl('q');
+    Screen deleted = driveIn(rstudio, "main.shl", keys, dir, dir);
+    check(!file::exists(dir / "main.shl"), "Delete File, after 'yes', deletes it");
+    check(readFile(dir / "Proj.pro").find("main.shl") == std::string::npos, "and takes it out of the project");
+    (void)renamed; (void)moved; (void)deleted;
+
+    file::remove_all(dir);
+}
+
 int main(int argc, char** argv) {
 #ifdef _WIN32
     std::string rstudio = "RStudioConsole.exe";
@@ -2784,6 +2847,7 @@ int main(int argc, char** argv) {
     theHelpMenu(rstudio);
     theMenuSaysWhereYouAre(rstudio);
     theDebugMenuGroups(rstudio, shc);
+    theAuditMends(rstudio, shc);
 
     std::printf("\n%d checks, %d failed\n", checks, failures);
     return failures == 0 ? 0 : 1;

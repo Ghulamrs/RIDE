@@ -30,7 +30,9 @@ importantly **`Ctrl+PageDown`/`Ctrl+PageUp` move between files** there, because
 `Ctrl-N`; menus are reached with `Alt`+the underlined letter.
 
 **The menus:** File, Edit, Project (New / Open / Save / Save as / Close, then New
-File / Add File / Remove File), Build (Compile / Run / Build project / Run
+File / Add File / Remove File / Rename File / Delete File / Move to Group - the
+last three act on the file in front, or on the one picked in the project pane,
+and the project follows the file), Build (Compile / Run / Build project / Run
 project / Debug / Release / and the Console/Debug/Assembly tabs), Debug,
 Language (By extension / C / C++ / Shalimar / JSON / Plain text), Tools (By
 language / cc1 / cxx1 / shc / MSVC (cl) / C++ (host)), Target (the architectures),

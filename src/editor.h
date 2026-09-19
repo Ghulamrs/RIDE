@@ -220,6 +220,8 @@ private:
     void newProject();
     void saveProject();
     void resetDebug();
+    void chooseArch(size_t which);
+    void chooseTool(ToolchainKind kind, const std::string& named);
     void showHelpContents();
     void showKeys();
     void showAbout();

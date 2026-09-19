@@ -2184,6 +2184,45 @@ void Editor::saveProject() {
     say(done.message);
 }
 
+// The target and the compiler are the project's while one is open - written
+// to its .pro, which is what the manual promised and what a project needs to
+// open the same way next time - and the installation's default otherwise.
+// Until 2026-09-19 the Target menu wrote nothing and the Tools menu wrote
+// settings.json whatever was open, so Ctrl-K inside one project changed the
+// compiler of every other.
+void Editor::chooseArch(size_t which) {
+    arch_ = which;
+    resetDebug();
+    std::string said = std::string("target: ") + kArches[arch_];
+    ToolchainKind takes = resolve(tool_, lang_);
+    if (!usesArch(takes))
+        said += " - a cc1, cxx1 or shc setting; " + toolchainShown(tool_, takes) + " builds for its own host";
+    if (project_.loaded()) {
+        project_.setArch(kArches[arch_]);
+        std::string error;
+        said += project_.save(error) ? " - written to " + path::filename(project_.file())
+                                     : " - but " + error;
+    }
+    say(said);
+}
+
+void Editor::chooseTool(ToolchainKind kind, const std::string& named) {
+    tool_.kind = kind;
+    resetDebug();
+    std::string said = "compiler: " + named +
+                       (kind == ToolAuto ? " - this one goes to " + std::string(toolchainName(resolve(tool_, lang_)))
+                                         : std::string(", for every file"));
+    if (project_.loaded()) {
+        project_.setToolchain(kind);
+        std::string error;
+        said += project_.save(error) ? " - written to " + path::filename(project_.file())
+                                     : " - but " + error;
+    } else {
+        settings::rememberDefaultCompiler(toolchainWord(kind));
+    }
+    say(said);
+}
+
 void Editor::resetDebug() {
 
     debug_.clear();
@@ -3222,12 +3261,7 @@ void Editor::perform(Action action) {
         case ActionArchLinux:
         case ActionArchDarwin:
         case ActionArchTms6747:
-            arch_ = static_cast<size_t>(action - ActionArchWindows);
-            resetDebug();
-            say(usesArch(tool_.kind)
-                    ? std::string("target: ") + kArches[arch_]
-                    : std::string("target is a cc1, cxx1 or shc setting - " +
-                                  toolchainShown(tool_, tool_.kind) + " builds for its own host"));
+            chooseArch(static_cast<size_t>(action - ActionArchWindows));
             break;
         case ActionLangAuto:
             langChoice_ = LangCount;
@@ -3248,45 +3282,12 @@ void Editor::perform(Action action) {
             say(std::string("language: ") + languageName(lang_) + ", for every file");
             break;
         }
-        case ActionToolShc:
-            tool_.kind = ToolShc;
-            settings::rememberDefaultCompiler("shc");
-            resetDebug();
-            say("compiler: shc, for every file");
-            break;
-        case ActionToolAuto:
-            tool_.kind = ToolAuto;
-            settings::rememberDefaultCompiler("auto");
-            resetDebug();
-            say(std::string("compiler: chosen by the file - this one goes to ") +
-                toolchainName(resolve(tool_, lang_)));
-            break;
-        case ActionToolCc1:
-            tool_.kind = ToolCc1;
-            settings::rememberDefaultCompiler("cc1");
-            resetDebug();
-            say("compiler: cc1, for every file");
-            break;
-        case ActionToolCxx1:
-            tool_.kind = ToolCxx1;
-            settings::rememberDefaultCompiler("cxx1");
-            resetDebug();
-            say("compiler: cxx1, for every file");
-            break;
-        case ActionToolMsvc:
-            tool_.kind = ToolMsvc;
-            settings::rememberDefaultCompiler("msvc");
-            resetDebug();
-            say("compiler: cl, for every file");
-            break;
-        case ActionToolCxx:
-
-            tool_.kind = hostCppToolchain();
-            settings::rememberDefaultCompiler(toolchainWord(tool_.kind));
-            resetDebug();
-
-            say("compiler: " + toolchainShown(tool_, tool_.kind) + ", for every file");
-            break;
+        case ActionToolShc:  chooseTool(ToolShc, "shc"); break;
+        case ActionToolAuto: chooseTool(ToolAuto, "chosen by the file"); break;
+        case ActionToolCc1:  chooseTool(ToolCc1, "cc1"); break;
+        case ActionToolCxx1: chooseTool(ToolCxx1, "cxx1"); break;
+        case ActionToolMsvc: chooseTool(ToolMsvc, "cl"); break;
+        case ActionToolCxx:  chooseTool(hostCppToolchain(), toolchainShown(tool_, hostCppToolchain())); break;
         case ActionHelpContents: showHelpContents(); break;
         case ActionKeys:         showKeys(); break;
         case ActionAbout:        showAbout(); break;
@@ -3414,10 +3415,7 @@ void Editor::processKey(int key) {
         case KEY_CTRL_UP:   perform(ActionFrameUp); return;
         case KEY_CTRL_DOWN: perform(ActionFrameDown); return;
 
-        case ctrl('q'):
-            if (!mayLeave()) return;
-            running_ = false;
-            return;
+        case ctrl('q'): perform(ActionQuit); return;   // the menu's Quit: the same way out
 
         case ctrl('s'): perform(ActionSave); return;
         case ctrl('b'): perform(ActionBuild); return;
@@ -3457,10 +3455,7 @@ void Editor::processKey(int key) {
             return;
         case ctrl('w'): cycleFocus(); return;
 
-        case ctrl('t'):
-            arch_ = (arch_ + 1) % kArchCount;
-            say(std::string("target: ") + kArches[arch_] + " - Ctrl-B to build it");
-            return;
+        case ctrl('t'): chooseArch((arch_ + 1) % kArchCount); return;
 
         case KEY_ARROW_UP:
         case KEY_ARROW_DOWN:

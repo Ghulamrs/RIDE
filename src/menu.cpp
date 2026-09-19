@@ -53,6 +53,9 @@ Menu::Menu() : active_(false), dropped_(false), column_(0), item_(0) {
     project.items.push_back({"New File", "", ActionFileCreate});
     project.items.push_back({"Add File", "", ActionProjectAdd});
     project.items.push_back({"Remove File", "", ActionProjectRemove});
+    project.items.push_back({"Rename File...", "", ActionFileRename});
+    project.items.push_back({"Delete File...", "", ActionFileDelete});
+    project.items.push_back({"Move to Group...", "", ActionFileRegroup});
     project.items.push_back(separator());
     project.items.push_back({"1 (no recent project)", "", ActionProjectRecent});
     project.items.push_back({"2", "", ActionProjectRecent2});

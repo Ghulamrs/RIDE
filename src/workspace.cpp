@@ -130,13 +130,16 @@ bool endsWith(const std::string& name, const std::string& suffix) {
     return true;
 }
 
+// A source of any of the three languages goes to Sources - the one group a
+// project made here builds from. Shalimar had a group of its own until
+// 2026-09-19, and a .shl made or added in the editor therefore never reached
+// the build; the rule that Shalimar and C cannot share a group is the
+// build's to state, when it happens, not the pane's to prevent by default.
 std::string groupForNamed(const std::string& name) {
     if (endsWith(name, ".h") || endsWith(name, ".hpp")) return "Headers";
 
-    if (endsWith(name, ".shl")) return "Shalimar";
-
-    const char* const sources[4] = {".c", ".cpp", ".cc", ".s"};
-    for (size_t i = 0; i < 4; ++i)
+    const char* const sources[6] = {".c", ".cpp", ".cc", ".cxx", ".shl", ".s"};
+    for (size_t i = 0; i < 6; ++i)
         if (endsWith(name, sources[i])) return "Sources";
 
     return std::string();
@@ -183,7 +186,7 @@ Outcome beginFromWhatIsThere(Project& project, const std::string& directory) {
     Outcome done = saveProject(project);
     if (!done.ok) return done;
 
-    done.message = project.name() + " - no " + Project::fileName() + " here, so one was made";
+    done.message = project.name() + " - no project here, so " + path::filename(project.file()) + " was made";
     if (found > 0) {
         char many[32];
         std::snprintf(many, sizeof many, "%lu", static_cast<unsigned long>(found));
@@ -247,6 +250,7 @@ Outcome deleteFile(Project& project, const std::string& absolute) {
         return no("could not delete " + relative + " - it is still there");
 
     project.removeFile(relative);
+    if (project.openFile() == relative) project.setOpenFile(std::string());
     return andSave(project, relative + " deleted", std::string());
 }
 
@@ -306,6 +310,8 @@ Outcome removeExisting(Project& project, const std::string& absolute) {
     std::string relative = project.relative(absolute);
 
     if (!project.removeFile(relative)) return no(relative + " is not in the project");
+    // a file out of the project is not the one it opens with
+    if (project.openFile() == relative) project.setOpenFile(std::string());
 
     return andSave(project, relative + " removed from the project - the file is still there",
                    std::string());
@@ -322,7 +328,7 @@ Outcome beginProject(Project& project, const std::string& directory,
         std::string why;
         if (Project::allows(relative, why)) project.addFile(relative, "Sources");
     }
-    return andSave(project, std::string(Project::fileName()) + " written - " + name,
+    return andSave(project, path::filename(project.file()) + " written - " + name,
                    project.file());
 }
 

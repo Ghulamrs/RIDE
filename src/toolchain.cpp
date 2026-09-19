@@ -526,8 +526,12 @@ Recipe targetRecipe(const Toolchain& tool, ToolchainKind kind,
             // the files beside it that it calls into, which shc compiles as one
             // - a library file on its own has no main() and is refused. So all
             // the sources go in one command, and one .s comes out.
+            // Named after the program without the .exe Windows gives it, as
+            // the .vm directory is: prog.s in prog.vm, on every host.
+            std::string stem = path::filename(emulatedProgram(program));
+            stem.resize(stem.size() - 3);
             recipe.command = quote(programOf(tool, kind)) + named + " -S" + archFlag(kind, arch) + " -o " +
-                             quote(path::join(dir, path::filename(program) + ".s")) + configFlags(kind, config, arch);
+                             quote(path::join(dir, stem + ".s")) + configFlags(kind, config, arch);
             return recipe;
         }
         for (size_t i = 0; i < sources.size(); ++i) {

@@ -233,7 +233,7 @@ bool Project::load(const std::string& dir, std::string& error) {
         return false;
     }
     if (!root.is(Json::Object)) {
-        error = std::string(fileName()) + ": the file should hold one object";
+        error = path::filename(path) + ": the file should hold one object";
         return false;
     }
 
@@ -655,7 +655,7 @@ bool Project::targetParts(std::vector<Part>& parts, std::string& why,
                    (gone.size() == 2 ? " other" : " others") + ")";
         }
         if (detail) {
-            *detail = std::string("The build list in ") + fileName() +
+            *detail = std::string("The build list in ") + path::filename(file_) +
                       " names files that are not there: ";
             for (size_t i = 0; i < gone.size(); ++i) {
                 if (i) *detail += ", ";

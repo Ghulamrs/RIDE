@@ -81,6 +81,10 @@ int rstudio_project_toolchain(RStudioProject* project);
 int rstudio_configuration(void);
 void rstudio_remember_configuration(int config);
 const char* rstudio_project_arch(RStudioProject* project);
+// The project's own target and compiler, set from the Target and Tools
+// menus while it is open and written to its .pro at once; 0 with no project.
+int rstudio_project_set_arch(RStudioProject* project, const char* arch);
+int rstudio_project_set_toolchain(RStudioProject* project, int kind);
 
 int rstudio_project_allows(const char* relative, char* why, int whySize);
 

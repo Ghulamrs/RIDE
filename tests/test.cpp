@@ -970,6 +970,17 @@ void writeSource(const std::string& where, const char* text) {
     out << text;
 }
 
+// What the editor remembers between sessions, and what it opens when there is
+// nothing to remember. Both are about the machine you are on, so both are
+// checked with home pointed somewhere disposable.
+void sayWhereHomeIs(const std::string& where) {
+#ifdef _WIN32
+    _putenv_s("USERPROFILE", where.c_str());
+#else
+    setenv("HOME", where.c_str(), 1);
+#endif
+}
+
 void projects() {
     std::printf("the project\n");
 
@@ -1245,9 +1256,15 @@ void projects() {
           "and, saying nothing about a build, builds its Sources");
     check(error.empty() && small.indent().width == 4 && !small.indent().tabs,
           "and every setting falls back to its default");
+    // From a home of its own: the live one says whatever was chosen last,
+    // which failed this on the box every time Release was selected there.
+    std::string wasHome = editor::path::homeDir();
+    file::create_directories(dir / "home");
+    sayWhereHomeIs((dir / "home").string());
     checkEqual(editor::settings::configuration(), "debug",
                "and the configuration defaults to debug, which is what you want "
                "while the code is still being written");
+    sayWhereHomeIs(wasHome);
 
     file::remove_all(dir);
 }
@@ -2897,6 +2914,20 @@ void theWindowsProjectBuild() {
               editor::ToolMsvc,
           "the one the group named");
 
+    // The Target and Tools menus write the project's own target and compiler
+    // while it is open (the audit of 2026-09-19: they had never reached the
+    // file), and read back as written.
+    check(rstudio_project_set_arch(project, "tms6747") != 0, "the window sets the project's target");
+    check(rstudio_project_set_toolchain(project, editor::ToolCxx1) != 0, "and its compiler");
+    check(rstudio_project_load(project, dir.string().c_str(), trouble, sizeof trouble) != 0 &&
+              std::string(rstudio_project_arch(project)) == "tms6747" &&
+              rstudio_project_toolchain(project) == editor::ToolCxx1,
+          "and both are in the .pro when it is read again");
+    RStudioProject* none = rstudio_project_new();
+    check(rstudio_project_set_arch(none, "tms6747") == 0 && rstudio_project_set_toolchain(none, editor::ToolCc1) == 0,
+          "with no project open there is nothing to write, and the window is told so");
+    rstudio_project_free(none);
+
     rstudio_project_free(project);
     file::remove_all(dir);
 }
@@ -3174,16 +3205,6 @@ void aProjectMadeFromWhatIsThere() {
     pth::removeTree(dir);
 }
 
-// What the editor remembers between sessions, and what it opens when there is
-// nothing to remember. Both are about the machine you are on, so both are
-// checked with home pointed somewhere disposable.
-void sayWhereHomeIs(const std::string& where) {
-#ifdef _WIN32
-    _putenv_s("USERPROFILE", where.c_str());
-#else
-    setenv("HOME", where.c_str(), 1);
-#endif
-}
 
 // The project file's old name, which is a different promise from the settings
 // file's: a project written as ed1.json opens, and stays ed1.json. Nothing here
@@ -3249,8 +3270,9 @@ void whereAFileBelongs() {
     checkEqual(editor::groupForFile("wide.cc"), "Sources", "and a .cc");
     checkEqual(editor::groupForFile("counter.h"), "Headers", "a .h is a header");
     checkEqual(editor::groupForFile("vector3.hpp"), "Headers", "and a .hpp");
-    checkEqual(editor::groupForFile("gcd.shl"), "Shalimar",
-               "Shalimar goes in a group of its own, since it shares one with nothing");
+    checkEqual(editor::groupForFile("gcd.shl"), "Sources",
+               "and a .shl - Sources is the group a new project builds, and a group "
+               "of its own kept every Shalimar file made here out of the build");
     check(editor::groupForFile("notes.txt").empty(),
           "and something this editor does not compile belongs nowhere");
 
