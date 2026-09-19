@@ -541,6 +541,11 @@ const char* rstudio_project_arch(RStudioProject* project) {
     return project->answer.c_str();
 }
 
+int rstudio_project_runs_as_project(RStudioProject* project, const char* source) {
+    if (!project || !source) return 0;
+    return static_cast<int>(project->project.runsAsProject(source));
+}
+
 int rstudio_project_set_arch(RStudioProject* project, const char* arch) {
     if (!project || !project->project.loaded() || !arch) return 0;
     project->project.setArch(arch);

@@ -8,7 +8,7 @@
 | Key | Does | Key | Does |
 |-----|------|-----|------|
 | `F1` | the keys | `Ctrl-B` | compile this file |
-| `F10` | the menu | `F5` | run this file |
+| `F10` | the menu | `F5` | run this file - or the project it is one source of |
 | `F2`/`F3` | previous / next file | `F4` | build the project |
 | `F9` | breakpoint | `F8` | debug — start / continue |
 | `F7`/`F6` | step over / into | `Ctrl-D` | debug or release |

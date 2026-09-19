@@ -436,6 +436,24 @@ bool Project::allows(const std::string& rel, std::string& why) {
     return true;
 }
 
+size_t Project::runsAsProject(const std::string& file) const {
+    if (!loaded() || !builds() || file.empty()) return 0;
+    std::vector<Part> parts;
+    std::string why;
+    if (!targetParts(parts, why)) return 0;
+    size_t count = 0;
+    bool mine = false;
+    // Compared the way the pane names a file: relative to the root, slashes
+    // one way - relative() answers the same for the file whichever way it came.
+    std::string wanted = relative(path::absolute(file));
+    for (size_t i = 0; i < parts.size(); ++i)
+        for (size_t k = 0; k < parts[i].sources.size(); ++k) {
+            ++count;
+            if (relative(parts[i].sources[k]) == wanted) mine = true;   // parts hold full paths
+        }
+    return mine && count > 1 ? count : 0;
+}
+
 std::vector<std::string> Project::directories() const {
     std::vector<std::string> found;
     for (size_t i = 0; i < groups_.size(); ++i) {

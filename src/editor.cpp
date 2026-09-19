@@ -2603,6 +2603,13 @@ void Editor::compile() {
 }
 
 void Editor::buildAndRun() {
+    // One source of several: the project is what runs (Project::runsAsProject).
+    if (size_t of = project_.runsAsProject(buf_.path())) {
+        say(baseName(buf_.path()) + " is one of " + std::to_string(of) + " sources of " +
+            project_.name() + " - running the project");
+        buildProject(true);
+        return;
+    }
     ToolchainKind kind = resolve(tool_, lang_);
     if (!canCompile(kind, lang_)) {
         say(refusal(kind, lang_));

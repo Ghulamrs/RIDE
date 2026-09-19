@@ -2905,6 +2905,11 @@ void theWindowsProjectBuild() {
     check(rstudio_project_part_toolchain(project, 0, "cc1", "cl", "shc", "cxx1", editor::ToolAuto) ==
               editor::ToolCc1,
           "which go to cc1");
+    // Run file on one of them is Run project: alone it links against nothing.
+    check(rstudio_project_runs_as_project(project, (dir / "main.c").string().c_str()) == 3,
+          "Run file on one of three sources runs the project - the window is told three");
+    check(rstudio_project_runs_as_project(project, (dir / "other.c").string().c_str()) == 0,
+          "and a file outside the build runs as itself");
     check(rstudio_project_part_toolchain(project, 1, "cc1", "cl", "shc", "cxx1", editor::ToolAuto) ==
               (editor::resolve(editor::Toolchain(), editor::LangCpp)),
           "and to this machine's C++ compiler, without the window being told which");

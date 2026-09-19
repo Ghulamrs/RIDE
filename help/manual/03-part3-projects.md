@@ -113,7 +113,9 @@ Field by field:
 **What the `.pro` provides:**
 
 - A named program made from a chosen set of sources, so `Build project` (F4) and
-  `Run project` know what to make without you naming files each time.
+  `Run project` know what to make without you naming files each time. `Run
+  file` (F5) on one of those sources runs the project too: one file of several
+  links against nothing on its own, and the status line says which it did.
 - Per-group compiler choice, so a C-and-C++ program is expressible: a group of
   both languages is split, the C to `cc1i` and the C++ to `cxx1i`, and the
   objects are linked (Part IV chapter 15).

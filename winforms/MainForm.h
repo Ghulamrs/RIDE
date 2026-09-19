@@ -2931,6 +2931,19 @@ private:
         }
         OnSave(nullptr, nullptr);
 
+        {
+            array<Byte>^ askBytes = Utf8Of(path_);
+            pin_ptr<Byte> ask = &askBytes[0];
+            int of = rstudio_project_runs_as_project(project_, reinterpret_cast<const char*>(ask));
+            if (of > 0) {
+                what_->Text = System::IO::Path::GetFileName(path_) + " is one of " + of +
+                              " sources of " + FromUtf8(rstudio_project_name(project_)) +
+                              " - running the project";
+                BuildProject(true);
+                return;
+            }
+        }
+
         int language = LanguageNow();
         int kind = rstudio_resolve(toolKind_, language);
         if (rstudio_can_compile(kind, language) == 0) {
@@ -3011,6 +3024,19 @@ private:
             return;
         }
         OnSave(nullptr, nullptr);
+
+        {
+            array<Byte>^ askBytes = Utf8Of(path_);
+            pin_ptr<Byte> ask = &askBytes[0];
+            int of = rstudio_project_runs_as_project(project_, reinterpret_cast<const char*>(ask));
+            if (of > 0) {
+                what_->Text = System::IO::Path::GetFileName(path_) + " is one of " + of +
+                              " sources of " + FromUtf8(rstudio_project_name(project_)) +
+                              " - running the project";
+                BuildProject(true);
+                return;
+            }
+        }
 
         int language = LanguageNow();
         int kind = rstudio_resolve(toolKind_, language);

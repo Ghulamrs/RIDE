@@ -81,6 +81,9 @@ int rstudio_project_toolchain(RStudioProject* project);
 int rstudio_configuration(void);
 void rstudio_remember_configuration(int config);
 const char* rstudio_project_arch(RStudioProject* project);
+/* Run file on one source of a several-source build: the count of sources it
+   is one of, or 0 - then the window runs the project instead. */
+int rstudio_project_runs_as_project(RStudioProject* project, const char* source);
 // The project's own target and compiler, set from the Target and Tools
 // menus while it is open and written to its .pro at once; 0 with no project.
 int rstudio_project_set_arch(RStudioProject* project, const char* arch);

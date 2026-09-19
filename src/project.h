@@ -68,6 +68,11 @@ public:
 
     bool targetSources(std::vector<std::string>& sources, Language& lang,
                        std::string& why, std::string* detail = 0) const;
+    // **Run file on one source of a several-source build runs the project.**
+    // The file alone links against nothing, and a wall of unresolved names
+    // is what Run file gave on CXX1Lab. Answers the count of sources the
+    // file is one of, or 0 when it is not part of the build or stands alone.
+    size_t runsAsProject(const std::string& file) const;
 
     bool targetParts(std::vector<Part>& parts, std::string& why,
                      std::string* detail = 0) const;
