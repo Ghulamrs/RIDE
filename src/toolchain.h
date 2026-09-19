@@ -108,6 +108,8 @@ bool canCompile(ToolchainKind kind, Language lang);
 std::string refusal(ToolchainKind kind, Language lang);
 
 const char* hostArch();
+// One of the three machines' own targets, as against the emulated C6000.
+bool isHostArch(const std::string& arch);
 
 bool runsHere(ToolchainKind kind, const std::string& arch);
 

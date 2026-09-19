@@ -427,6 +427,10 @@ const char* hostArch() {
 #endif
 }
 
+bool isHostArch(const std::string& arch) {
+    return arch == "x86_64-linux" || arch == "arm64-darwin" || arch == "x86_64-windows";
+}
+
 bool runsHere(ToolchainKind kind, const std::string& arch) {
 
     if (kind == ToolMsvc || kind == ToolCxx) return true;

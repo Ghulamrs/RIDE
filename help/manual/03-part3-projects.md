@@ -75,7 +75,10 @@ Field by field:
 - **`arch`** — the target the project builds for: one of `x86_64-windows`,
   `x86_64-linux`, `arm64-darwin`, `tms6747`. The Target menu (and Ctrl-T)
   changes it and writes it while the project is open; a project that names
-  none gets this machine's host target.
+  none gets this machine's host target, and so does one that names another
+  machine's - a project written on a Mac opens on Windows as `x86_64-windows`,
+  since a host target is the machine's by nature. `tms6747` is kept wherever
+  the project goes: the emulator runs it on every machine.
 - **`indent`** / **`tabs`** — how the editor lays this project's files out;
   absent, the installation's `settings.json` answers, and a new project
   writes neither.

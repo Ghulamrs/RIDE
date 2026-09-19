@@ -1256,6 +1256,19 @@ void projects() {
           "and, saying nothing about a build, builds its Sources");
     check(error.empty() && small.indent().width == 4 && !small.indent().tabs,
           "and every setting falls back to its default");
+    // A project written on another machine names that machine's target; opened
+    // here it is this machine's, and the emulated target is kept as written.
+    file::path moved = dir / "moved";
+    file::create_directories(moved);
+    const char* elsewhere = std::string(editor::hostArch()) == "x86_64-linux" ? "arm64-darwin" : "x86_64-linux";
+    { std::ofstream f((moved / "RStudio.json").string().c_str()); f << "{ \"arch\": \"" << elsewhere << "\" }\n"; }
+    editor::Project came;
+    check(came.load(moved.string(), error) && came.arch() == editor::hostArch(),
+          "another host's target reads as this host's");
+    { std::ofstream f((moved / "RStudio.json").string().c_str()); f << "{ \"arch\": \"tms6747\" }\n"; }
+    editor::Project emulated;
+    check(emulated.load(moved.string(), error) && emulated.arch() == "tms6747",
+          "and the emulated target stays as written");
     // From a home of its own: the live one says whatever was chosen last,
     // which failed this on the box every time Release was selected there.
     std::string wasHome = editor::path::homeDir();

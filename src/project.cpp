@@ -232,7 +232,14 @@ bool Project::load(const std::string& dir, std::string& error) {
     name_ = root.get("name").text(path::filename(base));
     toolchain_ = toolchainFrom(root.get("toolchain").text("auto"));
 
+    // **Another machine's host target means this machine's.** A project moves
+    // between the three hosts - CXX1Lab.pro, written on a Mac, opened on the
+    // Windows box - and `arm64-darwin` there only reaches -S, so Build made an
+    // assembly and Run was refused. A host target is bound to a machine by
+    // its nature; the emulated one is not and stays. The file is not rewritten
+    // until a target is chosen, so the Mac reads its own back unchanged.
     arch_ = root.get("arch").text(hostArch());
+    if (isHostArch(arch_) && arch_ != hostArch()) arch_ = hostArch();
 
     indentSaid_ = root.has("indent") || root.has("tabs");
     indent_.width = static_cast<size_t>(root.get("indent").integer(static_cast<long>(settings::indentWidth())));
