@@ -1233,6 +1233,23 @@ void projects() {
                    "a relative one against the file");
         check(editor::settings::rememberVcvars("no-such-file.bat") && editor::settings::vcvars().empty(),
               "a vcvars that is not there counts for nothing");
+        // The two linkers - LINK's for x86_64-windows, LNK6X's for tms6747 -
+        // are named the way the assembler is: a path that exists, or nothing.
+        check(editor::settings::linker().empty() && editor::settings::tilinker().empty(),
+              "no linker of the project's own until one is named");
+        check(editor::settings::rememberLinker("no-such-link.exe") && editor::settings::linker().empty(),
+              "a linker that is not there counts for nothing");
+        std::string self = editor::path::absolute((app / "settings.json").string());
+        check(editor::settings::rememberLinker(self) && editor::settings::linker() == self,
+              "one that is there is the linker for x86_64-windows");
+        check(editor::settings::rememberTilinker(self) && editor::settings::tilinker() == self,
+              "and, named apart, the linker for tms6747");
+        editor::settings::overrideTilinker("for-this-run");
+        checkEqual(editor::settings::tilinker(), "for-this-run", "--tilinker wins for the run");
+        editor::settings::overrideTilinker(std::string());
+        check(editor::settings::rememberLinker(std::string()) && editor::settings::rememberTilinker(std::string())
+                  && editor::settings::linker().empty() && editor::settings::tilinker().empty(),
+              "and `-` puts link.exe and lnk6x back");
         editor::settings::pretendInstalledAt(std::string());
         check(editor::settings::includeDir().empty() || true, "and the suite's own binary is back in charge");
     }

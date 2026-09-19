@@ -250,8 +250,10 @@ std::string vcvars() {
 // the onexit table before main, and the window died with STATUS_HEAP_CORRUPTION
 // on every start from 2026-09-18 until these three were found on the 19th.
 static std::string* assemblerForThisRun = 0;
+static std::string* linkerForThisRun = 0;
 static std::string* tiForThisRun = 0;
 static std::string* tilibForThisRun = 0;
+static std::string* tilinkerForThisRun = 0;
 static void overrideWith(std::string*& slot, const std::string& value) {
     if (!slot) slot = new std::string();
     *slot = value;
@@ -261,6 +263,14 @@ void overrideAssembler(const std::string& p) { overrideWith(assemblerForThisRun,
 std::string assembler() {
     if (assemblerForThisRun && !assemblerForThisRun->empty()) return *assemblerForThisRun;
     std::string said = readInstall().get("assembler").text(std::string());
+    return (!said.empty() && path::exists(said)) ? said : std::string();
+}
+
+void overrideLinker(const std::string& p) { overrideWith(linkerForThisRun, p); }
+
+std::string linker() {
+    if (linkerForThisRun && !linkerForThisRun->empty()) return *linkerForThisRun;
+    std::string said = readInstall().get("linker").text(std::string());
     return (!said.empty() && path::exists(said)) ? said : std::string();
 }
 
@@ -278,6 +288,14 @@ std::string tilib() {
     if (tilibForThisRun && !tilibForThisRun->empty()) return *tilibForThisRun;
     std::string said = readInstall().get("tilib").text(std::string());
     return (!said.empty() && path::isDirectory(said)) ? said : std::string();
+}
+
+void overrideTilinker(const std::string& p) { overrideWith(tilinkerForThisRun, p); }
+
+std::string tilinker() {
+    if (tilinkerForThisRun && !tilinkerForThisRun->empty()) return *tilinkerForThisRun;
+    std::string said = readInstall().get("tilinker").text(std::string());
+    return (!said.empty() && path::exists(said)) ? said : std::string();
 }
 
 namespace {
@@ -343,10 +361,22 @@ bool rememberAssembler(const std::string& file) {
     return writeInstall(root);
 }
 
+bool rememberLinker(const std::string& file) {
+    Json root = readInstall();
+    root.set("linker", Json::fromText(file));
+    return writeInstall(root);
+}
+
 bool rememberTi(const std::string& dir, const std::string& lib) {
     Json root = readInstall();
     root.set("ti", Json::fromText(dir));
     root.set("tilib", Json::fromText(lib));
+    return writeInstall(root);
+}
+
+bool rememberTilinker(const std::string& file) {
+    Json root = readInstall();
+    root.set("tilinker", Json::fromText(file));
     return writeInstall(root);
 }
 
@@ -358,8 +388,10 @@ bool writeInstallFileIfAbsent() {
     root.set("lib", Json::fromText("lib"));
     root.set("vcvars", Json::fromText(""));
     root.set("assembler", Json::fromText(""));
+    root.set("linker", Json::fromText(""));
     root.set("ti", Json::fromText(""));
     root.set("tilib", Json::fromText(""));
+    root.set("tilinker", Json::fromText(""));
     root.set("compiler", Json::fromText("auto"));
     root.set("indent", Json::fromNumber(4));
     root.set("tabs", Json::fromBool(false));

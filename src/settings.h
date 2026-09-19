@@ -57,6 +57,11 @@ std::string vcvars();
 // -masm=masm. Empty, and the compilers choose as they always did.
 std::string assembler();
 void overrideAssembler(const std::string& path);   // --assembler, for this run only
+// **The linker for x86_64-windows**, the project's own (Ghulamrs/LINK's
+// link) named by its path: a Windows build then links through it instead of
+// Microsoft's link.exe. Empty, and link.exe (or CC1_LD) as always.
+std::string linker();
+void overrideLinker(const std::string& path);      // --linker, for this run only
 // **TI's C6000 compiler directory**, for tms6747: CCS's ti-cgt-c6000 root,
 // whose bin\lnk6x links what asm6x - the project's own assembler, beside the
 // editor - made of a tms6747 build into a real .out, against the runtime in
@@ -68,6 +73,12 @@ std::string ti();
 std::string tilib();
 void overrideTi(const std::string& dir);           // --ti, for this run only
 void overrideTilib(const std::string& dir);        // --tilib, for this run only
+// **The linker for tms6747**, the project's own (Ghulamrs/LNK6X's lnk6x)
+// named by its path: a tms6747 build then links its .out through it instead
+// of TI's bin\lnk6x - still against TI's runtime, which "ti" and "tilib"
+// name. Empty, and TI's lnk6x as always.
+std::string tilinker();
+void overrideTilinker(const std::string& path);    // --tilinker, for this run only
 // The compiler chosen when the editor starts and no project or command
 // line says otherwise: auto, cc1, cxx1, shc, msvc or c++ - "compiler" in
 // the installation's settings.json. Choosing one from the menu writes it.
@@ -83,7 +94,9 @@ bool rememberDefaultCompiler(const std::string& word);
 bool rememberHeaderDirs(const std::string& include, const std::string& lib);
 bool rememberVcvars(const std::string& file);
 bool rememberAssembler(const std::string& file);
+bool rememberLinker(const std::string& file);
 bool rememberTi(const std::string& dir, const std::string& lib);
+bool rememberTilinker(const std::string& file);
 // Writes the file with the two directories when there is none yet, so that a
 // person opening the installation sees what is in force.
 bool writeInstallFileIfAbsent();

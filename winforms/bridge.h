@@ -128,6 +128,11 @@ const char* rstudio_assembler(void);
 int rstudio_remember_assembler(const char* file);
 // TI's C6000 compiler directory and the runtime directory beside it, for a
 // tms6747 build's .out, and the choice written back.
+// The linkers named for x86_64-windows and tms6747, and the choices written back.
+const char* rstudio_linker(void);
+int rstudio_remember_linker(const char* file);
+const char* rstudio_tilinker(void);
+int rstudio_remember_tilinker(const char* file);
 const char* rstudio_ti(void);
 const char* rstudio_tilib(void);
 int rstudio_remember_ti(const char* dir, const char* lib);

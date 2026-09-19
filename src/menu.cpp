@@ -132,7 +132,9 @@ Menu::Menu() : active_(false), dropped_(false), column_(0), item_(0) {
     tools.items.push_back({"Project libraries...", "", ActionOwnLibraries});
     tools.items.push_back({"Locate vcvars64.bat...", "", ActionLocateVcvars});
     tools.items.push_back({"Assembler for x86_64-windows...", "", ActionLocateAssembler});
+    tools.items.push_back({"Linker for x86_64-windows...", "", ActionLocateLinker});
     tools.items.push_back({"TI compiler for tms6747...", "", ActionLocateTi});
+    tools.items.push_back({"Linker for tms6747...", "", ActionLocateTilinker});
     columns_.push_back(tools);
 
     MenuColumn target;

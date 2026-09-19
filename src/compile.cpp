@@ -426,7 +426,11 @@ void makeTiProgram(Built& result, const std::string& program, LineSink sink, voi
         if (sink) sink(context, "[" + std::to_string(objects.size()) + " TI objects made; a .out needs TI's linker, named under Tools]");
         return;
     }
-    std::string lnk = path::join(path::join(ti, "bin"), "lnk6x.exe");
+    // The project's own C6000 linker where one is named, TI's otherwise;
+    // the runtime and the command file are TI's either way - see
+    // settings::tilinker.
+    std::string lnk = settings::tilinker();
+    if (lnk.empty()) lnk = path::join(path::join(ti, "bin"), "lnk6x.exe");
     if (!path::exists(lnk)) lnk = path::join(path::join(ti, "bin"), "lnk6x");
     if (!path::exists(lnk)) {
         result.ok = false;

@@ -6,7 +6,10 @@ needed. Since 3.5 (2026-09-19) RIDE also assembles tms6747 code itself, with
 its own asm6x beside the compilers, and links a real .out from the editor
 when settings.json names a TI Code Generation Tools install: "ti" is the CGT
 folder and "tilib" the folder holding rts6740_elf_eh.lib (the EH runtime
-mklib builds). To produce a .out and an Intel .hex from the command line
+mklib builds). Since 4.0 a "tilinker" may name a linker of the project's own
+(LNK6x) to use in place of TI's lnk6x, still against TI's runtime; and a
+"linker" the same for x86_64-windows (LINK) in place of link.exe. Both are
+set under Tools, empty by default. To produce a .out and an Intel .hex from the command line
 instead, use ti-build, which uses a CGT install already on this machine
 (none of TI's tools are shipped with RIDE):
 

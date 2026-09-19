@@ -671,8 +671,12 @@ private:
                                   gcnew EventHandler(this, &MainForm::OnLocateVcvars));
         tools->DropDownItems->Add("Assembler for x86_64-windows...", nullptr,
                                   gcnew EventHandler(this, &MainForm::OnLocateAssembler));
+        tools->DropDownItems->Add("Linker for x86_64-windows...", nullptr,
+                                  gcnew EventHandler(this, &MainForm::OnLocateLinker));
         tools->DropDownItems->Add("TI compiler for tms6747...", nullptr,
                                   gcnew EventHandler(this, &MainForm::OnLocateTi));
+        tools->DropDownItems->Add("Linker for tms6747...", nullptr,
+                                  gcnew EventHandler(this, &MainForm::OnLocateTilinker));
         bar->Items->Add(tools);
         bar->Items->Add(target);
 
@@ -2420,6 +2424,35 @@ private:
         }
         what_->Text = "cc1i and cxx1i assemble through " + pick->FileName + " - written to " + file;
     }
+
+    // The project's own linkers - LINK's for x86_64-windows in place of
+    // link.exe, LNK6X's for tms6747 in place of TI's lnk6x - each named by its
+    // path; Cancel keeps what is named, and the console front end's `-`
+    // clears it. One picker serves both, told which setting it is for.
+    void PickLinker(bool ti) {
+        String^ file = FromUtf8(rstudio_install_file());
+        if (file->Length == 0) { what_->Text = "no installation directory to keep this in"; return; }
+        OpenFileDialog^ pick = gcnew OpenFileDialog();
+        pick->Title = ti ? "The linker for tms6747 (lnk6x.exe)" : "The linker for x86_64-windows (link.exe)";
+        pick->Filter = "Programs (*.exe)|*.exe";
+        String^ now = FromUtf8(ti ? rstudio_tilinker() : rstudio_linker());
+        if (now->Length > 0) pick->InitialDirectory = System::IO::Path::GetDirectoryName(now);
+        if (pick->ShowDialog(this) != System::Windows::Forms::DialogResult::OK) {
+            what_->Text = "linker unchanged";
+            return;
+        }
+        array<Byte>^ bytes = Utf8Of(pick->FileName);
+        pin_ptr<Byte> pinned = &bytes[0];
+        int written = ti ? rstudio_remember_tilinker(reinterpret_cast<const char*>(pinned))
+                         : rstudio_remember_linker(reinterpret_cast<const char*>(pinned));
+        if (written == 0) {
+            what_->Text = "cannot write " + file;
+            return;
+        }
+        what_->Text = (ti ? "a tms6747 build links through " : "a Windows build links through ") + pick->FileName + " - written to " + file;
+    }
+    void OnLocateLinker(Object^, EventArgs^) { PickLinker(false); }
+    void OnLocateTilinker(Object^, EventArgs^) { PickLinker(true); }
 
     // TI's C6000 compiler directory (CCS's ti-cgt-c6000_x.y.z), whose lnk6x
     // links what asm6x made of a tms6747 build into a .out - and a second

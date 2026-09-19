@@ -769,6 +769,24 @@ int rstudio_remember_assembler(const char* file) {
     return editor::settings::rememberAssembler(file ? file : "") ? 1 : 0;
 }
 
+const char* rstudio_linker(void) {
+    scratch() = editor::settings::linker();
+    return scratch().c_str();
+}
+
+int rstudio_remember_linker(const char* file) {
+    return editor::settings::rememberLinker(file ? file : "") ? 1 : 0;
+}
+
+const char* rstudio_tilinker(void) {
+    scratch() = editor::settings::tilinker();
+    return scratch().c_str();
+}
+
+int rstudio_remember_tilinker(const char* file) {
+    return editor::settings::rememberTilinker(file ? file : "") ? 1 : 0;
+}
+
 const char* rstudio_ti(void) {
     scratch() = editor::settings::ti();
     return scratch().c_str();

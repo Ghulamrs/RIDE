@@ -573,8 +573,12 @@ const char* hostCppDriver() {
 
 }
 
-const char* linkerNameFor(bool windows, bool withCpp) {
-    if (windows) return hostLinker();
+std::string linkerNameFor(bool windows, bool withCpp) {
+    if (windows) {
+        // The project's linker where one is named - see settings::linker.
+        std::string named = settings::linker();
+        return named.empty() ? std::string(hostLinker()) : named;
+    }
     if (withCpp) return hostCppDriver();
     return hostDriver();
 }

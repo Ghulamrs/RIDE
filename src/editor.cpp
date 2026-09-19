@@ -2193,6 +2193,41 @@ void Editor::locateAssembler() {
         say("cannot write " + file);
 }
 
+// The project's own linker in place of Microsoft's, for x86_64-windows: named
+// by its path and kept in settings.json; `-` puts link.exe back. See
+// settings::linker.
+void Editor::locateLinker() {
+    std::string file = settings::installFile();
+    if (file.empty()) { say("no installation directory to keep this in"); return; }
+    bool cancelled = false;
+    std::string ld = prompt("linker for x86_64-windows, full path [" + settings::linker() + "]: ", cancelled);
+    if (cancelled || ld.empty()) { say("linker unchanged"); return; }
+    if (ld != "-" && !path::exists(ld)) { say("no such file: " + ld); return; }
+    if (settings::rememberLinker(ld == "-" ? std::string() : ld))
+        say("written to " + file + (ld == "-" ? " - a Windows build links with link.exe again"
+                                             : " - a Windows build links through " + ld));
+    else
+        say("cannot write " + file);
+}
+
+// The project's own C6000 linker in place of TI's lnk6x, for tms6747: named
+// by its path and kept in settings.json; `-` puts TI's back. The runtime it
+// links against is still TI's, named under Tools > TI compiler. See
+// settings::tilinker.
+void Editor::locateTilinker() {
+    std::string file = settings::installFile();
+    if (file.empty()) { say("no installation directory to keep this in"); return; }
+    bool cancelled = false;
+    std::string ld = prompt("linker for tms6747, full path [" + settings::tilinker() + "]: ", cancelled);
+    if (cancelled || ld.empty()) { say("linker unchanged"); return; }
+    if (ld != "-" && !path::exists(ld)) { say("no such file: " + ld); return; }
+    if (settings::rememberTilinker(ld == "-" ? std::string() : ld))
+        say("written to " + file + (ld == "-" ? " - a tms6747 build links with TI's lnk6x again"
+                                             : " - a tms6747 build links through " + ld));
+    else
+        say("cannot write " + file);
+}
+
 void Editor::removeFromProject() {
     if (!project_.loaded()) { say("there is no project open"); return; }
     if (buf_.path().empty()) { say("this buffer has no name to look for"); return; }
@@ -3251,6 +3286,8 @@ void Editor::perform(Action action) {
         case ActionLocateVcvars: locateVcvars(); break;
         case ActionLocateAssembler: locateAssembler(); break;
         case ActionLocateTi:     locateTi(); break;
+        case ActionLocateLinker:   locateLinker(); break;
+        case ActionLocateTilinker: locateTilinker(); break;
         case ActionFileCreate:   createFile(); break;
         case ActionFileRename:   renameFile(); break;
         case ActionFileDelete:   deleteFile(); break;
