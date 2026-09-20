@@ -1275,6 +1275,15 @@ void projects() {
 
             check(editor::tiLinker(std::string(), std::string(), editor::path::join(dir.string(), "no-ti")).path.empty(),
                   "no TI directory: no linker to run");
+
+            // --tilinker is not checked before it gets here, so a path typed
+            // wrong must be named as the thing that is wrong.
+            editor::LinkerChoice typo = editor::tiLinker("D:\\LNK6X\\nosuch.exe", "D:\\LNK6X\\nosuch.exe", bin);
+            check(typo.path.empty(), "a linker named for this run that is not there stops the build");
+            check(typo.say.find("nosuch.exe") != std::string::npos,
+                  "and the build names it, not TI's directory");
+            check(typo.say.find(bin) == std::string::npos,
+                  "TI's install is not blamed for a flag typed wrong");
         }
         editor::settings::pretendInstalledAt(std::string());
         check(editor::settings::includeDir().empty() || true, "and the suite's own binary is back in charge");

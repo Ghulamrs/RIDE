@@ -73,8 +73,9 @@ Built buildTarget(const Toolchain& tool, ToolchainKind kind,
 // suite can hold it to every case: nothing named, one named and there, one
 // named and gone. A linker named in settings.json that has since gone leaves
 // settings::tilinker() empty and TI's would be used with nothing said; `say`
-// is what keeps that from passing unnoticed. `path` empty means there is no
-// linker to run at all.
+// is what keeps that from passing unnoticed. `path` empty means the build
+// cannot go on, and `say` is then why - either no lnk6x at all, or one named
+// for this run by --tilinker that is not there.
 struct LinkerChoice {
     std::string path;
     std::string say;

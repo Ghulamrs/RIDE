@@ -433,7 +433,9 @@ void makeTiProgram(Built& result, const std::string& program, LineSink sink, voi
     LinkerChoice choice = tiLinker(settings::tilinker(), settings::namedTilinker(), ti);
     if (choice.path.empty()) {
         result.ok = false;
-        std::string hint = "no lnk6x under " + ti + " - Tools names TI's C6000 compiler directory, the one with bin\\lnk6x";
+        std::string hint = choice.say.empty()
+            ? "no lnk6x under " + ti + " - Tools names TI's C6000 compiler directory, the one with bin\\lnk6x"
+            : choice.say;
         result.output += hint + "\n";
         if (sink) sink(context, hint);
         return;
@@ -477,6 +479,14 @@ void makeTiProgram(Built& result, const std::string& program, LineSink sink, voi
 LinkerChoice tiLinker(const std::string& chosen, const std::string& named,
                       const std::string& tiDir) {
     LinkerChoice choice;
+    // --tilinker skips the check settings::tilinker() makes, so a path typed
+    // wrong arrives here whole. It is a choice stated for this run: say that
+    // it is not there, rather than falling through to TI's and failing with
+    // TI's directory named, which is not what went wrong.
+    if (!chosen.empty() && !path::exists(chosen)) {
+        choice.say = "the linker named for tms6747 is not there: " + chosen;
+        return choice;
+    }
     if (!chosen.empty()) {
         choice.path = chosen;
         choice.say = "[linking with " + chosen + "]";
