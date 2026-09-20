@@ -714,9 +714,12 @@ Recipe programRecipe(const Toolchain& tool, ToolchainKind kind,
 
     // cc1 and cxx1 take sources only, so a library rides on F4, where the
     // objects are linked by the host; the machine's own C++ takes them here.
+    // assemblerFlag as on F4: without it cxx1i writes the GNU spelling and
+    // hands masm.exe clang's command line - "usage: asm -t x64 ..." was what
+    // Run file on smart.cpp said in the first 4.0 install, F4 being fine.
     recipe.command = quote(program) + " " + quote(source) + " -o " +
                      quote(recipe.assemblyPath) + configFlags(kind, config, arch) +
-                     includeFlags(tool, kind) +
+                     assemblerFlag(kind, arch) + includeFlags(tool, kind) +
                      (kind == ToolCxx ? libraryArguments(tool) : std::string());
     return recipe;
 }
@@ -736,7 +739,8 @@ std::string shownProgramCommand(const Toolchain& tool, ToolchainKind kind,
                configFlags(kind, config, arch) + includeFlags(tool, kind) +
                " /Ferstudio-run " + source + libraryArguments(tool);
     return program + " " + source + " -o rstudio-run" + configFlags(kind, config, arch) +
-           includeFlags(tool, kind) + (kind == ToolCxx ? libraryArguments(tool) : std::string());
+           assemblerFlag(kind, arch) + includeFlags(tool, kind) +
+           (kind == ToolCxx ? libraryArguments(tool) : std::string());
 }
 
 Recipe assemblyRecipe(const Toolchain& tool, ToolchainKind kind,

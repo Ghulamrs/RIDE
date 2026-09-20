@@ -1252,8 +1252,39 @@ void projects() {
         checkEqual(editor::settings::assembler(),
                    editor::path::absolute((app / "bin" / "masm.exe").string()),
                    "and is found beside the editor, made absolute against it");
+        // With the assembler named, every recipe that assembles x86_64-windows
+        // C++ has to tell cxx1i to write MASM's spelling - F5's Run file was
+        // the one that did not, and masm.exe got clang's command line.
+        {
+            editor::Toolchain tool;
+            tool.cxx1 = "cxx1i.exe";
+            std::vector<std::string> srcs(1, "a.cpp"), objs;
+            std::vector<std::string> lines;
+            lines.push_back(editor::programRecipe(tool, editor::ToolCxx1, "a.cpp", editor::LangCpp,
+                                                  "x86_64-windows", editor::ConfigDebug).command);
+            lines.push_back(editor::shownProgramCommand(tool, editor::ToolCxx1, "a.cpp", editor::LangCpp,
+                                                        "x86_64-windows", editor::ConfigDebug));
+            lines.push_back(editor::targetRecipe(tool, editor::ToolCxx1, srcs, editor::LangCpp,
+                                                 "x86_64-windows", editor::ConfigDebug, "a.exe").command);
+            lines.push_back(editor::objectRecipe(tool, editor::ToolCxx1, srcs, editor::LangCpp,
+                                                 "x86_64-windows", editor::ConfigDebug, ".", objs).command);
+            bool all = true;
+            for (size_t i = 0; i < lines.size(); ++i)
+                if (lines[i].find(" -masm=masm") == std::string::npos) all = false;
+            check(all, "Run file, its shown line, F4 and a part's objects all pass -masm=masm to cxx1i");
+            std::string c = editor::programRecipe(tool, editor::ToolCc1, "a.c", editor::LangC,
+                                                  "x86_64-windows", editor::ConfigDebug).command;
+            check(c.find("-masm") == std::string::npos, "cc1i, which reads CC1_AS alone, gets no flag");
+        }
         check(editor::settings::rememberAssembler("bin/no-such.exe") && editor::settings::assembler().empty(),
               "a relative one that is not there counts for nothing either");
+        {
+            editor::Toolchain tool;
+            tool.cxx1 = "cxx1i.exe";
+            check(editor::programRecipe(tool, editor::ToolCxx1, "a.cpp", editor::LangCpp,
+                                        "x86_64-windows", editor::ConfigDebug).command.find("-masm") == std::string::npos,
+                  "and with no assembler named, Run file leaves cxx1i's spelling alone");
+        }
         check(editor::settings::rememberAssembler(std::string()) && editor::settings::assembler().empty(),
               "and `-` puts ml64 back");
         editor::settings::overrideTilinker("for-this-run");
