@@ -54,6 +54,9 @@ if exist "%STAGE%\bin\lnk6x.exe" set "TILD=bin/lnk6x.exe"
 for %%e in (c h cpp shl pro) do (
   if exist "%SRC%\examples\*.%%e" copy /y "%SRC%\examples\*.%%e" "%STAGE%\examples\" >nul
 )
+rem example projects that live in their own subdirectory (a .pro with many
+rem files, e.g. compilerpp\) travel whole; the .iss recurses the stage tree
+for /d %%D in ("%SRC%\examples\*") do xcopy /e /i /q "%%D" "%STAGE%\examples\%%~nxD" >nul
 if exist "%SRC%\help" xcopy /e /i /q "%SRC%\help" "%STAGE%\help" >nul
 if exist "%SRC%\docs" xcopy /e /i /q "%SRC%\docs" "%STAGE%\docs" >nul
 if exist "%SRC%\README.md" copy /y "%SRC%\README.md" "%STAGE%\" >nul
