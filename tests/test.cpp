@@ -1244,6 +1244,18 @@ void projects() {
               "one that is there is the linker for x86_64-windows");
         check(editor::settings::rememberTilinker(self) && editor::settings::tilinker() == self,
               "and, named apart, the linker for tms6747");
+        // The installer writes the assembler as "bin/masm.exe": relative to
+        // the settings file, as include/ and lib/ are, so the installation
+        // can be put anywhere. What is written is kept as written.
+        std::ofstream((app / "bin" / "masm.exe").string().c_str()) << "not an assembler, but a file that is there\n";
+        check(editor::settings::rememberAssembler("bin/masm.exe"), "the assembler can be named relative to the file");
+        checkEqual(editor::settings::assembler(),
+                   editor::path::absolute((app / "bin" / "masm.exe").string()),
+                   "and is found beside the editor, made absolute against it");
+        check(editor::settings::rememberAssembler("bin/no-such.exe") && editor::settings::assembler().empty(),
+              "a relative one that is not there counts for nothing either");
+        check(editor::settings::rememberAssembler(std::string()) && editor::settings::assembler().empty(),
+              "and `-` puts ml64 back");
         editor::settings::overrideTilinker("for-this-run");
         checkEqual(editor::settings::tilinker(), "for-this-run", "--tilinker wins for the run");
         editor::settings::overrideTilinker(std::string());

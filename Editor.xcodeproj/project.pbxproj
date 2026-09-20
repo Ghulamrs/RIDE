@@ -93,6 +93,7 @@
 		935BB4E07B0FFC8A1ED9426B /* cxx1i.exe.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = cxx1i.exe.xcodeproj; path = "../VM6747/Compiler-Cppi/cxx1.xcodeproj"; sourceTree = "<group>"; };
 		7F746CB55AD3A770E177E479 /* vm6747.exe.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = vm6747.exe.xcodeproj; path = "../VM6747/Emulator/vm6747.xcodeproj"; sourceTree = "<group>"; };
 		027BFC03EF75C888838128AE /* asm6x.exe.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = asm6x.exe.xcodeproj; path = "../ASM6x/asm6x.xcodeproj"; sourceTree = "<group>"; };
+		5727B91399C48BD57845A8A4 /* masm.exe.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = masm.exe.xcodeproj; path = "../MASM/masm.xcodeproj"; sourceTree = "<group>"; };
 		B0E4B24994DA6A15303DF67C /* shci.exe.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = shci.exe.xcodeproj; path = "../VM6747/Compiler-Si/shc.xcodeproj"; sourceTree = "<group>"; };
 		F37F914312A3544D790C94C4 /* c2s.exe.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = c2s.exe.xcodeproj; path = "../Converter-C2S/c2s.xcodeproj"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -154,6 +155,20 @@
 			remoteGlobalIDString = 4C9755EAC3E6C308E3121AA8;
 			remoteInfo = asm6x.exe;
 		};
+		47C40D28DA6DBE03E0B95AD4 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 5727B91399C48BD57845A8A4 /* masm.exe.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 3F5D281E29DB207A68C5DF5F;
+			remoteInfo = masm.exe;
+		};
+		CA5E4D66795AFA2BE06F3C32 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 5727B91399C48BD57845A8A4 /* masm.exe.xcodeproj */;
+			proxyType = 1;
+			remoteGlobalIDString = 6A503C59EA2D76B27E13F658;
+			remoteInfo = masm.exe;
+		};
 		7F3F7C63B9FFE92A90EDCEF8 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = B0E4B24994DA6A15303DF67C /* shci.exe.xcodeproj */;
@@ -203,6 +218,7 @@
 				935BB4E07B0FFC8A1ED9426B /* cxx1i.exe.xcodeproj */,
 				7F746CB55AD3A770E177E479 /* vm6747.exe.xcodeproj */,
 				027BFC03EF75C888838128AE /* asm6x.exe.xcodeproj */,
+				5727B91399C48BD57845A8A4 /* masm.exe.xcodeproj */,
 				B0E4B24994DA6A15303DF67C /* shci.exe.xcodeproj */,
 				F37F914312A3544D790C94C4 /* c2s.exe.xcodeproj */,
 				744890367C8084A94875E5BE /* Products */,
@@ -307,6 +323,14 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
+		878D16BDB9729DF6245554C9 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				8A70DFA2BAB71B123E18BE8D /* masm.exe */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
 		6C9AEBD72996EFE97927A707 /* Products */ = {
 			isa = PBXGroup;
 			children = (
@@ -354,6 +378,13 @@
 			remoteRef = CA6A75851D9ABCD24046CA72 /* PBXContainerItemProxy */;
 			sourceTree = BUILT_PRODUCTS_DIR;
 		};
+		8A70DFA2BAB71B123E18BE8D /* masm.exe */ = {
+			isa = PBXReferenceProxy;
+			fileType = "compiled.mach-o.executable";
+			path = masm.exe;
+			remoteRef = 47C40D28DA6DBE03E0B95AD4 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
 		1AF118E366DD5B4E5D778CB8 /* shci.exe */ = {
 			isa = PBXReferenceProxy;
 			fileType = "compiled.mach-o.executable";
@@ -386,6 +417,7 @@
 				320658C674B7EED4220FCA2D /* PBXTargetDependency */,
 				A4E2F5287A5ED8052FA26C2F /* PBXTargetDependency */,
 				6673D78DD291D8D6C1777374 /* PBXTargetDependency */,
+				D71212D271C84DE00F6DA51A /* PBXTargetDependency */,
 				8D2974D8BE7A2CAC21E834ED /* PBXTargetDependency */,
 				EF18CE9F2F4C0054317F0417 /* PBXTargetDependency */,
 			);
@@ -416,6 +448,11 @@
 			isa = PBXTargetDependency;
 			name = asm6x.exe;
 			targetProxy = A494BD127012A0C127389EB2 /* PBXContainerItemProxy */;
+		};
+		D71212D271C84DE00F6DA51A /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = masm.exe;
+			targetProxy = CA5E4D66795AFA2BE06F3C32 /* PBXContainerItemProxy */;
 		};
 		8D2974D8BE7A2CAC21E834ED /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
@@ -462,6 +499,10 @@
 				{
 					ProductGroup = 0EBB139289FEE0D24E72E525 /* Products */;
 					ProjectRef = 027BFC03EF75C888838128AE /* asm6x.exe.xcodeproj */;
+				},
+				{
+					ProductGroup = 878D16BDB9729DF6245554C9 /* Products */;
+					ProjectRef = 5727B91399C48BD57845A8A4 /* masm.exe.xcodeproj */;
 				},
 				{
 					ProductGroup = 6C9AEBD72996EFE97927A707 /* Products */;

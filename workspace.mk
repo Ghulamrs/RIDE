@@ -28,6 +28,7 @@ C2S_DIR ?= ../Converter-C2S
 CXX1_DIR ?= ../VM6747/Compiler-Cppi
 VM_DIR ?= ../VM6747/Emulator
 ASM_DIR ?= ../ASM6x
+MASM_DIR ?= ../MASM
 
 # ---- one directory, named once and given to all four ------------------------
 #
@@ -58,7 +59,7 @@ ASM_DIR ?= ../ASM6x
 BINDIR ?= $(CURDIR)/bin
 OUT := $(abspath $(BINDIR))
 
-.PHONY: all cc1 cxx1 vm6747 asm6x shc c2s editor confirm bin check clean
+.PHONY: all cc1 cxx1 vm6747 asm6x masm shc c2s editor confirm bin check clean
 
 # `confirm` and not `editor`, so that the last thing a workspace build does is
 # check that what the editor drives is actually beside it.
@@ -96,10 +97,12 @@ vm6747:
 
 asm6x:
 	$(MAKE) -C $(ASM_DIR) BINDIR=$(OUT) OBJDIR=$(OUT)/obj/asm6x
+masm:
+	$(MAKE) -C $(MASM_DIR) BINDIR=$(OUT) OBJDIR=$(OUT)/obj/masm
 
 # The dependency, said the same way it is said in the other three: the editor
 # is built after the things it drives. Nothing of them ends up inside it.
-editor: cc1 cxx1 vm6747 asm6x shc c2s
+editor: cc1 cxx1 vm6747 asm6x masm shc c2s
 	$(MAKE) BINDIR=$(OUT) OBJDIR=$(OUT)/obj/editor
 
 # Asked of RStudio rather than answered here. The editor is the thing that
@@ -132,6 +135,8 @@ endif
 	cd $(CXX1_DIR) && CXX1=$(OUT)/cxx1i.exe VM=$(OUT)/vm6747.exe ./tests/tms6747.sh
 # The assembler against asm6x's recorded objects, python3 alone.
 	cd $(ASM_DIR) && ASM=$(OUT)/asm6x.exe sh tests/run.sh
+# And the x86-64 one against ml64's recorded objects, the same way.
+	cd $(MASM_DIR) && ASM=$(OUT)/masm.exe sh tests/run.sh
 # LIBDIR too: Compiler-S's examples suite builds a C library from
 # Compiler-C/examples, and this is the only place that knows where Compiler-C
 # actually is on this machine - it is ~/ansicc on the Linux box. Without it

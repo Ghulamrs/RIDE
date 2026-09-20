@@ -136,7 +136,7 @@ rem box with both archives and no directory confirmed clean while a Shalimar
 rem program for the emulator had nothing to run beside.
 if "%BINDIR%"=="" set BINDIR=bin
 set MISSING=0
-for %%f in (cc1i.exe cxx1i.exe vm6747.exe asm6x.exe shci.exe c2s.exe lib\shmrt-x86_64-windows.lib lib\shmrt-x86_64-windows-debug.lib lib\shmrt-tms6747\Runtime.s) do (
+for %%f in (cc1i.exe cxx1i.exe vm6747.exe asm6x.exe masm.exe shci.exe c2s.exe lib\shmrt-x86_64-windows.lib lib\shmrt-x86_64-windows-debug.lib lib\shmrt-tms6747\Runtime.s) do (
    if exist "%BINDIR%\%%f" (echo   ok       %%f) else (echo   MISSING  %%f& set MISSING=1)
 )
 if "%MISSING%"=="1" (

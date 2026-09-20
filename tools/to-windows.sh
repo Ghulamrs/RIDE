@@ -4,9 +4,10 @@
 #
 # That box was rebuilt on 2026-08-25 and everything below is about the machine
 # as it is now: reached as `ssh windows`, its ssh shell is cmd.exe, and the
-# projects are siblings under C:\Users\GRA\source - RStudio, Compiler-C,
-# Compiler-Cpp, Compiler-S, Converter-C2S - which is the shape RStudio.sln
-# assumes when it names ..\Compiler-C\msvc\cc1.vcxproj and the rest.
+# projects are siblings under C:\Users\GRA\source - RIDE (4.0's own
+# directory, so the sealed 3.5 tree in RStudio is left alone), VM6747,
+# ASM6x, MASM, Converter-C2S - which is the shape RStudio.sln assumes when
+# it names ..\VM6747\Compiler-Ci\msvc\cc1.vcxproj and the rest.
 #
 # Three rules that each cost an hour before they were written down:
 #
@@ -33,7 +34,7 @@ cd "$(dirname "${BASH_SOURCE[0]}")/.."
 
 BOX="${ED1_WINDOWS_BOX:-windows}"
 ROOT="${ED1_WINDOWS_ROOT:-C:\\Users\\GRA\\source}"
-DIR="$ROOT\\RStudio"
+DIR="$ROOT\\RIDE"
 # 3.5: the four VM6747 repositories travel with the editor - they have no
 # remote, by that line's rules - laid out on the box as they are here.
 # Compiler-Si joined when shci was docked; the Compiler-S beside it on the
@@ -44,6 +45,7 @@ CXX1_DIR="$VM_ROOT\\Compiler-Cppi"
 SHCI_DIR="$VM_ROOT\\Compiler-Si"
 EMU_DIR="$VM_ROOT\\Emulator"
 ASM_DIR="$ROOT\\ASM6x"
+MASM_DIR="$ROOT\\MASM"
 WHAT="${1:-check}"
 TMP="${TMPDIR:-/tmp}"
 
@@ -75,6 +77,9 @@ tar --no-mac-metadata \
 # asm6x: the C6000 assembler, beside this checkout as ../ASM6x, its own repository.
 ( cd ../ASM6x && tar --no-mac-metadata --exclude '* 2.*' --exclude '*.exe' --exclude 'build' \
     -czf "$TMP/asm6x-src.tgz" src tests Makefile asm6x.vcxproj README.md ) || exit 2
+# masm: the x86-64 assembler, beside this checkout as ../MASM, its own repository.
+( cd ../MASM && tar --no-mac-metadata --exclude '* 2.*' --exclude '*.exe' --exclude 'build' \
+    -czf "$TMP/masm-src.tgz" src tests Makefile masm.vcxproj README.md ) || exit 2
 # shci: what shc.vcxproj compiles - src and the runtime it builds beside the
 # binary - and nothing built here; lib/ holds this machine's archives.
 ( cd ../VM6747/Compiler-Si && tar --no-mac-metadata --exclude '* 2.*' --exclude '*.exe' --exclude 'lib' --exclude 'out-*' \
@@ -83,7 +88,7 @@ tar --no-mac-metadata \
 say "copying to $BOX:$DIR and $VM_ROOT"
 # One directory per call: in cmd, `if not exist X mkdir X & if ...` makes the
 # second `if` part of the first one's body, so it runs only when X was missing.
-for d in "$DIR" "$CC1I_DIR" "$CXX1_DIR" "$SHCI_DIR" "$EMU_DIR" "$ASM_DIR"; do
+for d in "$DIR" "$CC1I_DIR" "$CXX1_DIR" "$SHCI_DIR" "$EMU_DIR" "$ASM_DIR" "$MASM_DIR"; do
   ssh -n "$BOX" "if not exist \"$d\" mkdir \"$d\"" || exit 2
 done
 scp -q "$TMP/rstudio-src.tgz" "$BOX:$DIR\\rstudio-src.tgz" || exit 2
@@ -91,6 +96,7 @@ scp -q "$TMP/cc1i-src.tgz" "$BOX:$CC1I_DIR\\cc1i-src.tgz" || exit 2
 scp -q "$TMP/cxx1-src.tgz" "$BOX:$CXX1_DIR\\cxx1-src.tgz" || exit 2
 scp -q "$TMP/vm6747-src.tgz" "$BOX:$EMU_DIR\\vm6747-src.tgz" || exit 2
 scp -q "$TMP/asm6x-src.tgz" "$BOX:$ASM_DIR\\asm6x-src.tgz" || exit 2
+scp -q "$TMP/masm-src.tgz" "$BOX:$MASM_DIR\\masm-src.tgz" || exit 2
 scp -q "$TMP/shci-src.tgz" "$BOX:$SHCI_DIR\\shci-src.tgz" || exit 2
 
 # ---- the script that does the work there -----------------------------------
@@ -109,7 +115,7 @@ BIN="$DIR\\bin"
   # Only tests\: the rest is laid over, since these directories also hold
   # hand-run experiments that are not ours.
   for pair in "$DIR rstudio" "$CC1I_DIR cc1i" "$CXX1_DIR cxx1" \
-              "$EMU_DIR vm6747" "$ASM_DIR asm6x" "$SHCI_DIR shci"; do
+              "$EMU_DIR vm6747" "$ASM_DIR asm6x" "$MASM_DIR masm" "$SHCI_DIR shci"; do
     set -- $pair
     printf 'cd /d "%s" || exit /b 2\r\n' "$1"
     printf 'if exist tests rmdir /s /q tests\r\n'

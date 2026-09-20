@@ -8,7 +8,7 @@ set CC=%~4
 if "%CC%"=="" set "CC=%CPP%\..\Compiler-Ci"
 if exist "%STAGE%" rmdir /s /q "%STAGE%"
 mkdir "%STAGE%\bin" "%STAGE%\bin\lib" "%STAGE%\examples"
-for %%f in (RStudio.exe RStudioConsole.exe cc1i.exe cxx1i.exe shci.exe vm6747.exe asm6x.exe c2s.exe) do (
+for %%f in (RStudio.exe RStudioConsole.exe cc1i.exe cxx1i.exe shci.exe vm6747.exe asm6x.exe masm.exe c2s.exe) do (
   if exist "%SRC%\bin\%%f" copy /y "%SRC%\bin\%%f" "%STAGE%\bin\" >nul
 )
 if exist "%SRC%\bin\lib\*.lib" copy /y "%SRC%\bin\lib\*.lib" "%STAGE%\bin\lib\" >nul
@@ -19,12 +19,18 @@ rem bin\ for its own, and settings.json beside them says so for the editor.
 if exist "%CPP%\include" xcopy /e /i /q "%CPP%\include" "%STAGE%\include" >nul
 if exist "%CPP%\lib\*.h" copy /y "%CPP%\lib\*.h" "%STAGE%\include\" >nul
 if exist "%CC%\lib" xcopy /e /i /q "%CC%\lib" "%STAGE%\lib" >nul
+rem The assembler for x86_64-windows is the project's own, masm.exe beside
+rem the editor, named relative to this file so the installation can be put
+rem anywhere; the editor makes it absolute against the file. The linkers are
+rem still link.exe and TI's lnk6x - LINK and LNK6x have no source yet.
+set "ASM="
+if exist "%STAGE%\bin\masm.exe" set "ASM=bin/masm.exe"
 (
   echo {
   echo   "include": "include",
   echo   "lib": "lib",
   echo   "vcvars": "",
-  echo   "assembler": "",
+  echo   "assembler": "%ASM%",
   echo   "linker": "",
   echo   "ti": "",
   echo   "tilib": "",

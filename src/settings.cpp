@@ -225,6 +225,19 @@ std::string installedDir(const char* key) {
     return path::isDirectory(dir) ? dir : std::string();
 }
 
+// A program named in the file, made absolute against it the same way: the
+// installer writes "bin/masm.exe" for the assembler, which is beside the
+// editor wherever the installation was put; a full path is taken as
+// written. What is not there counts for nothing, as before.
+std::string installedFile(const char* key) {
+    std::string said = readInstall().get(key).text(std::string());
+    if (said.empty()) return std::string();
+    bool rooted = said[0] == '/' || said[0] == '\\' || (said.size() > 1 && said[1] == ':');
+    std::string base = installDir();
+    std::string file = rooted || base.empty() ? said : path::absolute(path::join(base, said));
+    return path::exists(file) ? file : std::string();
+}
+
 }
 
 void pretendInstalledAt(const std::string& directory) {
@@ -262,16 +275,14 @@ void overrideAssembler(const std::string& p) { overrideWith(assemblerForThisRun,
 
 std::string assembler() {
     if (assemblerForThisRun && !assemblerForThisRun->empty()) return *assemblerForThisRun;
-    std::string said = readInstall().get("assembler").text(std::string());
-    return (!said.empty() && path::exists(said)) ? said : std::string();
+    return installedFile("assembler");
 }
 
 void overrideLinker(const std::string& p) { overrideWith(linkerForThisRun, p); }
 
 std::string linker() {
     if (linkerForThisRun && !linkerForThisRun->empty()) return *linkerForThisRun;
-    std::string said = readInstall().get("linker").text(std::string());
-    return (!said.empty() && path::exists(said)) ? said : std::string();
+    return installedFile("linker");
 }
 
 void overrideTi(const std::string& d) { overrideWith(tiForThisRun, d); }
@@ -294,8 +305,7 @@ void overrideTilinker(const std::string& p) { overrideWith(tilinkerForThisRun, p
 
 std::string tilinker() {
     if (tilinkerForThisRun && !tilinkerForThisRun->empty()) return *tilinkerForThisRun;
-    std::string said = readInstall().get("tilinker").text(std::string());
-    return (!said.empty() && path::exists(said)) ? said : std::string();
+    return installedFile("tilinker");
 }
 
 std::string namedTilinker() {

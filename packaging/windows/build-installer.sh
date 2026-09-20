@@ -8,7 +8,7 @@
 #  is a relocatable tarball (unpack and run bin/RStudio); use build-installer.bat
 #  on Windows for a real setup.exe.
 #
-#  Usage:   ./build-installer.sh [3.5]
+#  Usage:   ./build-installer.sh [4.0|3.5]
 #  Env overrides (optional):
 #     CPP    the C++ compiler clone carrying include/ (C++) and lib/ (C) headers
 #            (default: first of <repo>/../Compiler-Cppi, <repo>/../C++)
@@ -18,7 +18,7 @@
 # =============================================================================
 set -euo pipefail
 
-VER="${1:-3.5}"
+VER="${1:-4.0}"
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(cd "$HERE/../.." && pwd)"
 PY="${PY:-python3}"

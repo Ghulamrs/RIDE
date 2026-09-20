@@ -48,9 +48,9 @@ cd "$(dirname "${BASH_SOURCE[0]}")/.."
 
 KEY="${ED1_LINUX_KEY:-$HOME/Documents/Claude/myMorningWalk.pem}"
 BOX="${ED1_LINUX_BOX:-ec2-user@52.202.164.123}"
-# Its own directory, well away from ~/RStudio, that box's clone: this one is
-# this script's to empty.
-DIR="${ED1_LINUX_DIR:-rstudio}"
+# Its own directory, well away from ~/RStudio, that box's clone, and from
+# ~/rstudio, the sealed 3.5 tree's relay: this one is this script's to empty.
+DIR="${ED1_LINUX_DIR:-ride}"
 WHAT="${1:-check}"
 TMP="${TMPDIR:-/tmp}"
 SSH=(ssh -n -i "$KEY" "$BOX")
@@ -90,6 +90,8 @@ pack asm6x  ../ASM6x                src tests Makefile README.md \
     review-probes-2026-09-19/recheck.sh review-probes-2026-09-19/known.txt \
     review-probes-2026-09-19/edge review-probes-2026-09-19/linkcheck review-probes-2026-09-19/fresh \
     review-probes-2026-09-19/labeldiff
+# masm: the x86-64 assembler, ml64's objects checked in under tests/enc.
+pack masm   ../MASM                 src tests Makefile README.md
 pack c2s    ../Converter-C2S        src tests Makefile README.md
 
 # Where they land: the shape workspace.mk assumes, ../VM6747/<name> and
@@ -102,10 +104,11 @@ there() {
         shci)   echo 'VM6747/Compiler-Si' ;;
         vm6747) echo 'VM6747/Emulator' ;;
         asm6x)  echo 'ASM6x' ;;
+        masm)   echo 'MASM' ;;
         c2s)    echo 'Converter-C2S' ;;
     esac
 }
-NAMES="cc1i cxx1i shci vm6747 asm6x c2s"
+NAMES="cc1i cxx1i shci vm6747 asm6x masm c2s"
 
 say "copying to $BOX"
 dirs=""; for name in $NAMES; do dirs="$dirs ~/$(there $name)"; done
@@ -152,7 +155,7 @@ run() {  # run <log> <make arguments...>
     grep -vE '^(clang|g)\+\+ |^ar |^/usr/bin/make|^make\[[0-9]+\]: (Entering|Leaving|Nothing)' "$log"
     return $rc
 }
-run build.log || { echo "the workspace build failed - see ~/rstudio/build.log"; exit 2; }
+run build.log || { echo "the workspace build failed - see $PWD/build.log"; exit 2; }
 [ -x ./bin/RStudio.exe ] || { echo "no bin/RStudio.exe was built"; exit 2; }
 if [ "$WHAT" = build ]; then echo "built the workspace"; exit 0; fi
 run check.log check

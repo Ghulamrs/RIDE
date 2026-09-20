@@ -7,8 +7,8 @@
 Three machines, three shapes, one idea: open one thing and get all four
 programs, with the editor built after the three it drives.
 
-    macOS    RStudio.xcworkspace          RStudio.exe, cc1i.exe, cxx1i.exe, vm6747.exe, asm6x.exe, shci.exe, c2s.exe
-    Windows  RStudio.sln                  RStudioConsole, RStudioGui, cc1i, cxx1i, vm6747, asm6x, shci, c2s
+    macOS    RStudio.xcworkspace          RStudio.exe, cc1i.exe, cxx1i.exe, vm6747.exe, asm6x.exe, masm.exe, shci.exe, c2s.exe
+    Windows  RStudio.sln                  RStudioConsole, RStudioGui, cc1i, cxx1i, vm6747, asm6x, masm, shci, c2s
     Linux    workspace.mk                 make -f workspace.mk
 
 Was make-xcodeproj.py while Xcode was all it wrote.
@@ -87,6 +87,11 @@ VM_REPO = os.path.join("VM6747", "Emulator")
 # tms6747 assembly into TI objects, and lnk6x - CCS's, where Tools names it -
 # links them into a real .out. It travels with the editor as vm6747 does.
 ASM_REPO = "ASM6x"
+# The x86-64 assembler, its own repository beside this one too: masm reads
+# the MASM the three compilers write for x86_64-windows and writes the COFF
+# that link.exe takes, in place of ml64 - which is what settings.json names
+# it as, in an installation. Docked since 4.0.
+MASM_REPO = "MASM"
 SHC_REPO = os.path.join("VM6747", "Compiler-Si")
 
 
@@ -208,6 +213,7 @@ def projects():
                         ("cxx1i.exe", "../" + CXX1_REPO + "/cxx1.xcodeproj"),
                         ("vm6747.exe", "../" + VM_REPO + "/vm6747.xcodeproj"),
                         ("asm6x.exe", "../" + ASM_REPO + "/asm6x.xcodeproj"),
+                        ("masm.exe", "../" + MASM_REPO + "/masm.xcodeproj"),
                         ("shci.exe", "../" + SHC_REPO + "/shc.xcodeproj"),
                         ("c2s.exe", "../Converter-C2S/c2s.xcodeproj")],
         },
@@ -303,6 +309,15 @@ def projects():
             "out": os.path.join(SIBLINGS, ASM_REPO, "asm6x.xcodeproj"),
             "sources": by_glob(os.path.join(SIBLINGS, ASM_REPO), ("src",)),
             "headers": headers_under(os.path.join(SIBLINGS, ASM_REPO), ("src",)),
+            "include": "$(SRCROOT)/src",
+        },
+        {
+            # The x86-64 assembler: the same shape again.
+            "product": "masm.exe",
+            "root": os.path.join(SIBLINGS, MASM_REPO),
+            "out": os.path.join(SIBLINGS, MASM_REPO, "masm.xcodeproj"),
+            "sources": by_glob(os.path.join(SIBLINGS, MASM_REPO), ("src",)),
+            "headers": headers_under(os.path.join(SIBLINGS, MASM_REPO), ("src",)),
             "include": "$(SRCROOT)/src",
         },
         {
@@ -1118,6 +1133,7 @@ C2S_DIR ?= ../Converter-C2S
 CXX1_DIR ?= ../VM6747/Compiler-Cppi
 VM_DIR ?= ../VM6747/Emulator
 ASM_DIR ?= ../ASM6x
+MASM_DIR ?= ../MASM
 
 # ---- one directory, named once and given to all four ------------------------
 #
@@ -1148,7 +1164,7 @@ ASM_DIR ?= ../ASM6x
 BINDIR ?= $(CURDIR)/bin
 OUT := $(abspath $(BINDIR))
 
-.PHONY: all cc1 cxx1 vm6747 asm6x shc c2s editor confirm bin check clean
+.PHONY: all cc1 cxx1 vm6747 asm6x masm shc c2s editor confirm bin check clean
 
 # `confirm` and not `editor`, so that the last thing a workspace build does is
 # check that what the editor drives is actually beside it.
@@ -1186,10 +1202,12 @@ vm6747:
 
 asm6x:
 	$(MAKE) -C $(ASM_DIR) BINDIR=$(OUT) OBJDIR=$(OUT)/obj/asm6x
+masm:
+	$(MAKE) -C $(MASM_DIR) BINDIR=$(OUT) OBJDIR=$(OUT)/obj/masm
 
 # The dependency, said the same way it is said in the other three: the editor
 # is built after the things it drives. Nothing of them ends up inside it.
-editor: cc1 cxx1 vm6747 asm6x shc c2s
+editor: cc1 cxx1 vm6747 asm6x masm shc c2s
 	$(MAKE) BINDIR=$(OUT) OBJDIR=$(OUT)/obj/editor
 
 # Asked of RStudio rather than answered here. The editor is the thing that
@@ -1222,6 +1240,8 @@ endif
 	cd $(CXX1_DIR) && CXX1=$(OUT)/cxx1i.exe VM=$(OUT)/vm6747.exe ./tests/tms6747.sh
 # The assembler against asm6x's recorded objects, python3 alone.
 	cd $(ASM_DIR) && ASM=$(OUT)/asm6x.exe sh tests/run.sh
+# And the x86-64 one against ml64's recorded objects, the same way.
+	cd $(MASM_DIR) && ASM=$(OUT)/masm.exe sh tests/run.sh
 # LIBDIR too: Compiler-S's examples suite builds a C library from
 # Compiler-C/examples, and this is the only place that knows where Compiler-C
 # actually is on this machine - it is ~/ansicc on the Linux box. Without it
@@ -1454,6 +1474,11 @@ def main():
                                 ["_CRT_SECURE_NO_WARNINGS"],
                                 includes=("$(ProjectDir)src",)),
                    "asm6x.vcxproj"))
+    wanted.append((os.path.join(SIBLINGS, MASM_REPO, "masm.vcxproj"),
+                   vcxproj_text("masm", spec_of["masm.exe"]["sources"],
+                                ["_CRT_SECURE_NO_WARNINGS"],
+                                includes=("$(ProjectDir)src",)),
+                   "masm.vcxproj"))
 
     entries = [
         # The VM6747 line, laid out on the Windows box as it is here:
@@ -1463,6 +1488,7 @@ def main():
         ("cxx1i", "../" + CXX1_REPO.replace(os.sep, "/") + "/cxx1.vcxproj", guid("cxx1i"), []),
         ("vm6747", "../" + VM_REPO.replace(os.sep, "/") + "/vm6747.vcxproj", guid("vm6747"), []),
         ("asm6x", "../" + ASM_REPO + "/asm6x.vcxproj", guid("asm6x"), []),
+        ("masm", "../" + MASM_REPO + "/masm.vcxproj", guid("masm"), []),
         # shci after cxx1i: its post-build step compiles the Shalimar runtime
         # for the C6000 with the cxx1i.exe beside it (shc_runtime_step).
         ("shci", "../" + SHC_REPO.replace(os.sep, "/") + "/shc.vcxproj", guid("shci"), [guid("cxx1i")]),
@@ -1472,7 +1498,7 @@ def main():
         ("c2s", "../Converter-C2S/c2s.vcxproj", guid("c2s"), []),
         # the editor after both, which is the dependency this whole thing is
         # for - said in a .sln the way the workspace says it in a .xcodeproj.
-        ("RStudioConsole", "RStudioConsole.vcxproj", guid("RStudioConsole"), [CC1_GUID, guid("cxx1i"), guid("vm6747"), guid("asm6x"), guid("shci"), guid("c2s")]),
+        ("RStudioConsole", "RStudioConsole.vcxproj", guid("RStudioConsole"), [CC1_GUID, guid("cxx1i"), guid("vm6747"), guid("asm6x"), guid("masm"), guid("shci"), guid("c2s")]),
         # The window, on the same footing as the console half. It is in the
         # solution for two reasons: so that one build makes all four, and
         # because being in a solution is what moves its output into the
@@ -1482,7 +1508,7 @@ def main():
         # version of it set OutDir, IntDir, BasicRuntimeChecks and a platform
         # version, and the binary died at startup with heap corruption before
         # main. Nothing in that file is touched to get this.
-        ("RStudioGui", "winforms/RStudioGui.vcxproj", GUI_GUID, [CC1_GUID, guid("cxx1i"), guid("vm6747"), guid("asm6x"), guid("shci"), guid("c2s")]),
+        ("RStudioGui", "winforms/RStudioGui.vcxproj", GUI_GUID, [CC1_GUID, guid("cxx1i"), guid("vm6747"), guid("asm6x"), guid("masm"), guid("shci"), guid("c2s")]),
     ]
     wanted.append((os.path.join(HERE, "RStudio.sln"), solution_text(entries),
                    "RStudio.sln"))

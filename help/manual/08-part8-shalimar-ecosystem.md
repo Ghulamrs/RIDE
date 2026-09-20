@@ -22,7 +22,7 @@ separate projects that share the language:
 **Beside RIDE (separate projects that share the language):**
 
 - **Compiler-S** — the upstream Shalimar native compiler that `shci` is built
-  from. C++14, three host targets; RIDE 3.5's `shci` adds `tms6747`.
+  from. C++14, three host targets; RIDE's `shci` (since 3.5) adds `tms6747`.
 - **The Shalimar app family** — the iOS apps whose Swift interpreter *runs*
   Shalimar on a phone. These are not compilers and are not part of RIDE; they
   are where the language's own specification lives, and RIDE's Shalimar help
@@ -51,7 +51,7 @@ else in this list is upstream or a sibling.
 
 **Compiler-S** is the native Shalimar compiler. It compiles `.shm`/`.shl`
 programs to native assembly for `arm64-darwin`, `x86_64-linux` and
-`x86_64-windows`; RIDE 3.5's **`shci`** is the same compiler with `tms6747`
+`x86_64-windows`; RIDE's **`shci`** (since 3.5) is the same compiler with `tms6747`
 added. It is C++14, held to the same `-Wall -Wextra -Werror -pedantic`
 discipline as the C and C++ compilers.
 

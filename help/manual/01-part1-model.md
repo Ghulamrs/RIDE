@@ -1,4 +1,4 @@
-# RIDE 3.5 — The Complete Manual
+# RIDE 4.0 — The Complete Manual
 
 **Part I — What the compilers are, what they eat, and what they make**
 
@@ -49,9 +49,12 @@ what it did on its standard streams.
 
 The "i" in `cc1i`/`cxx1i`/`shci` is the *i-line* — the same three compilers, one
 target on (the fourth, tms6747), built beside the originals under distinct
-names. RIDE 3.5 drives the i-line; RIDE 3.0 drove the originals
+names. RIDE drives the i-line since 3.5; RIDE 3.0 drove the originals
 (`cc1`/`cxx1`/`shc`), which are frozen and three-target. Everything in this
-manual is about 3.5 and the i-line unless it says otherwise.
+manual is about 4.0 and the i-line unless it says otherwise. What 4.0 adds
+over 3.5 is the project's own assembler for x86-64, `masm`, docked beside the
+editor and used in place of Microsoft's `ml64` (section 5); the C6000 one,
+`asm6x`, arrived in 3.5 (Part VI).
 
 --------------------------------------------------------------------------------
 ## 2. What a compiler takes as input
@@ -167,11 +170,18 @@ The compiler generates assembly. It does **not** assemble or link — it calls t
 host's tools for that. Three jobs go to native tools:
 
 1. **Assembling** the `.s`/`.asm` into an object. On `x86_64-windows` that is
-   Microsoft's `ml64.exe` (MASM); with `-masm=gnu` it is the GNU assembler
-   spelling. On `x86_64-linux` it is the GNU assembler; on `arm64-darwin` it is
-   the assembler `clang` drives.
+   the MASM dialect: since 4.0 the project's own `masm.exe` beside the editor
+   assembles it (the installation's `settings.json` names it, `"assembler":
+   "bin/masm.exe"`; Tools > Assembler for x86_64-windows... changes or clears
+   it), and without one it is Microsoft's `ml64.exe`. `masm` takes ml64's own
+   command line and is held to ml64 byte for byte on the compilers' whole
+   corpus. With `-masm=gnu` it is the GNU assembler spelling. On
+   `x86_64-linux` it is the GNU assembler; on `arm64-darwin` it is the
+   assembler `clang` drives.
 
-2. **Linking** objects into a program. On Windows that is Microsoft's `link.exe`;
+2. **Linking** objects into a program. On Windows that is Microsoft's `link.exe`
+   (the project's own linker, LINK, will take its place the way `masm` took
+   ml64's - Tools > Linker for x86_64-windows... - once it exists);
    on Linux the host driver (`cc`/`gcc`) or, for C++, `clang++`/`g++`; on macOS
    `clang++`. A link of C++ objects goes through the C++ driver so the C++
    runtime is pulled in.

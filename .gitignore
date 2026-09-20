@@ -79,3 +79,4 @@ bin/
 # git add -A. It held an API key, and GitHub refused the push. Ignored so that
 # it cannot happen twice.
 Untitled.swift
+dist/

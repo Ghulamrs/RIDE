@@ -6,7 +6,7 @@ rem
 rem  Steps: compile every compiler project + the RIDE editor, (re)generate the
 rem  HTML docs, stage the install tree, and compile the Inno Setup installer.
 rem
-rem  Usage:   build-installer.bat [3.5|3.0]
+rem  Usage:   build-installer.bat [4.0|3.5|3.0]
 rem  Env overrides (all optional):
 rem     CPP    the C++ compiler clone that carries include\ and lib\ headers
 rem            (default: <repo>\..\VM6747\Compiler-Cppi, else <repo>\..\Compiler-Cpp)
@@ -22,7 +22,7 @@ rem  Setup 6. Python is optional - if absent, the committed HTML docs are used.
 rem ===========================================================================
 
 set "VER=%~1"
-if "%VER%"=="" set "VER=3.5"
+if "%VER%"=="" set "VER=4.0"
 set "NV=%VER:.=%"
 set "HERE=%~dp0"
 for %%I in ("%HERE%..\..") do set "ROOT=%%~fI"
@@ -53,10 +53,10 @@ if not exist "%OUT%" mkdir "%OUT%"
 call "%HERE%stage.cmd" "%ROOT%" "%CPP%" "%STAGE%" "%CC%"
 if errorlevel 1 (echo   STAGE FAILED & exit /b 1)
 
-echo [4/6] Bundling Express Help and (3.5) the TI build path ...
+echo [4/6] Bundling Express Help and (3.5, 4.0) the TI build path ...
 copy /y "%HERE%EXPRESS-HELP-%VER%.md"   "%STAGE%\EXPRESS-HELP.md"   >nul
 if exist "%HERE%EXPRESS-HELP-%VER%.html" copy /y "%HERE%EXPRESS-HELP-%VER%.html" "%STAGE%\EXPRESS-HELP.html" >nul
-if "%VER%"=="3.5" (
+if not "%VER%"=="3.0" (
   if not exist "%STAGE%\bin\ti" mkdir "%STAGE%\bin\ti"
   copy /y "%HERE%ti-build.cmd" "%STAGE%\bin\ti\" >nul
   copy /y "%HERE%ti-link.cmd"  "%STAGE%\bin\ti\" >nul

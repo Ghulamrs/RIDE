@@ -20,6 +20,9 @@
       location = "group:../ASM6x/asm6x.xcodeproj">
    </FileRef>
    <FileRef
+      location = "group:../MASM/masm.xcodeproj">
+   </FileRef>
+   <FileRef
       location = "group:../Converter-C2S/c2s.xcodeproj">
    </FileRef>
 </Workspace>

@@ -17,7 +17,7 @@ namespace about {
 
 const char* name() { return "RIDE"; }
 
-const char* version() { return "3.5"; }
+const char* version() { return "4.0"; }
 
 namespace {
 

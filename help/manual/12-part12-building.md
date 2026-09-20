@@ -16,7 +16,7 @@ RStudio is one repository; the compilers are their own repositories beside it:
     Converter-C2S (c2s) the converter
     Emulator    (vm6747) the C6000 emulator (i-line only)
 
-The *i-line* (the `…i` binaries) is what RIDE 3.5 drives — the same compilers
+The *i-line* (the `…i` binaries) is what RIDE drives since 3.5 — the same compilers
 with the fourth target (tms6747) added, built beside the originals so the
 originals stay sealed. RIDE 3.0 drove the originals.
 
