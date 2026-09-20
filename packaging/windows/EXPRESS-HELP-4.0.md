@@ -96,29 +96,37 @@ machine (none of TI's tools ship here); see `bin\ti\TI-BUILD.txt`.
 ## 5. The toolchain behind a build (new in 4.0)
 
 Everything that turns your source into a program is this project's own code,
-except the two linkers - for now:
+except the two links - for now:
 
 | Step          | x86_64-windows                        | tms6747                              |
 |---------------|---------------------------------------|--------------------------------------|
 | compile       | `cc1i` / `cxx1i` / `shci` (ours)      | `cc1i` / `cxx1i` / `shci` (ours)     |
 | assemble      | **`masm`** (ours, in place of ml64)   | **`asm6x`** (ours, in place of TI's) |
-| link          | `link.exe` (Visual Studio) - until LINK  | TI's `lnk6x` - until LNK6x        |
+| link          | Microsoft's `link.exe`; ours ships, unnamed | TI's `lnk6x`; ours ships, unnamed |
 | run           | this machine                          | **`vm6747`** (ours), or real silicon |
 
 `settings.json` names `masm` as the assembler for x86_64-windows out of the
 box (`"assembler": "bin/masm.exe"`, relative to that file). Tools > Assembler
 for x86_64-windows... changes it, or clears it to go back to ml64; `masm` also
 answers ml64's own command line (`masm /nologo /c /Fo x.obj x.asm`), so a
-script that ran ml64 can run it instead. The linker slots (`"linker"`,
-`"tilinker"`, Tools > Linker for ...) are empty until the project's own
-linkers exist; Visual Studio's link.exe and TI's lnk6x are used meanwhile.
+script that ran ml64 can run it instead. The project's own x86-64 linker is
+here too, `bin\link.exe` (LINK, held to Microsoft's byte for byte on its
+probe bed), but `"linker"` is left empty: a program the compilers write links
+against Microsoft's C runtime, which that linker does not yet take (`LIB`, the
+runtime's COMDAT sections, the default entry point). Tools > Linker for
+x86_64-windows... names it for a link it can do. The C6000 linker is here on
+the same terms, `bin\lnk6x.exe` (LNK6x, held to TI's lnk6x byte for byte):
+`"tilinker"` is left empty because a program's link pulls members out of
+TI's runtime archive and builds a cinit table, which it does not do yet;
+Tools > Linker for tms6747... names it for a link it can do.
 
 --------------------------------------------------------------------------
 ## Where things are
 
     bin\      the editor (RStudio.exe), the console editor, the compilers
               cc1i cxx1i shci, the assemblers masm (x86-64) and asm6x (C6000),
-              the vm6747 emulator, the c2s converter
+              the linkers link (x86-64) and lnk6x (C6000), the vm6747
+              emulator, the c2s converter
     bin\lib\  the Shalimar runtime (shmrt-x86_64-windows[-debug].lib) and the
               C6000 runtime (shmrt-tms6747\*.s)
     bin\ti\   ti-build.cmd — the real-silicon TI build path
@@ -127,7 +135,7 @@ linkers exist; Visual Studio's link.exe and TI's lnk6x are used meanwhile.
     lib\      cc1i's headers: the C standard headers (<stdio.h>, <string.h>, …)
     settings.json  the installation's settings: where include\ and lib\ are,
               the default compiler (the Tools menu writes it), the assembler
-              (bin/masm.exe), the linkers when the project's own exist, and a
+              (bin/masm.exe), the linkers when named under Tools, and a
               vcvars64.bat when Visual Studio had to be named by hand
               (Tools > Header directories..., Tools > Locate vcvars64.bat...)
     examples\ worked programs and a demo project (demo.pro)

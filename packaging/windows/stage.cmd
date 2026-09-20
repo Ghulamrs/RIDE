@@ -8,7 +8,7 @@ set CC=%~4
 if "%CC%"=="" set "CC=%CPP%\..\Compiler-Ci"
 if exist "%STAGE%" rmdir /s /q "%STAGE%"
 mkdir "%STAGE%\bin" "%STAGE%\bin\lib" "%STAGE%\examples"
-for %%f in (RStudio.exe RStudioConsole.exe cc1i.exe cxx1i.exe shci.exe vm6747.exe asm6x.exe masm.exe c2s.exe) do (
+for %%f in (RStudio.exe RStudioConsole.exe cc1i.exe cxx1i.exe shci.exe vm6747.exe asm6x.exe masm.exe link.exe lnk6x.exe c2s.exe) do (
   if exist "%SRC%\bin\%%f" copy /y "%SRC%\bin\%%f" "%STAGE%\bin\" >nul
 )
 if exist "%SRC%\bin\lib\*.lib" copy /y "%SRC%\bin\lib\*.lib" "%STAGE%\bin\lib\" >nul
@@ -21,8 +21,16 @@ if exist "%CPP%\lib\*.h" copy /y "%CPP%\lib\*.h" "%STAGE%\include\" >nul
 if exist "%CC%\lib" xcopy /e /i /q "%CC%\lib" "%STAGE%\lib" >nul
 rem The assembler for x86_64-windows is the project's own, masm.exe beside
 rem the editor, named relative to this file so the installation can be put
-rem anywhere; the editor makes it absolute against the file. The linkers are
-rem still link.exe and TI's lnk6x - LINK and LNK6x have no source yet.
+rem anywhere; the editor makes it absolute against the file. The project's
+rem own linker for x86_64-windows ships beside it as link.exe, but is not
+rem named here: a program the compilers write links against Microsoft's C
+rem runtime, and that linker does not yet search LIB, take the CRT's COMDAT
+rem sections or supply the default entry point - so naming it would break
+rem every Windows build. Tools > Linker for x86_64-windows... names it for a
+rem link it can do. The C6000 linker ships beside it as lnk6x.exe on the same
+rem terms: a program's link pulls members out of TI's runtime archive and
+rem builds a cinit table, neither of which it does yet, so "tilinker" is not
+rem named either; Tools > Linker for tms6747... names it for a link it can do.
 set "ASM="
 if exist "%STAGE%\bin\masm.exe" set "ASM=bin/masm.exe"
 (

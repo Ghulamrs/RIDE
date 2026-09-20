@@ -94,6 +94,8 @@
 		7F746CB55AD3A770E177E479 /* vm6747.exe.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = vm6747.exe.xcodeproj; path = "../VM6747/Emulator/vm6747.xcodeproj"; sourceTree = "<group>"; };
 		027BFC03EF75C888838128AE /* asm6x.exe.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = asm6x.exe.xcodeproj; path = "../ASM6x/asm6x.xcodeproj"; sourceTree = "<group>"; };
 		5727B91399C48BD57845A8A4 /* masm.exe.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = masm.exe.xcodeproj; path = "../MASM/masm.xcodeproj"; sourceTree = "<group>"; };
+		C9BFC337BD21019F4516FB33 /* link.exe.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = link.exe.xcodeproj; path = "../LINK/link.xcodeproj"; sourceTree = "<group>"; };
+		D174DFA3AB2F135B1531576A /* lnk6x.exe.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = lnk6x.exe.xcodeproj; path = "../LNK6x/lnk6x.xcodeproj"; sourceTree = "<group>"; };
 		B0E4B24994DA6A15303DF67C /* shci.exe.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = shci.exe.xcodeproj; path = "../VM6747/Compiler-Si/shc.xcodeproj"; sourceTree = "<group>"; };
 		F37F914312A3544D790C94C4 /* c2s.exe.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = c2s.exe.xcodeproj; path = "../Converter-C2S/c2s.xcodeproj"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -169,6 +171,34 @@
 			remoteGlobalIDString = 6A503C59EA2D76B27E13F658;
 			remoteInfo = masm.exe;
 		};
+		5C4FE70C7FBF66E7DAB38821 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = C9BFC337BD21019F4516FB33 /* link.exe.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 6656DF28AF5D20F50CBCEB32;
+			remoteInfo = link.exe;
+		};
+		6D109B0EE83AACDCBB09C0DC /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = C9BFC337BD21019F4516FB33 /* link.exe.xcodeproj */;
+			proxyType = 1;
+			remoteGlobalIDString = C86FD8D895FEFF0485685DB1;
+			remoteInfo = link.exe;
+		};
+		014B17949C899A2CA555B67F /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = D174DFA3AB2F135B1531576A /* lnk6x.exe.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = A733BF72187A73EC1DC8F617;
+			remoteInfo = lnk6x.exe;
+		};
+		7958FF6C085384D8C397B821 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = D174DFA3AB2F135B1531576A /* lnk6x.exe.xcodeproj */;
+			proxyType = 1;
+			remoteGlobalIDString = 0AF269B5D180058A3A373CDD;
+			remoteInfo = lnk6x.exe;
+		};
 		7F3F7C63B9FFE92A90EDCEF8 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = B0E4B24994DA6A15303DF67C /* shci.exe.xcodeproj */;
@@ -219,6 +249,8 @@
 				7F746CB55AD3A770E177E479 /* vm6747.exe.xcodeproj */,
 				027BFC03EF75C888838128AE /* asm6x.exe.xcodeproj */,
 				5727B91399C48BD57845A8A4 /* masm.exe.xcodeproj */,
+				C9BFC337BD21019F4516FB33 /* link.exe.xcodeproj */,
+				D174DFA3AB2F135B1531576A /* lnk6x.exe.xcodeproj */,
 				B0E4B24994DA6A15303DF67C /* shci.exe.xcodeproj */,
 				F37F914312A3544D790C94C4 /* c2s.exe.xcodeproj */,
 				744890367C8084A94875E5BE /* Products */,
@@ -331,6 +363,22 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
+		43B1775C9598C287D29CCA87 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				FF9EDA60B035D30411A87C91 /* link.exe */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		DA29442EBB64F6BBEF2C5DFE /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				D759505E70996857BAA2A4E9 /* lnk6x.exe */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
 		6C9AEBD72996EFE97927A707 /* Products */ = {
 			isa = PBXGroup;
 			children = (
@@ -385,6 +433,20 @@
 			remoteRef = 47C40D28DA6DBE03E0B95AD4 /* PBXContainerItemProxy */;
 			sourceTree = BUILT_PRODUCTS_DIR;
 		};
+		FF9EDA60B035D30411A87C91 /* link.exe */ = {
+			isa = PBXReferenceProxy;
+			fileType = "compiled.mach-o.executable";
+			path = link.exe;
+			remoteRef = 5C4FE70C7FBF66E7DAB38821 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		D759505E70996857BAA2A4E9 /* lnk6x.exe */ = {
+			isa = PBXReferenceProxy;
+			fileType = "compiled.mach-o.executable";
+			path = lnk6x.exe;
+			remoteRef = 014B17949C899A2CA555B67F /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
 		1AF118E366DD5B4E5D778CB8 /* shci.exe */ = {
 			isa = PBXReferenceProxy;
 			fileType = "compiled.mach-o.executable";
@@ -418,6 +480,8 @@
 				A4E2F5287A5ED8052FA26C2F /* PBXTargetDependency */,
 				6673D78DD291D8D6C1777374 /* PBXTargetDependency */,
 				D71212D271C84DE00F6DA51A /* PBXTargetDependency */,
+				24D28D531CF8EC92764B82CA /* PBXTargetDependency */,
+				F4F0C37324CB7E32F458E3AF /* PBXTargetDependency */,
 				8D2974D8BE7A2CAC21E834ED /* PBXTargetDependency */,
 				EF18CE9F2F4C0054317F0417 /* PBXTargetDependency */,
 			);
@@ -453,6 +517,16 @@
 			isa = PBXTargetDependency;
 			name = masm.exe;
 			targetProxy = CA5E4D66795AFA2BE06F3C32 /* PBXContainerItemProxy */;
+		};
+		24D28D531CF8EC92764B82CA /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = link.exe;
+			targetProxy = 6D109B0EE83AACDCBB09C0DC /* PBXContainerItemProxy */;
+		};
+		F4F0C37324CB7E32F458E3AF /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = lnk6x.exe;
+			targetProxy = 7958FF6C085384D8C397B821 /* PBXContainerItemProxy */;
 		};
 		8D2974D8BE7A2CAC21E834ED /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
@@ -503,6 +577,14 @@
 				{
 					ProductGroup = 878D16BDB9729DF6245554C9 /* Products */;
 					ProjectRef = 5727B91399C48BD57845A8A4 /* masm.exe.xcodeproj */;
+				},
+				{
+					ProductGroup = 43B1775C9598C287D29CCA87 /* Products */;
+					ProjectRef = C9BFC337BD21019F4516FB33 /* link.exe.xcodeproj */;
+				},
+				{
+					ProductGroup = DA29442EBB64F6BBEF2C5DFE /* Products */;
+					ProjectRef = D174DFA3AB2F135B1531576A /* lnk6x.exe.xcodeproj */;
 				},
 				{
 					ProductGroup = 6C9AEBD72996EFE97927A707 /* Products */;

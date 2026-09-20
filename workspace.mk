@@ -29,6 +29,8 @@ CXX1_DIR ?= ../VM6747/Compiler-Cppi
 VM_DIR ?= ../VM6747/Emulator
 ASM_DIR ?= ../ASM6x
 MASM_DIR ?= ../MASM
+LINK_DIR ?= ../LINK
+LNK6X_DIR ?= ../LNK6x
 
 # ---- one directory, named once and given to all four ------------------------
 #
@@ -59,7 +61,7 @@ MASM_DIR ?= ../MASM
 BINDIR ?= $(CURDIR)/bin
 OUT := $(abspath $(BINDIR))
 
-.PHONY: all cc1 cxx1 vm6747 asm6x masm shc c2s editor confirm bin check clean
+.PHONY: all cc1 cxx1 vm6747 asm6x masm link lnk6x shc c2s editor confirm bin check clean
 
 # `confirm` and not `editor`, so that the last thing a workspace build does is
 # check that what the editor drives is actually beside it.
@@ -99,10 +101,14 @@ asm6x:
 	$(MAKE) -C $(ASM_DIR) BINDIR=$(OUT) OBJDIR=$(OUT)/obj/asm6x
 masm:
 	$(MAKE) -C $(MASM_DIR) BINDIR=$(OUT) OBJDIR=$(OUT)/obj/masm
+link:
+	$(MAKE) -C $(LINK_DIR) BINDIR=$(OUT) OBJDIR=$(OUT)/obj/link
+lnk6x:
+	$(MAKE) -C $(LNK6X_DIR) BINDIR=$(OUT) OBJDIR=$(OUT)/obj/lnk6x
 
 # The dependency, said the same way it is said in the other three: the editor
 # is built after the things it drives. Nothing of them ends up inside it.
-editor: cc1 cxx1 vm6747 asm6x masm shc c2s
+editor: cc1 cxx1 vm6747 asm6x masm link lnk6x shc c2s
 	$(MAKE) BINDIR=$(OUT) OBJDIR=$(OUT)/obj/editor
 
 # Asked of RStudio rather than answered here. The editor is the thing that
@@ -137,6 +143,15 @@ endif
 	cd $(ASM_DIR) && ASM=$(OUT)/asm6x.exe sh tests/run.sh
 # And the x86-64 one against ml64's recorded objects, the same way.
 	cd $(MASM_DIR) && ASM=$(OUT)/masm.exe sh tests/run.sh
+# The linker against link.exe's recorded images, byte for byte. Its bed exits
+# 2 when a probe had to be skipped for want of an input - kernel32.lib is
+# Microsoft's and is not checked in; `sh tests/probes.sh` brings it back from
+# the Windows box - and 1 when an image differed. A skip is not a failure
+# here; a difference is.
+	cd $(LINK_DIR) && LINK=$(OUT)/link.exe sh tests/run.sh || [ $$? -eq 2 ]
+# The C6000 linker against lnk6x's recorded images, the same way and with the
+# same two exits: TI's runtime library is the input that is not checked in.
+	cd $(LNK6X_DIR) && LNK=$(OUT)/lnk6x.exe sh tests/run.sh || [ $$? -eq 2 ]
 # LIBDIR too: Compiler-S's examples suite builds a C library from
 # Compiler-C/examples, and this is the only place that knows where Compiler-C
 # actually is on this machine - it is ~/ansicc on the Linux box. Without it

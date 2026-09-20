@@ -98,14 +98,15 @@ a{color:inherit;text-decoration:none}}
 <p>It uses a Texas Instruments Code Generation Tools install already on the machine (none of TI's tools ship here); see <code>bin\ti\TI-BUILD.txt</code>.</p>
 <hr>
 <h2 id="5-the-toolchain-behind-a-build-new-in-4-0">5. The toolchain behind a build (new in 4.0)</h2>
-<p>Everything that turns your source into a program is this project's own code, except the two linkers - for now:</p>
-<table><thead><tr><th>Step</th><th>x86_64-windows</th><th>tms6747</th></tr></thead><tbody><tr><td>compile</td><td><code>cc1i</code> / <code>cxx1i</code> / <code>shci</code> (ours)</td><td><code>cc1i</code> / <code>cxx1i</code> / <code>shci</code> (ours)</td></tr><tr><td>assemble</td><td><strong><code>masm</code></strong> (ours, in place of ml64)</td><td><strong><code>asm6x</code></strong> (ours, in place of TI's)</td></tr><tr><td>link</td><td><code>link.exe</code> (Visual Studio) - until LINK</td><td>TI's <code>lnk6x</code> - until LNK6x</td></tr><tr><td>run</td><td>this machine</td><td><strong><code>vm6747</code></strong> (ours), or real silicon</td></tr></tbody></table>
-<p><code>settings.json</code> names <code>masm</code> as the assembler for x86_64-windows out of the box (<code>&quot;assembler&quot;: &quot;bin/masm.exe&quot;</code>, relative to that file). Tools &gt; Assembler for x86_64-windows... changes it, or clears it to go back to ml64; <code>masm</code> also answers ml64's own command line (<code>masm /nologo /c /Fo x.obj x.asm</code>), so a script that ran ml64 can run it instead. The linker slots (<code>&quot;linker&quot;</code>, <code>&quot;tilinker&quot;</code>, Tools &gt; Linker for ...) are empty until the project's own linkers exist; Visual Studio's link.exe and TI's lnk6x are used meanwhile.</p>
+<p>Everything that turns your source into a program is this project's own code, except the two links - for now:</p>
+<table><thead><tr><th>Step</th><th>x86_64-windows</th><th>tms6747</th></tr></thead><tbody><tr><td>compile</td><td><code>cc1i</code> / <code>cxx1i</code> / <code>shci</code> (ours)</td><td><code>cc1i</code> / <code>cxx1i</code> / <code>shci</code> (ours)</td></tr><tr><td>assemble</td><td><strong><code>masm</code></strong> (ours, in place of ml64)</td><td><strong><code>asm6x</code></strong> (ours, in place of TI's)</td></tr><tr><td>link</td><td>Microsoft's <code>link.exe</code>; ours ships, unnamed</td><td>TI's <code>lnk6x</code>; ours ships, unnamed</td></tr><tr><td>run</td><td>this machine</td><td><strong><code>vm6747</code></strong> (ours), or real silicon</td></tr></tbody></table>
+<p><code>settings.json</code> names <code>masm</code> as the assembler for x86_64-windows out of the box (<code>&quot;assembler&quot;: &quot;bin/masm.exe&quot;</code>, relative to that file). Tools &gt; Assembler for x86_64-windows... changes it, or clears it to go back to ml64; <code>masm</code> also answers ml64's own command line (<code>masm /nologo /c /Fo x.obj x.asm</code>), so a script that ran ml64 can run it instead. The project's own x86-64 linker is here too, <code>bin\link.exe</code> (LINK, held to Microsoft's byte for byte on its probe bed), but <code>&quot;linker&quot;</code> is left empty: a program the compilers write links against Microsoft's C runtime, which that linker does not yet take (<code>LIB</code>, the runtime's COMDAT sections, the default entry point). Tools &gt; Linker for x86_64-windows... names it for a link it can do. The C6000 linker is here on the same terms, <code>bin\lnk6x.exe</code> (LNK6x, held to TI's lnk6x byte for byte): <code>&quot;tilinker&quot;</code> is left empty because a program's link pulls members out of TI's runtime archive and builds a cinit table, which it does not do yet; Tools &gt; Linker for tms6747... names it for a link it can do.</p>
 <hr>
 <h2 id="where-things-are">Where things are</h2>
 <pre><code>bin\      the editor (RStudio.exe), the console editor, the compilers
           cc1i cxx1i shci, the assemblers masm (x86-64) and asm6x (C6000),
-          the vm6747 emulator, the c2s converter
+          the linkers link (x86-64) and lnk6x (C6000), the vm6747
+          emulator, the c2s converter
 bin\lib\  the Shalimar runtime (shmrt-x86_64-windows[-debug].lib) and the
           C6000 runtime (shmrt-tms6747\*.s)
 bin\ti\   ti-build.cmd — the real-silicon TI build path
@@ -114,7 +115,7 @@ include\  cxx1i&#x27;s headers: C++ (&lt;vector&gt;, &lt;new&gt;, &lt;typeinfo&g
 lib\      cc1i&#x27;s headers: the C standard headers (&lt;stdio.h&gt;, &lt;string.h&gt;, …)
 settings.json  the installation&#x27;s settings: where include\ and lib\ are,
           the default compiler (the Tools menu writes it), the assembler
-          (bin/masm.exe), the linkers when the project&#x27;s own exist, and a
+          (bin/masm.exe), the linkers when named under Tools, and a
           vcvars64.bat when Visual Studio had to be named by hand
           (Tools &gt; Header directories..., Tools &gt; Locate vcvars64.bat...)
 examples\ worked programs and a demo project (demo.pro)

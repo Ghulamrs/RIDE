@@ -92,6 +92,12 @@ pack asm6x  ../ASM6x                src tests Makefile README.md \
     review-probes-2026-09-19/labeldiff
 # masm: the x86-64 assembler, ml64's objects checked in under tests/enc.
 pack masm   ../MASM                 src tests Makefile README.md
+# link: the x86-64 linker, link.exe's images checked in under tests/ref - and
+# they are .exe files, which pack() drops, so this one is packed by hand.
+( cd ../LINK && tar --no-mac-metadata --exclude '* 2.*' --exclude 'build' \
+    -czf "$TMP/link-src.tgz" src tests Makefile README.md ) || exit 2
+# lnk6x: the C6000 linker, TI's lnk6x's .out images checked in under tests/ref.
+pack lnk6x  ../LNK6x                src tests Makefile README.md
 pack c2s    ../Converter-C2S        src tests Makefile README.md
 
 # Where they land: the shape workspace.mk assumes, ../VM6747/<name> and
@@ -105,10 +111,12 @@ there() {
         vm6747) echo 'VM6747/Emulator' ;;
         asm6x)  echo 'ASM6x' ;;
         masm)   echo 'MASM' ;;
+        link)   echo 'LINK' ;;
+        lnk6x)  echo 'LNK6x' ;;
         c2s)    echo 'Converter-C2S' ;;
     esac
 }
-NAMES="cc1i cxx1i shci vm6747 asm6x masm c2s"
+NAMES="cc1i cxx1i shci vm6747 asm6x masm link lnk6x c2s"
 
 say "copying to $BOX"
 dirs=""; for name in $NAMES; do dirs="$dirs ~/$(there $name)"; done

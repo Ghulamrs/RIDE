@@ -2,9 +2,11 @@
 ; four targets (x86_64-windows, x86_64-linux, arm64-darwin, tms6747), the
 ; VM6747 C6000 emulator, the C<->Shalimar converter, and the project's own
 ; assemblers for both machine targets: asm6x for the C6000 and, new in 4.0,
-; masm for x86-64, which the installed settings.json names in place of ml64.
-; The project's own linkers (LINK, LNK6x) dock here the same way when they
-; exist; until then the "linker" and "tilinker" slots stay empty.
+; masm for x86-64, which the installed settings.json names in place of ml64,
+; and the project's own linkers beside them, link.exe (LINK, x86-64) and
+; lnk6x.exe (LNK6x, C6000), shipped but not named: "linker" and "tilinker"
+; stay empty until each takes the editor's whole link line - the MSVC C
+; runtime on one side, TI's runtime archive and cinit on the other.
 #define MyName "RIDE 4.0"
 #define MyVer  "4.0"
 #ifndef Stage
@@ -55,6 +57,8 @@ Name: "{autodesktop}\RIDE 4.0"; Filename: "{app}\bin\RStudio.exe"; WorkingDir: "
 
 [Tasks]
 Name: "desktopicon"; Description: "Create a desktop shortcut"
+; bin holds a link.exe of the project's own. Appended, it sits after everything
+; already on PATH, and a Developer Command Prompt puts Microsoft's first anyway.
 Name: "addtopath"; Description: "Add the bin folder to PATH (cc1i, cxx1i, shci, masm, asm6x, vm6747, c2s on the command line)"; Flags: unchecked
 
 [Registry]

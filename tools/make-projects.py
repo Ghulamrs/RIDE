@@ -7,8 +7,8 @@
 Three machines, three shapes, one idea: open one thing and get all four
 programs, with the editor built after the three it drives.
 
-    macOS    RStudio.xcworkspace          RStudio.exe, cc1i.exe, cxx1i.exe, vm6747.exe, asm6x.exe, masm.exe, shci.exe, c2s.exe
-    Windows  RStudio.sln                  RStudioConsole, RStudioGui, cc1i, cxx1i, vm6747, asm6x, masm, shci, c2s
+    macOS    RStudio.xcworkspace          RStudio.exe, cc1i.exe, cxx1i.exe, vm6747.exe, asm6x.exe, masm.exe, link.exe, lnk6x.exe, shci.exe, c2s.exe
+    Windows  RStudio.sln                  RStudioConsole, RStudioGui, cc1i, cxx1i, vm6747, asm6x, masm, link, lnk6x, shci, c2s
     Linux    workspace.mk                 make -f workspace.mk
 
 Was make-xcodeproj.py while Xcode was all it wrote.
@@ -92,6 +92,16 @@ ASM_REPO = "ASM6x"
 # that link.exe takes, in place of ml64 - which is what settings.json names
 # it as, in an installation. Docked since 4.0.
 MASM_REPO = "MASM"
+# The x86-64 linker, its own repository beside this one as well: link reads
+# the COFF masm (and ml64, and cl) write and produces the PE32+ image, held to
+# link.exe byte for byte on its probe bed. Docked since 4.0; settings.json
+# names it as the linker only when it can take the editor's whole link line.
+LINK_REPO = "LINK"
+# And the C6000 linker, LINK's sibling as ASM6x is MASM's: lnk6x reads the TI
+# ELF asm6x (and cl6x) write, places it as a linker command file says and
+# writes the .out TI's lnk6x would, held to it byte for byte on its probe bed.
+# Docked since 4.0; named as the tms6747 linker under Tools, not by default.
+LNK6X_REPO = "LNK6x"
 SHC_REPO = os.path.join("VM6747", "Compiler-Si")
 
 
@@ -214,6 +224,8 @@ def projects():
                         ("vm6747.exe", "../" + VM_REPO + "/vm6747.xcodeproj"),
                         ("asm6x.exe", "../" + ASM_REPO + "/asm6x.xcodeproj"),
                         ("masm.exe", "../" + MASM_REPO + "/masm.xcodeproj"),
+                        ("link.exe", "../" + LINK_REPO + "/link.xcodeproj"),
+                        ("lnk6x.exe", "../" + LNK6X_REPO + "/lnk6x.xcodeproj"),
                         ("shci.exe", "../" + SHC_REPO + "/shc.xcodeproj"),
                         ("c2s.exe", "../Converter-C2S/c2s.xcodeproj")],
         },
@@ -318,6 +330,24 @@ def projects():
             "out": os.path.join(SIBLINGS, MASM_REPO, "masm.xcodeproj"),
             "sources": by_glob(os.path.join(SIBLINGS, MASM_REPO), ("src",)),
             "headers": headers_under(os.path.join(SIBLINGS, MASM_REPO), ("src",)),
+            "include": "$(SRCROOT)/src",
+        },
+        {
+            # The x86-64 linker: the same shape once more.
+            "product": "link.exe",
+            "root": os.path.join(SIBLINGS, LINK_REPO),
+            "out": os.path.join(SIBLINGS, LINK_REPO, "link.xcodeproj"),
+            "sources": by_glob(os.path.join(SIBLINGS, LINK_REPO), ("src",)),
+            "headers": headers_under(os.path.join(SIBLINGS, LINK_REPO), ("src",)),
+            "include": "$(SRCROOT)/src",
+        },
+        {
+            # The C6000 linker: the same shape.
+            "product": "lnk6x.exe",
+            "root": os.path.join(SIBLINGS, LNK6X_REPO),
+            "out": os.path.join(SIBLINGS, LNK6X_REPO, "lnk6x.xcodeproj"),
+            "sources": by_glob(os.path.join(SIBLINGS, LNK6X_REPO), ("src",)),
+            "headers": headers_under(os.path.join(SIBLINGS, LNK6X_REPO), ("src",)),
             "include": "$(SRCROOT)/src",
         },
         {
@@ -1134,6 +1164,8 @@ CXX1_DIR ?= ../VM6747/Compiler-Cppi
 VM_DIR ?= ../VM6747/Emulator
 ASM_DIR ?= ../ASM6x
 MASM_DIR ?= ../MASM
+LINK_DIR ?= ../LINK
+LNK6X_DIR ?= ../LNK6x
 
 # ---- one directory, named once and given to all four ------------------------
 #
@@ -1164,7 +1196,7 @@ MASM_DIR ?= ../MASM
 BINDIR ?= $(CURDIR)/bin
 OUT := $(abspath $(BINDIR))
 
-.PHONY: all cc1 cxx1 vm6747 asm6x masm shc c2s editor confirm bin check clean
+.PHONY: all cc1 cxx1 vm6747 asm6x masm link lnk6x shc c2s editor confirm bin check clean
 
 # `confirm` and not `editor`, so that the last thing a workspace build does is
 # check that what the editor drives is actually beside it.
@@ -1204,10 +1236,14 @@ asm6x:
 	$(MAKE) -C $(ASM_DIR) BINDIR=$(OUT) OBJDIR=$(OUT)/obj/asm6x
 masm:
 	$(MAKE) -C $(MASM_DIR) BINDIR=$(OUT) OBJDIR=$(OUT)/obj/masm
+link:
+	$(MAKE) -C $(LINK_DIR) BINDIR=$(OUT) OBJDIR=$(OUT)/obj/link
+lnk6x:
+	$(MAKE) -C $(LNK6X_DIR) BINDIR=$(OUT) OBJDIR=$(OUT)/obj/lnk6x
 
 # The dependency, said the same way it is said in the other three: the editor
 # is built after the things it drives. Nothing of them ends up inside it.
-editor: cc1 cxx1 vm6747 asm6x masm shc c2s
+editor: cc1 cxx1 vm6747 asm6x masm link lnk6x shc c2s
 	$(MAKE) BINDIR=$(OUT) OBJDIR=$(OUT)/obj/editor
 
 # Asked of RStudio rather than answered here. The editor is the thing that
@@ -1242,6 +1278,15 @@ endif
 	cd $(ASM_DIR) && ASM=$(OUT)/asm6x.exe sh tests/run.sh
 # And the x86-64 one against ml64's recorded objects, the same way.
 	cd $(MASM_DIR) && ASM=$(OUT)/masm.exe sh tests/run.sh
+# The linker against link.exe's recorded images, byte for byte. Its bed exits
+# 2 when a probe had to be skipped for want of an input - kernel32.lib is
+# Microsoft's and is not checked in; `sh tests/probes.sh` brings it back from
+# the Windows box - and 1 when an image differed. A skip is not a failure
+# here; a difference is.
+	cd $(LINK_DIR) && LINK=$(OUT)/link.exe sh tests/run.sh || [ $$? -eq 2 ]
+# The C6000 linker against lnk6x's recorded images, the same way and with the
+# same two exits: TI's runtime library is the input that is not checked in.
+	cd $(LNK6X_DIR) && LNK=$(OUT)/lnk6x.exe sh tests/run.sh || [ $$? -eq 2 ]
 # LIBDIR too: Compiler-S's examples suite builds a C library from
 # Compiler-C/examples, and this is the only place that knows where Compiler-C
 # actually is on this machine - it is ~/ansicc on the Linux box. Without it
@@ -1479,6 +1524,23 @@ def main():
                                 ["_CRT_SECURE_NO_WARNINGS"],
                                 includes=("$(ProjectDir)src",)),
                    "masm.vcxproj"))
+    # The linker's product is link.exe, the name of the thing it stands in
+    # for. A project may be called link - MSBuild's Link task is a target, not
+    # a project - and bin\link.exe beside the editor is not found by accident:
+    # a build's bare `link.exe` is resolved by cmd from the current directory
+    # (the project's) and then PATH, which vcvars starts with Microsoft's.
+    wanted.append((os.path.join(SIBLINGS, LINK_REPO, "link.vcxproj"),
+                   vcxproj_text("link", spec_of["link.exe"]["sources"],
+                                ["_CRT_SECURE_NO_WARNINGS"],
+                                includes=("$(ProjectDir)src",)),
+                   "link.vcxproj"))
+    # lnk6x.exe shares its name with TI's, as asm6x.exe does; the editor runs
+    # TI's by full path under the "ti" directory, never by PATH.
+    wanted.append((os.path.join(SIBLINGS, LNK6X_REPO, "lnk6x.vcxproj"),
+                   vcxproj_text("lnk6x", spec_of["lnk6x.exe"]["sources"],
+                                ["_CRT_SECURE_NO_WARNINGS"],
+                                includes=("$(ProjectDir)src",)),
+                   "lnk6x.vcxproj"))
 
     entries = [
         # The VM6747 line, laid out on the Windows box as it is here:
@@ -1489,6 +1551,8 @@ def main():
         ("vm6747", "../" + VM_REPO.replace(os.sep, "/") + "/vm6747.vcxproj", guid("vm6747"), []),
         ("asm6x", "../" + ASM_REPO + "/asm6x.vcxproj", guid("asm6x"), []),
         ("masm", "../" + MASM_REPO + "/masm.vcxproj", guid("masm"), []),
+        ("link", "../" + LINK_REPO + "/link.vcxproj", guid("link"), []),
+        ("lnk6x", "../" + LNK6X_REPO + "/lnk6x.vcxproj", guid("lnk6x"), []),
         # shci after cxx1i: its post-build step compiles the Shalimar runtime
         # for the C6000 with the cxx1i.exe beside it (shc_runtime_step).
         ("shci", "../" + SHC_REPO.replace(os.sep, "/") + "/shc.vcxproj", guid("shci"), [guid("cxx1i")]),
@@ -1498,7 +1562,7 @@ def main():
         ("c2s", "../Converter-C2S/c2s.vcxproj", guid("c2s"), []),
         # the editor after both, which is the dependency this whole thing is
         # for - said in a .sln the way the workspace says it in a .xcodeproj.
-        ("RStudioConsole", "RStudioConsole.vcxproj", guid("RStudioConsole"), [CC1_GUID, guid("cxx1i"), guid("vm6747"), guid("asm6x"), guid("masm"), guid("shci"), guid("c2s")]),
+        ("RStudioConsole", "RStudioConsole.vcxproj", guid("RStudioConsole"), [CC1_GUID, guid("cxx1i"), guid("vm6747"), guid("asm6x"), guid("masm"), guid("link"), guid("lnk6x"), guid("shci"), guid("c2s")]),
         # The window, on the same footing as the console half. It is in the
         # solution for two reasons: so that one build makes all four, and
         # because being in a solution is what moves its output into the
@@ -1508,7 +1572,7 @@ def main():
         # version of it set OutDir, IntDir, BasicRuntimeChecks and a platform
         # version, and the binary died at startup with heap corruption before
         # main. Nothing in that file is touched to get this.
-        ("RStudioGui", "winforms/RStudioGui.vcxproj", GUI_GUID, [CC1_GUID, guid("cxx1i"), guid("vm6747"), guid("asm6x"), guid("masm"), guid("shci"), guid("c2s")]),
+        ("RStudioGui", "winforms/RStudioGui.vcxproj", GUI_GUID, [CC1_GUID, guid("cxx1i"), guid("vm6747"), guid("asm6x"), guid("masm"), guid("link"), guid("lnk6x"), guid("shci"), guid("c2s")]),
     ]
     wanted.append((os.path.join(HERE, "RStudio.sln"), solution_text(entries),
                    "RStudio.sln"))

@@ -179,9 +179,14 @@ host's tools for that. Three jobs go to native tools:
    `x86_64-linux` it is the GNU assembler; on `arm64-darwin` it is the
    assembler `clang` drives.
 
-2. **Linking** objects into a program. On Windows that is Microsoft's `link.exe`
-   (the project's own linker, LINK, will take its place the way `masm` took
-   ml64's - Tools > Linker for x86_64-windows... - once it exists);
+2. **Linking** objects into a program. On Windows that is Microsoft's `link.exe`.
+   The project's own linker, `link.exe` beside the editor (LINK, held to
+   Microsoft's byte for byte on its probe bed), is built and shipped with 4.0
+   and takes its place the way `masm` took ml64's once Tools > Linker for
+   x86_64-windows... names it; it is not named by default, because a program
+   the compilers write links against Microsoft's C runtime, and that linker
+   does not yet search `LIB`, fold the runtime's COMDAT sections or supply the
+   default entry point;
    on Linux the host driver (`cc`/`gcc`) or, for C++, `clang++`/`g++`; on macOS
    `clang++`. A link of C++ objects goes through the C++ driver so the C++
    runtime is pulled in.

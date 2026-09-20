@@ -5,10 +5,15 @@
 
 - **RIDE 4.0** — everything 3.5 has, plus the project's own x86-64 assembler
   `masm` beside the editor, which the installed `settings.json` names in place
-  of `ml64` (`"assembler": "bin/masm.exe"`). The two linkers (LINK, LNK6x) dock
-  the same way when they have source; until then `"linker"`/`"tilinker"` are
-  empty and link.exe / TI's lnk6x are used. Built from the RIDE tree
-  (`C:\Users\GRA\source\RIDE`, with `..\MASM` beside it).
+  of `ml64` (`"assembler": "bin/masm.exe"`), and the project's own x86-64
+  linker `link.exe` beside it (LINK, docked the same way) - shipped but not
+  named: `"linker"` stays empty and Microsoft's link.exe is used until LINK
+  takes the editor's whole link line (the CRT's COMDATs, `LIB`, the default
+  entry). The C6000 linker `lnk6x.exe` (LNK6x) ships on the same terms:
+  `"tilinker"` stays empty and TI's lnk6x is used until LNK6x pulls members
+  out of TI's runtime archive and builds the cinit table. Built from the RIDE
+  tree (`C:\Users\GRA\source\RIDE`, with `..\MASM`, `..\LINK` and `..\LNK6x`
+  beside it).
 - **RIDE 3.5** — three languages, **four** targets (incl. `tms6747` with the
   `vm6747` emulator), the C↔Shalimar converter, and a **license-safe TI build
   path** (`bin\ti\ti-build.cmd`) that produces a real C674x `.out`/`.hex` using
@@ -20,7 +25,7 @@
 
 1. Build the workspace so the binaries exist:
    - 4.0: `tools/to-windows.sh` (into `C:\Users\GRA\source\RIDE\bin`; it
-     carries `..\MASM` too).
+     carries `..\MASM`, `..\LINK` and `..\LNK6x` too).
    - 3.5: the sealed tree's own relay (into `C:\Users\GRA\source\RStudio\bin`).
    - 3.0: a worktree at `8be81ca`, `ED1_WINDOWS_ROOT=...\source30 tools/to-windows.sh`
      (into `...\source30\RStudio\x64\Release`), with the four originals relayed.
@@ -56,7 +61,7 @@ adjust the `Stage` define for another machine.
 
 ## Layout the installer lays down
 
-    <install>\bin\     RStudio.exe, RStudioConsole.exe, the compilers, (3.5) vm6747, asm6x, c2s, (4.0) masm
+    <install>\bin\     RStudio.exe, RStudioConsole.exe, the compilers, (3.5) vm6747, asm6x, c2s, (4.0) masm, link, lnk6x
     <install>\bin\lib\ Shalimar runtime (.lib) and (3.5) shmrt-tms6747\*.s
     <install>\bin\ti\  (3.5) ti-build.cmd - real-silicon TI build path
     <install>\include\ C++ headers      <install>\lib\ C headers

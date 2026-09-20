@@ -138,6 +138,15 @@ Two diagnostics worth recognising:
 - **MASM / ml64** — the `x86_64-windows` assembly dialect, and Microsoft's
   assembler for it; `masm.exe` beside the editor is the project's own, used in
   its place since 4.0 (`asm6x.exe` is the C6000 counterpart).
+- **LINK / link.exe** — Microsoft's linker, and the project's own `link.exe`
+  beside the editor since 4.0, held to Microsoft's byte for byte on its probe
+  bed; Tools > Linker for x86_64-windows... names it, and a build resolves a
+  bare `link.exe` from the project directory and then `PATH`, never from
+  `bin\`, so the two do not get confused.
+- **LNK6x / lnk6x** — TI's C6000 linker, and the project's own `lnk6x.exe`
+  beside the editor since 4.0, held to TI's byte for byte on its probe bed;
+  Tools > Linker for tms6747... names it, and TI's is always run by full path
+  under the CGT directory.
 - **DWARF / CodeView** — the two debug-info formats; DWARF on the GNU targets,
   CodeView only via `cl`.
 
