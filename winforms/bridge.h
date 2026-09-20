@@ -111,6 +111,11 @@ const char* rstudio_install_file(void);
 const char* rstudio_includes(void);
 const char* rstudio_libraries(void);
 int rstudio_set_includes(const char* line);
+/* The window's way of asking the build's question - "the project's own
+   masm/link/lnk6x did not build it; use the native tools instead?" - a yes
+   builds again through them (compile.h: setAskNative). Installed once, at
+   start; the function is called on whichever thread is building. */
+void rstudio_ask_native(int (*ask)(const char* question));
 int rstudio_set_libraries(const char* line);
 const char* rstudio_include_dir(void);
 const char* rstudio_lib_dir(void);

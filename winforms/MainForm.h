@@ -1,6 +1,7 @@
 #pragma once
 
 #include "bridge.h"
+#include <cstring>
 
 namespace rstudiogui {
 
@@ -30,6 +31,17 @@ value struct Spot {
 // TabCloseRequested(index) - so the close button is part of the control rather
 // than something painted over it from outside.
 public delegate void TabCloseHandler(int index);
+
+// The build's question - the project's own masm/link/lnk6x did not build it,
+// use the native tools instead? - as the window asks it. A plain function so
+// the bridge can hold its address; MessageBox needs no owner, and the build
+// may be on the worker thread, whose own message loop shows it.
+static int AskNativeInWindow(const char* question) {
+    String^ text = gcnew String(question, 0, static_cast<int>(std::strlen(question)),
+                                System::Text::Encoding::UTF8);
+    return MessageBox::Show(text, "RIDE", MessageBoxButtons::YesNo, MessageBoxIcon::Question,
+                            MessageBoxDefaultButton::Button1) == System::Windows::Forms::DialogResult::Yes ? 1 : 0;
+}
 
 public ref class ClosableTabControl : public System::Windows::Forms::TabControl {
 public:
@@ -304,6 +316,7 @@ private:
     void Start(String^ projectDirectory, array<String^>^ files) {
         project_ = rstudio_project_new();
         arch_ = "x86_64-windows";
+        rstudio_ask_native(AskNativeInWindow);
 
         // The i-line names, since 3.5: the compilers docked beside the editor
         // are cc1i, cxx1i and shci (the Toolchain struct defaults to the same).

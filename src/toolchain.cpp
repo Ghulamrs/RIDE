@@ -804,11 +804,32 @@ bool prepareFor(ToolchainKind kind) {
     _putenv_s("CC1_AS", as.c_str());
     _putenv_s("CXX1_AS", as.c_str());
     _putenv_s("SHC_AS", as.c_str());
+    // And the linker for x86_64-windows the same way, where one is named:
+    // each compiler links its own program through what *_LD says, else
+    // link.exe. An empty value unsets the variable, which is what a yes to
+    // the native tools needs (settings::forceNative).
+    std::string ld = settings::linker();
+    _putenv_s("CC1_LD", ld.c_str());
+    _putenv_s("CXX1_LD", ld.c_str());
+    _putenv_s("SHC_LD", ld.c_str());
     return true;
 #else
     (void)kind;
     return true;
 #endif
+}
+
+bool nativeToolsAvailable(const std::string& arch) {
+    if (isEmulated(arch)) {
+        std::string ti = settings::ti();
+        if (ti.empty()) return false;
+        std::string lnk = path::join(path::join(ti, "bin"), "lnk6x.exe");
+        return path::exists(lnk) || path::exists(path::join(path::join(ti, "bin"), "lnk6x"));
+    }
+#ifdef _WIN32
+    if (arch == "x86_64-windows") return importMsvcEnvironment();
+#endif
+    return false;
 }
 
 std::string assemblerFlag(ToolchainKind kind, const std::string& arch) {

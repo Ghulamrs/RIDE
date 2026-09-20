@@ -102,23 +102,26 @@ except the two links - for now:
 |---------------|---------------------------------------|--------------------------------------|
 | compile       | `cc1i` / `cxx1i` / `shci` (ours)      | `cc1i` / `cxx1i` / `shci` (ours)     |
 | assemble      | **`masm`** (ours, in place of ml64)   | **`asm6x`** (ours, in place of TI's) |
-| link          | Microsoft's `link.exe`; ours ships, unnamed | TI's `lnk6x`; ours ships, unnamed |
+| link          | **`link`** (ours; a failure asks for link.exe) | **`lnk6x`** (ours; a failure asks for TI's) |
 | run           | this machine                          | **`vm6747`** (ours), or real silicon |
 
 `settings.json` names `masm` as the assembler for x86_64-windows out of the
 box (`"assembler": "bin/masm.exe"`, relative to that file). Tools > Assembler
 for x86_64-windows... changes it, or clears it to go back to ml64; `masm` also
 answers ml64's own command line (`masm /nologo /c /Fo x.obj x.asm`), so a
-script that ran ml64 can run it instead. The project's own x86-64 linker is
-here too, `bin\link.exe` (LINK, held to Microsoft's byte for byte on its
-probe bed), but `"linker"` is left empty: a program the compilers write links
-against Microsoft's C runtime, which that linker does not yet take (`LIB`, the
-runtime's COMDAT sections, the default entry point). Tools > Linker for
-x86_64-windows... names it for a link it can do. The C6000 linker is here on
-the same terms, `bin\lnk6x.exe` (LNK6x, held to TI's lnk6x byte for byte):
-`"tilinker"` is left empty because a program's link pulls members out of
-TI's runtime archive and builds a cinit table, which it does not do yet;
-Tools > Linker for tms6747... names it for a link it can do.
+script that ran ml64 can run it instead. The two linkers are named the same
+way - `"linker": "bin/link.exe"` (LINK, held to Microsoft's byte for byte on
+its probe bed) and `"tilinker": "bin/lnk6x.exe"` (LNK6x, held to TI's) - so
+the project's own tools are the tools by default. When one of them fails a
+build and the compilers found no fault in the source, RIDE asks: *"The
+project's own masm and link did not build it. Use Visual Studio's ml64 and
+link.exe for this build instead?"* (or TI's lnk6x). **Yes** builds again
+through the vendor's tools, which RIDE finds itself - Visual Studio through
+vswhere, TI's lnk6x under the directory Tools names; nothing has to be on
+PATH. `"askNative": false` in settings.json never asks and lets the build
+fail. Today the question comes up on every real link: neither linker yet
+takes its vendor's runtime (Microsoft's C runtime on one side, TI's archive
+and cinit on the other); each says so and stops rather than guess.
 
 --------------------------------------------------------------------------
 ## Where things are
@@ -135,7 +138,9 @@ Tools > Linker for tms6747... names it for a link it can do.
     lib\      cc1i's headers: the C standard headers (<stdio.h>, <string.h>, …)
     settings.json  the installation's settings: where include\ and lib\ are,
               the default compiler (the Tools menu writes it), the assembler
-              (bin/masm.exe), the linkers when named under Tools, and a
+              (bin/masm.exe), the linkers (bin/link.exe, bin/lnk6x.exe),
+              "askNative" - whether a failure of ours asks for the vendor's
+              tools - and a
               vcvars64.bat when Visual Studio had to be named by hand
               (Tools > Header directories..., Tools > Locate vcvars64.bat...)
     examples\ worked programs and a demo project (demo.pro)

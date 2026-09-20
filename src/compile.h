@@ -32,6 +32,22 @@ extern const char* const kArches[kArchCount];
 
 typedef void (*LineSink)(void* context, const std::string& line);
 
+// **The question a build asks when the project's own tools failed it.**
+// masm, link and lnk6x beside the editor are the tools by default; when one
+// of them did not build something and the compilers found no fault in the
+// source, and settings.json says "askNative": true, the front end puts this
+// question - "use the native tools for this build instead?" - and a yes
+// builds again with ml64 and link.exe, or TI's lnk6x. Each front end
+// installs its own way of asking (the console a prompt, the window a
+// message box); with none installed the build fails as it failed. The
+// question is decided by nativeFallbackWanted, so a test can hold it.
+typedef bool (*AskNative)(void* context, const std::string& question);
+void setAskNative(AskNative ask, void* context);
+// question holds the question when the answer is yes - and, when it is no
+// because the vendor's tools are not on this machine, the line that says so.
+bool nativeFallbackWanted(bool ok, bool sourceFault, const std::string& arch,
+                          std::string& question);
+
 int runCaptured(const std::string& command, std::string& output,
                 LineSink sink = 0, void* context = 0);
 

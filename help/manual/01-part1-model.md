@@ -182,11 +182,15 @@ host's tools for that. Three jobs go to native tools:
 2. **Linking** objects into a program. On Windows that is Microsoft's `link.exe`.
    The project's own linker, `link.exe` beside the editor (LINK, held to
    Microsoft's byte for byte on its probe bed), is built and shipped with 4.0
-   and takes its place the way `masm` took ml64's once Tools > Linker for
-   x86_64-windows... names it; it is not named by default, because a program
-   the compilers write links against Microsoft's C runtime, and that linker
-   does not yet search `LIB`, fold the runtime's COMDAT sections or supply the
-   default entry point;
+   and the installed `settings.json` names it (`"linker": "bin/link.exe"`) as
+   it names `masm`. When one of the project's own tools fails a build and
+   the compilers found no fault in the source, the editor asks - *"The
+   project's own masm and link did not build it. Use Visual Studio's ml64 and
+   link.exe for this build instead?"* - and a Yes builds again through the
+   vendor's, found as always (vswhere, never PATH); `"askNative": false` in
+   `settings.json` never asks and lets the build fail. Today that question
+   comes up on every real Windows link: LINK does not yet read Microsoft's C
+   runtime (`LIB`, COMDAT folding, the default entry point);
    on Linux the host driver (`cc`/`gcc`) or, for C++, `clang++`/`g++`; on macOS
    `clang++`. A link of C++ objects goes through the C++ driver so the C++
    runtime is pulled in.

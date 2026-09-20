@@ -255,6 +255,10 @@ bool refusedUnwritable(const std::string& program, Built& result, LineSink sink,
     return true;
 }
 
+// The front end's way of asking, or none.
+AskNative askNative = 0;
+void* askNativeContext = 0;
+
 bool looksLikeMissingProgram(const std::string& output) {
     bool shellSaidSo =
         output.find("command not found") != std::string::npos ||
@@ -267,6 +271,80 @@ bool looksLikeMissingProgram(const std::string& output) {
     for (size_t i = 0; i < sizeof ranAfterAll / sizeof *ranAfterAll; ++i)
         if (output.find(ranAfterAll[i]) != std::string::npos) return false;
     return true;
+}
+
+}
+
+void setAskNative(AskNative ask, void* context) {
+    askNative = ask;
+    askNativeContext = context;
+}
+
+// Whether a failed build is one the native tools might make: it failed, the
+// compilers found no fault in the source (a fault of the user's is not the
+// tools'), one of the project's own tools was in play for this target, and
+// the settings say to ask. What the question names is what was in play.
+bool nativeFallbackWanted(bool ok, bool sourceFault, const std::string& arch,
+                          std::string& question) {
+    question.clear();
+    if (ok || sourceFault || settings::nativeForced() || !settings::askNative()) return false;
+    std::string ours, theirs;
+    if (isEmulated(arch)) {
+        if (settings::tilinker().empty()) return false;
+        ours = "lnk6x"; theirs = "TI's lnk6x";
+    } else if (arch == "x86_64-windows") {
+        bool as = !settings::assembler().empty(), ld = !settings::linker().empty();
+        if (!as && !ld) return false;
+        ours = as && ld ? "masm and link" : as ? "masm" : "link";
+        theirs = as && ld ? "Visual Studio's ml64 and link.exe" : as ? "Visual Studio's ml64" : "Microsoft's link.exe";
+    } else {
+        return false;
+    }
+    if (!nativeToolsAvailable(arch)) {
+        question = "The project's own " + ours + " did not build it, and " + theirs +
+                   (isEmulated(arch) ? " is not on this machine - Tools names TI's C6000 compiler directory"
+                                     : " are not on this machine - no Visual Studio was found");
+        return false;
+    }
+    question = "The project's own " + ours + " did not build it. Use " + theirs +
+               " for this build instead?";
+    return true;
+}
+
+namespace {
+
+// The build again through the native tools, when the front end says yes to
+// the question; the answer to the first build stands otherwise. The
+// recipes read the settings as they go, so forcing native for the retry is
+// the whole switch: assembler(), linker() and tilinker() answer nothing.
+template <class Again>
+Built withNativeFallback(Built first, const std::string& arch, LineSink sink, void* context,
+                         Again again) {
+    std::string question;
+    if (!nativeFallbackWanted(first.ok, first.diag.present, arch, question)) {
+        if (!question.empty()) {
+            first.output += question + "\n";
+            if (sink) sink(context, question);
+        }
+        return first;
+    }
+    if (!askNative) {
+        // --build and --run have no one to ask: the build stands as failed,
+        // and the line says what an interactive front end would have asked.
+        std::string unasked = question + " (nothing here can ask - the build stands)";
+        first.output += unasked + "\n";
+        if (sink) sink(context, unasked);
+        return first;
+    }
+    if (!askNative(askNativeContext, question)) return first;
+    std::string said = "building again with the native tools, as asked";
+    first.output += said + "\n";
+    if (sink) sink(context, said);
+    settings::forceNative(true);
+    Built second = again();
+    settings::forceNative(false);
+    second.output = first.output + second.output;
+    return second;
 }
 
 }
@@ -330,9 +408,11 @@ Build build(const Toolchain& tool, ToolchainKind kind, const std::string& source
     return result;
 }
 
-Built buildProgram(const Toolchain& tool, ToolchainKind kind, const std::string& sourcePath,
-                   Language lang, const std::string& arch, Configuration config,
-                   LineSink sink, void* context) {
+namespace {
+
+Built buildProgramOnce(const Toolchain& tool, ToolchainKind kind, const std::string& sourcePath,
+                       Language lang, const std::string& arch, Configuration config,
+                       LineSink sink, void* context) {
     Built result;
 
     if (!prepareFor(kind)) {
@@ -363,6 +443,23 @@ Built buildProgram(const Toolchain& tool, ToolchainKind kind, const std::string&
         if (sink) sink(context, hint);
     }
     return result;
+}
+
+struct ProgramAgain {
+    const Toolchain* tool; ToolchainKind kind; const std::string* source; Language lang;
+    const std::string* arch; Configuration config; LineSink sink; void* context;
+    Built operator()() const {
+        return buildProgramOnce(*tool, kind, *source, lang, *arch, config, sink, context);
+    }
+};
+
+}
+
+Built buildProgram(const Toolchain& tool, ToolchainKind kind, const std::string& sourcePath,
+                   Language lang, const std::string& arch, Configuration config,
+                   LineSink sink, void* context) {
+    ProgramAgain again = {&tool, kind, &sourcePath, lang, &arch, config, sink, context};
+    return withNativeFallback(again(), arch, sink, context, again);
 }
 
 namespace {
@@ -533,10 +630,12 @@ LinkerChoice tiLinker(const std::string& chosen, const std::string& named,
     return choice;
 }
 
-Built buildTarget(const Toolchain& tool, ToolchainKind kind,
-                  const std::vector<std::string>& sources, Language lang,
-                  const std::string& arch, Configuration config,
-                  const std::string& program, LineSink sink, void* context) {
+namespace {
+
+Built buildTargetOnce(const Toolchain& tool, ToolchainKind kind,
+                      const std::vector<std::string>& sources, Language lang,
+                      const std::string& arch, Configuration config,
+                      const std::string& program, LineSink sink, void* context) {
     Built result;
 
     if (sources.empty()) {
@@ -579,9 +678,29 @@ Built buildTarget(const Toolchain& tool, ToolchainKind kind,
     return result;
 }
 
-Built buildParts(const Toolchain& tool, const std::vector<Part>& parts,
-                 const std::string& arch, Configuration config,
-                 const std::string& program, LineSink sink, void* context) {
+struct TargetAgain {
+    const Toolchain* tool; ToolchainKind kind; const std::vector<std::string>* sources; Language lang;
+    const std::string* arch; Configuration config; const std::string* program; LineSink sink; void* context;
+    Built operator()() const {
+        return buildTargetOnce(*tool, kind, *sources, lang, *arch, config, *program, sink, context);
+    }
+};
+
+}
+
+Built buildTarget(const Toolchain& tool, ToolchainKind kind,
+                  const std::vector<std::string>& sources, Language lang,
+                  const std::string& arch, Configuration config,
+                  const std::string& program, LineSink sink, void* context) {
+    TargetAgain again = {&tool, kind, &sources, lang, &arch, config, &program, sink, context};
+    return withNativeFallback(again(), arch, sink, context, again);
+}
+
+namespace {
+
+Built buildPartsOnce(const Toolchain& tool, const std::vector<Part>& parts,
+                     const std::string& arch, Configuration config,
+                     const std::string& program, LineSink sink, void* context) {
     Built result;
 
     if (parts.empty()) {
@@ -597,8 +716,8 @@ Built buildParts(const Toolchain& tool, const std::vector<Part>& parts,
     if (parts.size() == 1) {
         ToolchainKind only = toolchainOf(tool, parts[0]);
         if (tool.libraries.empty() || isEmulated(arch) || only == ToolShc)
-            return buildTarget(tool, only, parts[0].sources, parts[0].lang, arch, config,
-                               program, sink, context);
+            return buildTargetOnce(tool, only, parts[0].sources, parts[0].lang, arch, config,
+                                   program, sink, context);
     }
 
     bool withCpp = false;
@@ -693,6 +812,23 @@ Built buildParts(const Toolchain& tool, const std::vector<Part>& parts,
     result.program = program;
     result.ok = true;
     return result;
+}
+
+struct PartsAgain {
+    const Toolchain* tool; const std::vector<Part>* parts; const std::string* arch;
+    Configuration config; const std::string* program; LineSink sink; void* context;
+    Built operator()() const {
+        return buildPartsOnce(*tool, *parts, *arch, config, *program, sink, context);
+    }
+};
+
+}
+
+Built buildParts(const Toolchain& tool, const std::vector<Part>& parts,
+                 const std::string& arch, Configuration config,
+                 const std::string& program, LineSink sink, void* context) {
+    PartsAgain again = {&tool, &parts, &arch, config, &program, sink, context};
+    return withNativeFallback(again(), arch, sink, context, again);
 }
 
 Ran runBuilt(const std::string& program, LineSink sink, void* context, bool shalimar) {

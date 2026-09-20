@@ -78,6 +78,11 @@ std::string joined(const std::vector<std::string>& lines) {
     return all;
 }
 
+// The build's question, as a test front end hears and answers it.
+std::string askedQuestion;
+bool askedAnswer = false;
+bool rememberTheQuestion(void*, const std::string& question) { askedQuestion = question; return askedAnswer; }
+
 void check(bool ok, const std::string& what) {
     ++checks;
     if (ok) return;
@@ -1327,6 +1332,117 @@ void projects() {
                   "and the build names it, not TI's directory");
             check(typo.say.find(bin) == std::string::npos,
                   "TI's install is not blamed for a flag typed wrong");
+        }
+        // The question a build asks when the project's own tools failed it.
+        // Ours are the tools by default; "askNative" decides whether a
+        // failure asks to go to the vendor's - and only when the vendor's
+        // are on this machine - and a yes builds again with the four
+        // settings answering nothing. tms6747 serves every host here, TI's
+        // lnk6x being the fake one under tibin; x86_64-windows only where
+        // Visual Studio is.
+        {
+            check(editor::settings::askNative(), "askNative is true unless the file says otherwise");
+            std::string ours = editor::path::absolute((app / "settings.json").string());
+            std::string tiDir = editor::path::join(dir.string(), "tibin");
+            std::string q;
+            editor::settings::rememberTilinker(ours);
+            editor::settings::rememberTi(std::string(), std::string());
+            check(!editor::nativeFallbackWanted(false, false, "tms6747", q) &&
+                      q.find("not on this machine") != std::string::npos,
+                  "with no TI directory named, nothing asks - the line says TI's lnk6x is not here");
+            editor::settings::rememberTi(tiDir, std::string());
+            check(editor::nativeToolsAvailable("tms6747"), "TI's directory named, its lnk6x is the native tool");
+            check(editor::nativeFallbackWanted(false, false, "tms6747", q) &&
+                      q.find("own lnk6x") != std::string::npos && q.find("TI's lnk6x") != std::string::npos,
+                  "a tms6747 build ours failed asks, naming lnk6x and what would stand in");
+            check(!editor::nativeFallbackWanted(true, false, "tms6747", q) && q.empty(),
+                  "a build that succeeded does not");
+            check(!editor::nativeFallbackWanted(false, true, "tms6747", q),
+                  "nor one the compiler found a fault in - the source is the user's");
+            check(!editor::nativeFallbackWanted(false, false, "arm64-darwin", q),
+                  "nor a target none of ours serve");
+            editor::settings::rememberTilinker(std::string());
+            check(!editor::nativeFallbackWanted(false, false, "tms6747", q) && q.empty(),
+                  "tms6747 with no tilinker: nothing of ours in play, nothing to say");
+            editor::settings::rememberTilinker(ours);
+            editor::settings::forceNative(true);
+            check(editor::settings::assembler().empty() && editor::settings::linker().empty() &&
+                      editor::settings::tilinker().empty() && editor::settings::namedTilinker().empty(),
+                  "a yes makes the four settings answer nothing, so every recipe reaches for the vendor's");
+            check(!editor::nativeFallbackWanted(false, false, "tms6747", q), "and the second build does not ask again");
+            editor::settings::forceNative(false);
+            check(editor::settings::rememberAskNative(false) && !editor::settings::askNative(),
+                  "askNative false is kept");
+            check(!editor::nativeFallbackWanted(false, false, "tms6747", q), "and then nothing asks: the build fails as it failed");
+            editor::settings::rememberAskNative(true);
+#ifdef _WIN32
+            editor::settings::rememberAssembler("bin/masm.exe");
+            editor::settings::rememberLinker(ours);
+            if (editor::nativeToolsAvailable("x86_64-windows")) {
+                check(editor::nativeFallbackWanted(false, false, "x86_64-windows", q) &&
+                          q.find("masm and link") != std::string::npos && q.find("ml64 and link.exe") != std::string::npos,
+                      "a Windows build ours failed asks, naming masm and link and what would stand in");
+                editor::settings::rememberLinker(std::string());
+                check(editor::nativeFallbackWanted(false, false, "x86_64-windows", q) &&
+                          q.find("own masm ") != std::string::npos && q.find("link.exe") == std::string::npos,
+                      "with only the assembler named, the question names only it");
+            } else {
+                check(!editor::nativeFallbackWanted(false, false, "x86_64-windows", q) &&
+                          q.find("no Visual Studio") != std::string::npos,
+                      "with no Visual Studio, nothing asks - the line says so");
+            }
+#endif
+
+            // Through a build: the tools missing, the question put, a yes
+            // building again - the wrapper, on every host.
+            askedQuestion.clear(); askedAnswer = true;
+            editor::setAskNative(rememberTheQuestion, 0);
+            editor::Toolchain tool;
+            tool.cc1 = "cc1-that-is-not-there";
+            std::vector<std::string> srcs(1, editor::path::join(dir.string(), "any.c"));
+            writeSource(srcs[0], "int main(void) { return 0; }\n");
+            std::string any = editor::path::join(dir.string(), "any.exe");
+            editor::Built twice = editor::buildTarget(tool, editor::ToolCc1, srcs, editor::LangC, "tms6747",
+                                                      editor::ConfigRelease, any);
+            check(!askedQuestion.empty() && askedQuestion.find("lnk6x") != std::string::npos,
+                  "a failed build puts the question to the front end");
+            check(twice.output.find("building again with the native tools, as asked") != std::string::npos,
+                  "and a yes builds again, saying so");
+            check(!editor::settings::nativeForced(), "the switch is back off afterwards");
+            askedQuestion.clear(); askedAnswer = false;
+            editor::Built once = editor::buildTarget(tool, editor::ToolCc1, srcs, editor::LangC, "tms6747",
+                                                     editor::ConfigRelease, any);
+            check(!askedQuestion.empty() && once.output.find("building again") == std::string::npos,
+                  "a no leaves the first answer standing");
+            editor::setAskNative(0, 0);
+            askedQuestion.clear();
+            editor::Built unasked = editor::buildTarget(tool, editor::ToolCc1, srcs, editor::LangC, "tms6747",
+                                                        editor::ConfigRelease, any);
+            check(askedQuestion.empty() && unasked.output.find("nothing here can ask") != std::string::npos,
+                  "with no front end to ask - --build, --run - the line says what would have been asked");
+#ifdef _WIN32
+            // And for real, where cc1i and ml64 are: a masm.exe that is not an
+            // assembler fails cc1i, the yes goes to ml64, and the program is made.
+            const char* cc1Here = std::getenv("CC1");
+            if (cc1Here && *cc1Here && editor::path::exists(cc1Here) && editor::nativeToolsAvailable("x86_64-windows")) {
+                editor::setAskNative(rememberTheQuestion, 0);
+                askedQuestion.clear(); askedAnswer = true;
+                editor::settings::rememberAssembler("bin/masm.exe");
+                editor::settings::rememberLinker(std::string());
+                editor::Toolchain real;
+                real.cc1 = cc1Here;
+                editor::Built forReal = editor::buildTarget(real, editor::ToolCc1, srcs, editor::LangC, "x86_64-windows",
+                                                         editor::ConfigRelease, any);
+                check(askedQuestion.find("own masm") != std::string::npos, "for real: a masm.exe that is no assembler fails cc1i and asks");
+                check(forReal.ok, "and the yes builds the program through ml64");
+                if (forReal.ok) editor::path::remove(forReal.program);
+                editor::setAskNative(0, 0);
+            }
+            editor::settings::rememberAssembler(std::string());
+            editor::settings::rememberLinker(std::string());
+#endif
+            editor::settings::rememberTilinker(std::string());
+            editor::settings::rememberTi(std::string(), std::string());
         }
         editor::settings::pretendInstalledAt(std::string());
         check(editor::settings::includeDir().empty() || true, "and the suite's own binary is back in charge");

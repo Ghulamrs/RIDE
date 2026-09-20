@@ -717,6 +717,17 @@ const char* rstudio_libraries(void) {
     return scratch().c_str();
 }
 
+namespace {
+int (*askNativeInWindow)(const char*) = 0;
+bool askNativeThroughWindow(void*, const std::string& question) {
+    return askNativeInWindow && askNativeInWindow(question.c_str()) != 0;
+}
+}
+void rstudio_ask_native(int (*ask)(const char* question)) {
+    askNativeInWindow = ask;
+    editor::setAskNative(ask ? askNativeThroughWindow : 0, 0);
+}
+
 int rstudio_set_includes(const char* line) { return editor::settings::rememberIncludes(splitList(line)) ? 1 : 0; }
 int rstudio_set_libraries(const char* line) { return editor::settings::rememberLibraries(splitList(line)) ? 1 : 0; }
 

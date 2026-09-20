@@ -156,6 +156,12 @@ Recipe linkRecipe(const Toolchain& tool, const std::vector<std::string>& objects
 std::string linkerName(bool withCpp);
 
 bool prepareFor(ToolchainKind kind);
+// Whether the vendor's tools for a target are on this machine, found the way
+// a build finds them - never by PATH: Visual Studio through vswhere or the
+// "vcvars" setting, whose vcvars64.bat is imported into this process; TI's
+// lnk6x by full path under the "ti" directory. The question of going native
+// is only put when the answer here is yes.
+bool nativeToolsAvailable(const std::string& arch);
 
 }
 

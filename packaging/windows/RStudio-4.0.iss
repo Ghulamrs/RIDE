@@ -4,9 +4,8 @@
 ; assemblers for both machine targets: asm6x for the C6000 and, new in 4.0,
 ; masm for x86-64, which the installed settings.json names in place of ml64,
 ; and the project's own linkers beside them, link.exe (LINK, x86-64) and
-; lnk6x.exe (LNK6x, C6000), shipped but not named: "linker" and "tilinker"
-; stay empty until each takes the editor's whole link line - the MSVC C
-; runtime on one side, TI's runtime archive and cinit on the other.
+; lnk6x.exe (LNK6x, C6000), named too: ours are the tools by default, and
+; "askNative": true has a failure of ours ask for the vendor's tools.
 #define MyName "RIDE 4.0"
 #define MyVer  "4.0"
 #ifndef Stage

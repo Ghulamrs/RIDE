@@ -84,6 +84,19 @@ void overrideTilinker(const std::string& path);    // --tilinker, for this run o
 // this answers what was asked for either way, so the build can say that it
 // did. Empty when nothing was named.
 std::string namedTilinker();
+// **Whether a build that the project's own tools failed asks to go native.**
+// "askNative" in settings.json, true by default: when masm, link or lnk6x of
+// the project's own did not build something and the compilers found no
+// fault in the source, the front end asks - "use the native tools (ml64 and
+// link.exe / TI's lnk6x) for this build instead?" - and a yes builds again
+// through them. false, and the build fails as it failed, never asking. The
+// user's design, 2026-09-20: ours by default, the vendor's by consent.
+bool askNative();
+bool rememberAskNative(bool ask);
+// For the build a yes was given to: the four above answer as if nothing of
+// the project's own were named, so every recipe reaches for the vendor's.
+void forceNative(bool on);
+bool nativeForced();
 // The compiler chosen when the editor starts and no project or command
 // line says otherwise: auto, cc1, cxx1, shc, msvc or c++ - "compiler" in
 // the installation's settings.json. Choosing one from the menu writes it.

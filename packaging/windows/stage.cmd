@@ -19,30 +19,30 @@ rem bin\ for its own, and settings.json beside them says so for the editor.
 if exist "%CPP%\include" xcopy /e /i /q "%CPP%\include" "%STAGE%\include" >nul
 if exist "%CPP%\lib\*.h" copy /y "%CPP%\lib\*.h" "%STAGE%\include\" >nul
 if exist "%CC%\lib" xcopy /e /i /q "%CC%\lib" "%STAGE%\lib" >nul
-rem The assembler for x86_64-windows is the project's own, masm.exe beside
-rem the editor, named relative to this file so the installation can be put
-rem anywhere; the editor makes it absolute against the file. The project's
-rem own linker for x86_64-windows ships beside it as link.exe, but is not
-rem named here: a program the compilers write links against Microsoft's C
-rem runtime, and that linker does not yet search LIB, take the CRT's COMDAT
-rem sections or supply the default entry point - so naming it would break
-rem every Windows build. Tools > Linker for x86_64-windows... names it for a
-rem link it can do. The C6000 linker ships beside it as lnk6x.exe on the same
-rem terms: a program's link pulls members out of TI's runtime archive and
-rem builds a cinit table, neither of which it does yet, so "tilinker" is not
-rem named either; Tools > Linker for tms6747... names it for a link it can do.
+rem The assembler and the two linkers are the project's own, beside the
+rem editor, named relative to this file so the installation can be put
+rem anywhere; the editor makes each absolute against the file. They are the
+rem tools by default; when one of them fails a build and the compilers found
+rem no fault in the source, "askNative": true has the editor ask whether to
+rem use the vendor's (ml64 and link.exe, TI's lnk6x) for that build - false
+rem never asks, and the build fails as it failed. The user's design.
 set "ASM="
 if exist "%STAGE%\bin\masm.exe" set "ASM=bin/masm.exe"
+set "LD="
+if exist "%STAGE%\bin\link.exe" set "LD=bin/link.exe"
+set "TILD="
+if exist "%STAGE%\bin\lnk6x.exe" set "TILD=bin/lnk6x.exe"
 (
   echo {
   echo   "include": "include",
   echo   "lib": "lib",
   echo   "vcvars": "",
   echo   "assembler": "%ASM%",
-  echo   "linker": "",
+  echo   "linker": "%LD%",
   echo   "ti": "",
   echo   "tilib": "",
-  echo   "tilinker": "",
+  echo   "tilinker": "%TILD%",
+  echo   "askNative": true,
   echo   "compiler": "auto",
   echo   "indent": 4,
   echo   "tabs": false,

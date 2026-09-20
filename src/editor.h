@@ -89,6 +89,9 @@ public:
     void run();
 
     void console(const std::string& line);
+    // The build's question - the project's own tools failed it, use the
+    // vendor's for this build? - on the status line; y is the only yes.
+    bool askNativeTools(const std::string& question);
 
     // **Batch: the project built, and run, from a command line, with no
     // terminal** - the same buildProject the menu runs, its console printed

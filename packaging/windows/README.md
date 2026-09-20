@@ -6,12 +6,13 @@
 - **RIDE 4.0** — everything 3.5 has, plus the project's own x86-64 assembler
   `masm` beside the editor, which the installed `settings.json` names in place
   of `ml64` (`"assembler": "bin/masm.exe"`), and the project's own x86-64
-  linker `link.exe` beside it (LINK, docked the same way) - shipped but not
-  named: `"linker"` stays empty and Microsoft's link.exe is used until LINK
-  takes the editor's whole link line (the CRT's COMDATs, `LIB`, the default
-  entry). The C6000 linker `lnk6x.exe` (LNK6x) ships on the same terms:
-  `"tilinker"` stays empty and TI's lnk6x is used until LNK6x pulls members
-  out of TI's runtime archive and builds the cinit table. Built from the RIDE
+  linker `link.exe` beside it (LINK) and the C6000 linker `lnk6x.exe`
+  (LNK6x), both named too (`"linker": "bin/link.exe"`, `"tilinker":
+  "bin/lnk6x.exe"`). `"askNative": true`: when one of ours fails a build
+  and the source is not at fault, the editor asks whether to use the
+  vendor's tools for that build (found by vswhere / the `ti` directory,
+  never PATH); false never asks. Neither linker yet takes its vendor's
+  runtime, so the question comes up on every real link for now. Built from the RIDE
   tree (`C:\Users\GRA\source\RIDE`, with `..\MASM`, `..\LINK` and `..\LNK6x`
   beside it).
 - **RIDE 3.5** — three languages, **four** targets (incl. `tms6747` with the

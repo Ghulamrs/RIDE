@@ -225,6 +225,12 @@ void consoleSink(void* context, const std::string& line) {
     static_cast<Editor*>(context)->console(line);
 }
 
+// The question a build asks when the project's own tools failed it - see
+// compile.h - as the console front end puts it.
+bool askNativeOnConsole(void* context, const std::string& question) {
+    return static_cast<Editor*>(context)->askNativeTools(question);
+}
+
 }
 
 Editor::Editor()
@@ -3659,8 +3665,15 @@ void Editor::processKey(int key) {
     }
 }
 
+bool Editor::askNativeTools(const std::string& question) {
+    bool cancelled = false;
+    std::string answer = prompt(question + " [y/N] ", cancelled);
+    return !cancelled && !answer.empty() && (answer[0] == 'y' || answer[0] == 'Y');
+}
+
 void Editor::run() {
     starting_ = false;
+    setAskNative(askNativeOnConsole, this);
     if (message_.empty()) say("F10 menu  Ctrl-B build  Ctrl-Z undo  Ctrl-F find  F1 keys  Ctrl-Q quit");
 
     int wasRows = 0, wasCols = 0;

@@ -273,7 +273,23 @@ static void overrideWith(std::string*& slot, const std::string& value) {
 }
 void overrideAssembler(const std::string& p) { overrideWith(assemblerForThisRun, p); }
 
+// A plain bool, not a pointer: no destructor, so the window's rule holds.
+static bool nativeForcedNow = false;
+void forceNative(bool on) { nativeForcedNow = on; }
+bool nativeForced() { return nativeForcedNow; }
+
+bool askNative() {
+    return readInstall().get("askNative").boolean(true);
+}
+
+bool rememberAskNative(bool ask) {
+    Json root = readInstall();
+    root.set("askNative", Json::fromBool(ask));
+    return writeInstall(root);
+}
+
 std::string assembler() {
+    if (nativeForcedNow) return std::string();
     if (assemblerForThisRun && !assemblerForThisRun->empty()) return *assemblerForThisRun;
     return installedFile("assembler");
 }
@@ -281,6 +297,7 @@ std::string assembler() {
 void overrideLinker(const std::string& p) { overrideWith(linkerForThisRun, p); }
 
 std::string linker() {
+    if (nativeForcedNow) return std::string();
     if (linkerForThisRun && !linkerForThisRun->empty()) return *linkerForThisRun;
     return installedFile("linker");
 }
@@ -304,12 +321,14 @@ std::string tilib() {
 void overrideTilinker(const std::string& p) { overrideWith(tilinkerForThisRun, p); }
 
 std::string tilinker() {
+    if (nativeForcedNow) return std::string();
     if (tilinkerForThisRun && !tilinkerForThisRun->empty()) return *tilinkerForThisRun;
     return installedFile("tilinker");
 }
 
 std::string namedTilinker() {
     if (tilinkerForThisRun && !tilinkerForThisRun->empty()) return *tilinkerForThisRun;
+    if (nativeForcedNow) return std::string();
     return readInstall().get("tilinker").text(std::string());
 }
 
@@ -407,6 +426,7 @@ bool writeInstallFileIfAbsent() {
     root.set("ti", Json::fromText(""));
     root.set("tilib", Json::fromText(""));
     root.set("tilinker", Json::fromText(""));
+    root.set("askNative", Json::fromBool(true));
     root.set("compiler", Json::fromText("auto"));
     root.set("indent", Json::fromNumber(4));
     root.set("tabs", Json::fromBool(false));
