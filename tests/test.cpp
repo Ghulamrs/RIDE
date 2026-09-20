@@ -1250,6 +1250,32 @@ void projects() {
         check(editor::settings::rememberLinker(std::string()) && editor::settings::rememberTilinker(std::string())
                   && editor::settings::linker().empty() && editor::settings::tilinker().empty(),
               "and `-` puts link.exe and lnk6x back");
+        // A linker named for tms6747 that has since gone: tilinker() answers
+        // nothing, so TI's would stand in for it - and the build has to say
+        // so rather than change what made the .out without a word.
+        {
+            std::string bin = editor::path::join(dir.string(), "tibin");
+            file::create_directories(editor::path::join(bin, "bin"));
+            std::string theirs = editor::path::join(editor::path::join(bin, "bin"), "lnk6x.exe");
+            std::ofstream(theirs.c_str()) << "not a linker, but a file that is there\n";
+
+            editor::LinkerChoice plain = editor::tiLinker(std::string(), std::string(), bin);
+            checkEqual(plain.path, theirs, "nothing named: TI's own lnk6x");
+            check(plain.say.empty(), "and nothing to say about it");
+
+            editor::LinkerChoice gone = editor::tiLinker(std::string(), "D:\\LNK6X\\lnk6x.exe", bin);
+            checkEqual(gone.path, theirs, "named but gone: TI's stands in");
+            check(gone.say.find("LNK6X") != std::string::npos && gone.say.find("not there") != std::string::npos,
+                  "and the build says the named one is not there");
+
+            editor::LinkerChoice ours = editor::tiLinker(theirs, theirs, bin);
+            checkEqual(ours.path, theirs, "named and there: that one");
+            check(ours.say.find(theirs) != std::string::npos,
+                  "and it is named by its path, which is all that tells it from TI's");
+
+            check(editor::tiLinker(std::string(), std::string(), editor::path::join(dir.string(), "no-ti")).path.empty(),
+                  "no TI directory: no linker to run");
+        }
         editor::settings::pretendInstalledAt(std::string());
         check(editor::settings::includeDir().empty() || true, "and the suite's own binary is back in charge");
     }

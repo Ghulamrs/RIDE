@@ -79,6 +79,11 @@ void overrideTilib(const std::string& dir);        // --tilib, for this run only
 // name. Empty, and TI's lnk6x as always.
 std::string tilinker();
 void overrideTilinker(const std::string& path);    // --tilinker, for this run only
+// **What was named for tms6747, there or not.** tilinker() answers nothing
+// for a path that has gone, so a build would quietly use TI's lnk6x instead;
+// this answers what was asked for either way, so the build can say that it
+// did. Empty when nothing was named.
+std::string namedTilinker();
 // The compiler chosen when the editor starts and no project or command
 // line says otherwise: auto, cc1, cxx1, shc, msvc or c++ - "compiler" in
 // the installation's settings.json. Choosing one from the menu writes it.

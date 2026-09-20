@@ -298,6 +298,11 @@ std::string tilinker() {
     return (!said.empty() && path::exists(said)) ? said : std::string();
 }
 
+std::string namedTilinker() {
+    if (tilinkerForThisRun && !tilinkerForThisRun->empty()) return *tilinkerForThisRun;
+    return readInstall().get("tilinker").text(std::string());
+}
+
 namespace {
 
 std::vector<std::string> installedList(const char* key) {

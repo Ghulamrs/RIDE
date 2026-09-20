@@ -428,17 +428,21 @@ void makeTiProgram(Built& result, const std::string& program, LineSink sink, voi
     }
     // The project's own C6000 linker where one is named, TI's otherwise;
     // the runtime and the command file are TI's either way - see
-    // settings::tilinker.
-    std::string lnk = settings::tilinker();
-    if (lnk.empty()) lnk = path::join(path::join(ti, "bin"), "lnk6x.exe");
-    if (!path::exists(lnk)) lnk = path::join(path::join(ti, "bin"), "lnk6x");
-    if (!path::exists(lnk)) {
+    // settings::tilinker and tiLinker, which also says when a linker that was
+    // named has gone, so that TI's standing in for it is never silent.
+    LinkerChoice choice = tiLinker(settings::tilinker(), settings::namedTilinker(), ti);
+    if (choice.path.empty()) {
         result.ok = false;
         std::string hint = "no lnk6x under " + ti + " - Tools names TI's C6000 compiler directory, the one with bin\\lnk6x";
         result.output += hint + "\n";
         if (sink) sink(context, hint);
         return;
     }
+    if (!choice.say.empty()) {
+        result.output += choice.say + "\n";
+        if (sink) sink(context, choice.say);
+    }
+    std::string lnk = choice.path;
     std::string cmdfile = path::join(dir, "ti-link.cmd");
     if (std::FILE* f = std::fopen(cmdfile.c_str(), "wb")) { std::fputs(kTiLinkCmd, f); std::fclose(f); }
     // the exception-handling build of TI's runtime where there is one (CCS
@@ -465,6 +469,26 @@ void makeTiProgram(Built& result, const std::string& program, LineSink sink, voi
     if (sink) sink(context, "[linked " + out + "]");
 }
 
+}
+
+// Nothing named: TI's own, .exe or not. Named and there: that one, and the
+// console says which, because ours and TI's carry the same name and only the
+// path tells them apart. Named and gone: TI's, and the console says so.
+LinkerChoice tiLinker(const std::string& chosen, const std::string& named,
+                      const std::string& tiDir) {
+    LinkerChoice choice;
+    if (!chosen.empty()) {
+        choice.path = chosen;
+        choice.say = "[linking with " + chosen + "]";
+        return choice;
+    }
+    std::string theirs = path::join(path::join(tiDir, "bin"), "lnk6x.exe");
+    if (!path::exists(theirs)) theirs = path::join(path::join(tiDir, "bin"), "lnk6x");
+    if (!path::exists(theirs)) return choice;
+    choice.path = theirs;
+    if (!named.empty())
+        choice.say = "[" + named + " is not there - linking with TI's " + theirs + "]";
+    return choice;
 }
 
 Built buildTarget(const Toolchain& tool, ToolchainKind kind,
