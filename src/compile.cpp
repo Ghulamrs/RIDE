@@ -224,6 +224,37 @@ int runCaptured(const std::string& command, std::string& output,
 
 namespace {
 
+// A build whose program cannot be written where it would go - the project's
+// own directory, as a rule - is refused before any compiler runs, and the
+// refusal names the directory and what to do about it. Found the hard way:
+// RIDE 4.0's installer starts the editor in its own examples\ under Program
+// Files, where a normal user may read and not write, and the build then died
+// in the linker with "LNK1104: cannot open file ...demo.exe" under a hint
+// about vcvars64.bat, neither of which is the matter. A directory is
+// writable if a file can be made in it; the read-only attribute _access
+// answers with is not what UAC withholds.
+std::string unwritable(const std::string& program) {
+    if (program.empty()) return std::string();
+    std::string dir = path::parent(program);
+    if (dir.empty()) dir = ".";
+    std::string probe = path::join(dir, ".ride-writes-here");
+    if (std::FILE* f = std::fopen(probe.c_str(), "wb")) {
+        std::fclose(f);
+        std::remove(probe.c_str());
+        return std::string();
+    }
+    return dir + " cannot be written to, and the program would go there - "
+           "copy the project to a folder of your own, such as Documents, and build it there";
+}
+
+bool refusedUnwritable(const std::string& program, Built& result, LineSink sink, void* context) {
+    std::string why = unwritable(program);
+    if (why.empty()) return false;
+    result.output = why + "\n";
+    if (sink) sink(context, why);
+    return true;
+}
+
 bool looksLikeMissingProgram(const std::string& output) {
     bool shellSaidSo =
         output.find("command not found") != std::string::npos ||
@@ -314,6 +345,7 @@ Built buildProgram(const Toolchain& tool, ToolchainKind kind, const std::string&
     result.program = recipe.assemblyPath;
     result.leftovers = recipe.leftovers;
     result.shalimar = kind == ToolShc;
+    if (refusedUnwritable(result.program, result, sink, context)) return result;
 
     int made = runCaptured(recipe.command, result.output, sink, context);
     if (made < 0) {
@@ -511,6 +543,7 @@ Built buildTarget(const Toolchain& tool, ToolchainKind kind,
         result.output = "nothing to build\n";
         return result;
     }
+    if (refusedUnwritable(program, result, sink, context)) return result;
 
     if (!prepareFor(kind)) {
         result.output = "no Visual Studio found - cl, ml64 and link cannot be run; name its vcvars64.bat under Tools\n";
@@ -555,6 +588,7 @@ Built buildParts(const Toolchain& tool, const std::vector<Part>& parts,
         result.output = "nothing to build\n";
         return result;
     }
+    if (refusedUnwritable(program, result, sink, context)) return result;
 
     // One part is its compiler's own link - unless the project names
     // libraries, which cc1 and cxx1 do not take: those go to the host's

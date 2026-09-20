@@ -42,9 +42,15 @@ Source: "{#Stage}\*"; DestDir: "{app}"; Flags: recursesubdirs createallsubdirs i
 
 [Dirs]
 ; New projects default to {app}\projects and single programs to {app}\programs;
-; make them so a normal user can write there even under Program Files.
+; make them so a normal user can write there even under Program Files. And
+; examples\, where both shortcuts start the editor and whose projects are the
+; first thing anyone builds: without this line a build there died in the
+; linker ("LNK1104: cannot open file ...\examples\demo.exe") for every user
+; but an administrator - 2026-09-20, the first 4.0 install under Program
+; Files. The editor now refuses such a build and names the directory.
 Name: "{app}\projects"; Permissions: users-modify
 Name: "{app}\programs"; Permissions: users-modify
+Name: "{app}\examples"; Permissions: users-modify
 
 [Icons]
 Name: "{group}\RIDE 4.0"; Filename: "{app}\bin\RStudio.exe"; WorkingDir: "{app}\examples"

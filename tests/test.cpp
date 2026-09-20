@@ -3610,6 +3610,49 @@ void theOtherShapeOfDiagnostic() {
 // that could not be started: "ld: symbol(s) not found" contains "not found",
 // and the advice that followed - name it with --cc1, put it on PATH - sent
 // anybody who read it looking in the wrong place.
+void whereTheProgramCannotGo() {
+    std::printf("a build whose program cannot be written where it would go\n");
+
+    // The installer's examples\ under Program Files, as a normal user sees
+    // it: readable, not writable. The portable stand-in is a directory that
+    // is a file - nothing can be made inside one anywhere.
+    std::string dir = editor::path::join(editor::path::tempDir(), "rstudio-unwritable-test");
+    editor::path::removeTree(dir);
+    editor::path::makeDirectories(dir);
+    std::string notADir = editor::path::join(dir, "examples");
+    writeSource(notADir, "a file standing where the project directory would be\n");
+    std::string source = editor::path::join(dir, "hello.c");
+    writeSource(source, "int main(void) { return 0; }\n");
+    std::string program = editor::path::join(notADir, "hello.exe");
+
+    editor::Toolchain tool;
+    tool.cc1 = "cc1-that-must-not-run";
+    std::vector<std::string> sources(1, source);
+    editor::Built one = editor::buildTarget(tool, editor::ToolCc1, sources, editor::LangC,
+                                            editor::hostArch(), editor::ConfigRelease, program);
+    check(!one.ok, "a target whose program directory cannot be written is refused");
+    check(one.output.find(notADir) != std::string::npos, "naming the directory");
+    check(one.output.find("copy the project") != std::string::npos, "and saying what to do");
+    check(one.output.find("could not be run") == std::string::npos &&
+              one.output.find("LNK") == std::string::npos,
+          "before any compiler or linker runs, so neither is blamed");
+
+    std::vector<editor::Part> parts(1);
+    parts[0].group = "Sources";
+    parts[0].lang = editor::LangC;
+    parts[0].sources = sources;
+    editor::Built whole = editor::buildParts(tool, parts, editor::hostArch(), editor::ConfigRelease, program);
+    check(!whole.ok && whole.output.find("cannot be written to") != std::string::npos,
+          "a project build is refused the same way");
+
+    editor::Built alone = editor::buildProgram(tool, editor::ToolCc1, source, editor::LangC,
+                                               editor::hostArch(), editor::ConfigRelease);
+    check(alone.ok || alone.output.find("cannot be written to") == std::string::npos,
+          "and a file beside a writable directory is not");
+
+    editor::path::removeTree(dir);
+}
+
 void whatALinkFailureSays() {
     std::printf("what a link failure is called\n");
 
@@ -4969,6 +5012,7 @@ int main(int argc, char** argv) {
     projects();
     operations();
     theOtherShapeOfDiagnostic();
+    whereTheProgramCannotGo();
     whatALinkFailureSays();
     aCompilerPerGroup();
     theFourthCompiler();
