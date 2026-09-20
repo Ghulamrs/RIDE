@@ -57,6 +57,10 @@ for %%e in (c h cpp shl pro) do (
 rem example projects that live in their own subdirectory (a .pro with many
 rem files, e.g. compilerpp\) travel whole; the .iss recurses the stage tree
 for /d %%D in ("%SRC%\examples\*") do xcopy /e /i /q "%%D" "%STAGE%\examples\%%~nxD" >nul
+rem full project workspaces (a .pro with its files in its own directory, e.g.
+rem projects\compilerpp) - shipped whole into {app}\projects, which the .iss makes
+rem users-modify so F4 can write the built exe beside the project
+if exist "%SRC%\projects" xcopy /e /i /q "%SRC%\projects" "%STAGE%\projects" >nul
 if exist "%SRC%\help" xcopy /e /i /q "%SRC%\help" "%STAGE%\help" >nul
 if exist "%SRC%\docs" xcopy /e /i /q "%SRC%\docs" "%STAGE%\docs" >nul
 if exist "%SRC%\README.md" copy /y "%SRC%\README.md" "%STAGE%\" >nul
