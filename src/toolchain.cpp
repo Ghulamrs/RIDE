@@ -337,9 +337,20 @@ std::string configFlags(ToolchainKind kind, Configuration config,
     if (kind == ToolShc)
         return config == ConfigDebug && !isEmulated(arch) ? std::string(" --debug") : std::string();
 
+    // **cxx1's own -O2, not cl's.** This line passed `-O2` for a long time
+    // while cxx1 had no optimiser and no -O flag at all: it refused the switch
+    // ("unknown option -O2") and every Release C++ build failed, unseen only
+    // because the editor defaults to Debug. cxx1 now implements -O1 and -O2 on
+    // its instruction IR - lea fusion, copy propagation, a register and
+    // liveness model - so the switch is real and Release asks for it. On
+    // Compiler++'s sixteen units it takes .text from +54.6% over cl /O2 to
+    // +20.6%, and compiles faster than -O0 for having less assembly to write.
+    // -O2 is -O1 today; the favour-space/favour-speed split is not written yet.
     if (kind == ToolCxx)
         return config == ConfigRelease ? " -O2 -DNDEBUG=1" : " -g -D_DEBUG=1";
 
+    // cl's own switches: /O2 is Microsoft's full optimisation, and it belongs
+    // to this toolchain alone.
     if (kind == ToolMsvc)
         return config == ConfigRelease ? " /O2 /DNDEBUG" : " /Od /Zi /D_DEBUG";
 
