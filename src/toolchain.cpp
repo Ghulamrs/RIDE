@@ -296,19 +296,29 @@ std::string shalimarRuntimeDir() {
     return path::isDirectory(dir) ? dir : std::string();
 }
 
-std::string launchCommand(const std::string& program, bool shalimar) {
+/*  **The project's run arguments go last, after everything the emulated
+ *  target needs first.** For a native program that is simply the program and
+ *  its arguments; for a .s or a .vm it is the emulator, the program, the
+ *  Shalimar runtime if there is one, and only then the arguments - which is
+ *  the order the emulator reads them in. Each is quoted on its own, so a path
+ *  with a space survives. */
+std::string launchCommand(const std::string& program, bool shalimar,
+                          const std::vector<std::string>& args) {
     std::string leaf = path::filename(program);
     bool assembly = leaf.size() > 2 && leaf.compare(leaf.size() - 2, 2, ".s") == 0;
     bool directory = leaf.size() > 3 && leaf.compare(leaf.size() - 3, 3, ".vm") == 0;
+    std::string command;
     if (assembly || directory) {
-        std::string command = quote(emulatorProgram()) + " " + quote(program);
+        command = quote(emulatorProgram()) + " " + quote(program);
         if (shalimar) {
             std::string runtime = shalimarRuntimeDir();
             if (!runtime.empty()) command += " " + quote(runtime);
         }
-        return command;
+    } else {
+        command = quote(program);
     }
-    return quote(program);
+    for (size_t i = 0; i < args.size(); ++i) command += " " + quote(args[i]);
+    return command;
 }
 
 const char* configName(Configuration config) {

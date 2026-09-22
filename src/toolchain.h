@@ -93,7 +93,8 @@ std::string emulatorProgram();
 std::string c6xAssembler();
 // The command that runs a built program: the program itself, or the emulator
 // with it.
-std::string launchCommand(const std::string& program, bool shalimar = false);
+std::string launchCommand(const std::string& program, bool shalimar = false,
+                          const std::vector<std::string>& args = std::vector<std::string>());
 // The directory of runtime assembly a Shalimar program needs on the emulator.
 std::string shalimarRuntimeDir();
 // Where a project's program goes for the emulated target: <program>.vm, a

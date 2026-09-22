@@ -190,6 +190,22 @@ std::vector<std::string> Project::absoluteLibraries() const {
     return out;
 }
 
+/*  **An argument that names a file is resolved; one that does not is left
+ *  alone.** `-q` and `-run` are not paths and must reach the program as
+ *  written, so only an entry that matches something on disk under the root is
+ *  made absolute. The program is run from the root, so a relative path would
+ *  usually work anyway - usually, because the emulated target runs the program
+ *  somewhere else. */
+std::vector<std::string> Project::absoluteTargetArgs() const {
+    std::vector<std::string> out;
+    for (size_t i = 0; i < target_.args.size(); ++i) {
+        const std::string& one = target_.args[i];
+        std::string full = path::absolute(absolute(one));
+        out.push_back(path::exists(full) ? full : one);
+    }
+    return out;
+}
+
 bool Project::load(const std::string& dir, std::string& error) {
     error.clear();
     loaded_ = false;
@@ -299,6 +315,11 @@ bool Project::load(const std::string& dir, std::string& error) {
             std::string group = from.at(i).text();
             if (!group.empty()) target_.groups.push_back(group);
         }
+        const Json& args = built.get("args");
+        for (size_t i = 0; i < args.size(); ++i) {
+            std::string one = args.at(i).text();
+            if (!one.empty()) target_.args.push_back(one);
+        }
     } else if (!root.has("build")) {
         // A file with no build entry at all - every project the window
         // wrote before 2026-09-16 - builds its Sources group into a program
@@ -383,6 +404,12 @@ bool Project::save(std::string& error) {
         for (size_t i = 0; i < target_.groups.size(); ++i)
             from.push(Json::fromText(target_.groups[i]));
         target.set("groups", from);
+        if (!target_.args.empty()) {
+            Json args = Json::array();
+            for (size_t i = 0; i < target_.args.size(); ++i)
+                args.push(Json::fromText(target_.args[i]));
+            target.set("args", args);
+        }
         root.set("build", target);
     }
 

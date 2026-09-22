@@ -30,6 +30,14 @@ struct Part {
 struct Target {
     std::string name;
     std::vector<std::string> groups;
+    /*  What to pass the program when it is run. A project whose target is a
+     *  tool rather than a demonstration needs something to work on - the
+     *  compilerpp project is a compiler, and Run with nothing after it only
+     *  ever printed that compiler's usage. Each entry is one argument,
+     *  already split, so a path with a space in it stays one argument. A
+     *  relative path is taken from the project's root, which is where the
+     *  program is run from. */
+    std::vector<std::string> args;
 };
 
 ToolchainKind toolchainOf(const Toolchain& tool, const Part& part);
@@ -83,6 +91,11 @@ public:
     static std::string stemOf(const std::string& leaf);
 
     std::string targetProgram() const;
+    /*  The run arguments, as written; and resolved against the root, which
+     *  is what actually reaches the program. */
+    const std::vector<std::string>& targetArgs() const { return target_.args; }
+    std::vector<std::string> absoluteTargetArgs() const;
+    void setTargetArgs(const std::vector<std::string>& args) { target_.args = args; }
     const IndentStyle& indent() const { return indent_; }
     ToolchainKind toolchain() const { return toolchain_; }
     const std::string& arch() const { return arch_; }

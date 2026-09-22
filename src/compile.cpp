@@ -831,13 +831,14 @@ Built buildParts(const Toolchain& tool, const std::vector<Part>& parts,
     return withNativeFallback(again(), arch, sink, context, again);
 }
 
-Ran runBuilt(const std::string& program, LineSink sink, void* context, bool shalimar) {
+Ran runBuilt(const std::string& program, LineSink sink, void* context, bool shalimar,
+             const std::vector<std::string>& args) {
     Ran result;
     if (program.empty()) return result;
 
     result.built = true;
     result.ran = true;
-    result.status = runCaptured(launchCommand(program, shalimar), result.output, sink, context);
+    result.status = runCaptured(launchCommand(program, shalimar, args), result.output, sink, context);
     return result;
 }
 

@@ -105,7 +105,8 @@ Built buildParts(const Toolchain& tool, const std::vector<Part>& parts,
                  const std::string& program, LineSink sink = 0, void* context = 0);
 
 Ran runBuilt(const std::string& program, LineSink sink = 0, void* context = 0,
-             bool shalimar = false);
+             bool shalimar = false,
+             const std::vector<std::string>& args = std::vector<std::string>());
 
 void removeProgram(const Built& built);
 

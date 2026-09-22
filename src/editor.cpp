@@ -2820,7 +2820,16 @@ void Editor::buildProject(bool andRun) {
     } else {
         console_.push_back("");
         // What was built, which for the emulated target is <program>.vm.
-        Ran result = runBuilt(made.program, consoleSink, this, made.shalimar);
+        std::vector<std::string> args = project_.absoluteTargetArgs();
+        //  Say what is being run, arguments and all. A project whose program
+        //  is a tool prints its usage when it is handed nothing, and the
+        //  console should show that nothing was handed to it rather than
+        //  leave the usage looking like a fault.
+        std::string shown = project_.relative(made.program);
+        for (size_t a = 0; a < project_.targetArgs().size(); ++a)
+            shown += " " + project_.targetArgs()[a];
+        console_.push_back("$ " + shown);
+        Ran result = runBuilt(made.program, consoleSink, this, made.shalimar, args);
         lastRunStatus_ = result.status;
         console_.push_back("[program returned " + number(static_cast<size_t>(result.status)) + "]");
         say("ran " + project_.relative(program) + " - it returned " +
