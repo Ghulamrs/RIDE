@@ -1,15 +1,15 @@
-# RStudio, cc1 and shc as one RPM.
+# RIDE, cc1 and shc as one RPM.
 #
-#   rpmbuild -ba packaging/rstudio-editor.spec --define "_sourcedir $PWD/.."
+#   rpmbuild -ba packaging/ride-editor.spec --define "_sourcedir $PWD/.."
 #
 # The three programs are one thing to install because they are one thing to
 # use: the editor drives the two compilers and is not much good without them.
 #
-# Named rstudio-editor and not rstudio. "RStudio" is also a widely packaged IDE
-# for R, and a package called rstudio that installed something else would be a
+# Named ride-editor and not ride. "RIDE" is also a widely packaged IDE
+# for R, and a package called ride that installed something else would be a
 # trap for whoever typed it. The programs keep their own names.
 #
-# Everything lands under /opt/rstudio rather than in /usr, for two reasons that
+# Everything lands under /opt/ride rather than in /usr, for two reasons that
 # are both about how these programs find their own files:
 #
 #   shc.exe looks for its runtime archive at <the real directory it is in>/lib
@@ -19,19 +19,19 @@
 #   cc1.exe has its include directory compiled in - CC1_INCLUDE_DIR - so it is
 #   set at build time below to where this package puts the headers.
 #
-# /opt/rstudio/bin goes on PATH through profile.d, which is the ordinary way to
+# /opt/ride/bin goes on PATH through profile.d, which is the ordinary way to
 # do that for a self-contained prefix.
 
-%global prefix_dir /opt/rstudio
+%global prefix_dir /opt/ride
 %global _build_id_links none
 
-Name:           rstudio-editor
+Name:           ride-editor
 Version:        3.0
 Release:        1%{?dist}
 Summary:        An editor for C, C++ and Shalimar, with the two compilers it drives
 
 License:        Proprietary
-URL:            https://github.com/Ghulamrs/RStudio
+URL:            https://github.com/Ghulamrs/RIDE
 # No Source tags. rpmbuild checks that each one names a file it can find, and
 # what this builds from is three checkouts sitting side by side - which is a
 # real and useful thing to build from, and not a tarball. --define _sourcedir
@@ -42,7 +42,7 @@ BuildRequires:  gcc-c++, make
 Requires:       gcc, binutils
 
 %description
-RStudio is a terminal editor for three languages: C through cc1, C++ through
+RIDE is a terminal editor for three languages: C through cc1, C++ through
 cxx1, and Shalimar through shc - with the host's own C and C++ compiler one
 key away for the first two. It edits, builds, runs and debugs without leaving
 the keyboard.
@@ -50,7 +50,7 @@ the keyboard.
 This package carries all four programs, because the editor drives the other
 three and is not much use on its own:
 
-  RStudio.exe   the editor
+  RIDE.exe   the editor
   cc1.exe       a C compiler, three targets, its own DWARF
   cxx1.exe      a C++11 compiler, the same three targets, its own DWARF
   shc.exe       a compiler for Shalimar, and the runtime it links against
@@ -79,7 +79,7 @@ editor lists the same pages.
 %make_build -C %{_sourcedir}/Compiler-S
 
 # The editor last, because it is the one that drives the other two.
-%make_build -C %{_sourcedir}/RStudio
+%make_build -C %{_sourcedir}/RIDE
 
 %install
 install -d %{buildroot}%{prefix_dir}/bin
@@ -87,10 +87,10 @@ install -d %{buildroot}%{prefix_dir}/lib
 install -d %{buildroot}%{prefix_dir}/lib/cc1
 install -d %{buildroot}%{prefix_dir}/lib/cxx1
 install -d %{buildroot}%{prefix_dir}/include/cxx1
-install -d %{buildroot}%{prefix_dir}/share/doc/rstudio-editor
+install -d %{buildroot}%{prefix_dir}/share/doc/ride-editor
 install -d %{buildroot}/etc/profile.d
 
-install -m 0755 %{_sourcedir}/RStudio/RStudio.exe    %{buildroot}%{prefix_dir}/bin/
+install -m 0755 %{_sourcedir}/RIDE/RIDE.exe    %{buildroot}%{prefix_dir}/bin/
 install -m 0755 %{_sourcedir}/Compiler-C/cc1.exe     %{buildroot}%{prefix_dir}/bin/
 install -m 0755 %{_sourcedir}/Compiler-Cpp/cxx1.exe  %{buildroot}%{prefix_dir}/bin/
 install -m 0755 %{_sourcedir}/Compiler-S/shc.exe     %{buildroot}%{prefix_dir}/bin/
@@ -106,17 +106,17 @@ cp -a %{_sourcedir}/Compiler-C/lib/. %{buildroot}%{prefix_dir}/lib/cc1/
 cp -a %{_sourcedir}/Compiler-Cpp/lib/. %{buildroot}%{prefix_dir}/lib/cxx1/
 cp -a %{_sourcedir}/Compiler-Cpp/include/. %{buildroot}%{prefix_dir}/include/cxx1/
 
-cp -a %{_sourcedir}/RStudio/help/. %{buildroot}%{prefix_dir}/share/doc/rstudio-editor/
+cp -a %{_sourcedir}/RIDE/help/. %{buildroot}%{prefix_dir}/share/doc/ride-editor/
 
-cat > %{buildroot}/etc/profile.d/rstudio-editor.sh <<'PROFILE'
-# RStudio and the three compilers it drives.
+cat > %{buildroot}/etc/profile.d/ride-editor.sh <<'PROFILE'
+# RIDE and the three compilers it drives.
 case ":$PATH:" in
-  *:/opt/rstudio/bin:*) ;;
-  *) PATH="/opt/rstudio/bin:$PATH" ;;
+  *:/opt/ride/bin:*) ;;
+  *) PATH="/opt/ride/bin:$PATH" ;;
 esac
 export PATH
 PROFILE
-chmod 0644 %{buildroot}/etc/profile.d/rstudio-editor.sh
+chmod 0644 %{buildroot}/etc/profile.d/ride-editor.sh
 
 %check
 # The compilers are asked to do their actual job, on a program small enough to
@@ -158,7 +158,7 @@ test "$(./probeshm | tr -d '[:space:]')" = "42"
 %files
 # Every directory this package makes is listed, not just the top one. rpm
 # removes a directory on uninstall only if the package owned it, so without
-# these, `rpm -e` left /opt/rstudio/{bin,lib,share,share/doc} behind - empty,
+# these, `rpm -e` left /opt/ride/{bin,lib,share,share/doc} behind - empty,
 # owned by nothing, and invisible until somebody went looking. A package should
 # leave no trace when it is removed.
 %dir %{prefix_dir}
@@ -167,7 +167,7 @@ test "$(./probeshm | tr -d '[:space:]')" = "42"
 %dir %{prefix_dir}/include
 %dir %{prefix_dir}/share
 %dir %{prefix_dir}/share/doc
-%{prefix_dir}/bin/RStudio.exe
+%{prefix_dir}/bin/RIDE.exe
 %{prefix_dir}/bin/cc1.exe
 %{prefix_dir}/bin/cxx1.exe
 %{prefix_dir}/bin/shc.exe
@@ -175,13 +175,13 @@ test "$(./probeshm | tr -d '[:space:]')" = "42"
 %{prefix_dir}/lib/cc1/
 %{prefix_dir}/lib/cxx1/
 %{prefix_dir}/include/cxx1/
-%{prefix_dir}/share/doc/rstudio-editor/
-/etc/profile.d/rstudio-editor.sh
+%{prefix_dir}/share/doc/ride-editor/
+/etc/profile.d/ride-editor.sh
 
 %changelog
 * Fri Sep 11 2026 G. R. Akhtar <akhtar170313@gmail.com> - 3.0-1
-- RStudio 3.0, the release cxx1 arrived in: C++ goes to cxx1 by default and
+- RIDE 3.0, the release cxx1 arrived in: C++ goes to cxx1 by default and
   to the host's compiler by name. cxx1.exe and its two header directories
   join the package. Not yet rebuilt as an RPM since this change.
 * Sat Aug 22 2026 G. R. Akhtar <akhtar170313@gmail.com> - 1.1-1
-- First package. RStudio 1.1, the release Shalimar arrived in.
+- First package. RIDE 1.1, the release Shalimar arrived in.

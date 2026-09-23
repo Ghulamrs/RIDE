@@ -1,6 +1,7 @@
 #include "compile.h"
 
 #include "path.h"
+#include "product.h"
 #include "settings.h"
 
 #include <cstdio>
@@ -237,7 +238,7 @@ std::string unwritable(const std::string& program) {
     if (program.empty()) return std::string();
     std::string dir = path::parent(program);
     if (dir.empty()) dir = ".";
-    std::string probe = path::join(dir, ".ride-writes-here");
+    std::string probe = path::join(dir, std::string(".") + product::kLower + "-writes-here");
     if (std::FILE* f = std::fopen(probe.c_str(), "wb")) {
         std::fclose(f);
         std::remove(probe.c_str());
@@ -484,8 +485,8 @@ bool copyText(const std::string& from, const std::string& to) {
 // The linker command file lnk6x needs: one flat memory for the C6747 with
 // every section the compilers and TI's runtime write placed in it - the
 // same file VM6747/Emulator/tests/ti.sh links the corpus with.
-const char* const kTiLinkCmd =
-    "/* one flat memory for the C6747 and every section in it - written by RIDE */\n"
+const std::string kTiLinkCmd =
+    std::string("/* one flat memory for the C6747 and every section in it - written by ") + product::kName + " */\n" +
     "--rom_model\n--stack_size=0x4000\n--heap_size=0x100000\n"
     "MEMORY\n{\n    RAM : origin = 0xC0000000, length = 0x04000000\n}\n"
     "SECTIONS\n{\n"
@@ -575,7 +576,7 @@ void makeTiProgram(Built& result, const std::string& program, LineSink sink, voi
     }
     std::string lnk = choice.path;
     std::string cmdfile = path::join(dir, "ti-link.cmd");
-    if (std::FILE* f = std::fopen(cmdfile.c_str(), "wb")) { std::fputs(kTiLinkCmd, f); std::fclose(f); }
+    if (std::FILE* f = std::fopen(cmdfile.c_str(), "wb")) { std::fputs(kTiLinkCmd.c_str(), f); std::fclose(f); }
     // the exception-handling build of TI's runtime where there is one (CCS
     // ships the other; the C++ programs need this one), else the shipped one
     std::string lib = path::join(ti, "lib"), extra = settings::tilib();
@@ -734,7 +735,7 @@ Built buildPartsOnce(const Toolchain& tool, const std::vector<Part>& parts,
     // For the emulated target the parts' assembly is the program: each part
     // writes its .s files straight into <program>.vm, and there is no link.
     const bool emulated = isEmulated(arch);
-    std::string objects = emulated ? emulatedProgram(program) : temporaryDirectory("rstudio-parts");
+    std::string objects = emulated ? emulatedProgram(program) : temporaryDirectory((std::string(product::kLower) + "-parts").c_str());
     if (emulated) path::removeTree(objects);
     path::makeDirectories(objects);
 
@@ -853,7 +854,7 @@ void removeProgram(const Built& built) {
     // The .dSYM a debug build leaves beside the program - the compiler's
     // driver makes one for a single file, buildParts makes one for a project
     // - is a directory, and std::remove does not take those. Left behind, a
-    // temporary directory filled with rstudio-run-<pid>.dSYM bundles, one per
+    // temporary directory filled with ride-run-<pid>.dSYM bundles, one per
     // F8, which is how this was noticed.
     if (!built.program.empty()) path::removeTree(built.program + ".dSYM");
 #endif

@@ -316,7 +316,7 @@ std::string besideProgram(const std::string& name) {
     if (where.empty()) return std::string();
 
     // **The name as it was asked for first, and only then with `.exe`.** All
-    // four programs are called cc1.exe, shc.exe, c2s.exe and RStudio.exe on
+    // four programs are called cc1.exe, shc.exe, c2s.exe and RIDE.exe on
     // every machine now, so appending on Windows turned an honest "cc1.exe"
     // into a search for cc1.exe.exe. The editor survived that by asking twice
     // - "cc1.exe", then "cc1" - and About did not, reporting all three

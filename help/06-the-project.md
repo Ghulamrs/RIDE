@@ -23,7 +23,7 @@ one that leaves four things to their defaults.
 **Debug or release is not in here.** Which of the two you are building is what
 *you* are doing today, not a property of the program — and a project file
 travels, so one arriving with a configuration in it would put everyone who
-opened it into release. It lives in `~/.rstudio/config.json` with the rest of
+opened it into release. It lives in `~/.ride/state.json` with the rest of
 what this machine had, `--config` overrides it for one run, and a `"config"`
 key left in a project file is read by nothing.
 
@@ -35,12 +35,12 @@ opened is the one reopened next time.
 **`Project ▸ Save as...`** writes one out under a name of its own.
 That is the only thing that converts a project — see below.
 
-## What was here before
+## One kind of project file
 
-It was one `RStudio.json` per directory, and `ed1.json` before that. Both are
-still read, and a project opened under either is **saved back to it** — nothing
-is converted behind your back, and a directory never quietly ends up with two
-project files. Convert one when you mean to, with Project ▸ Save as.
+A project is a `.pro` file and nothing else. Older releases also read a
+whole-directory project file under two earlier names; RIDE 4.0 reads neither.
+Its configuration is `settings.json` beside the programs, and what it remembers
+between sessions is `state.json` in `.ride` under your home directory.
 
 With no project at all, the pane on the left shows the files you have open, and
 nothing at all when none are.
@@ -48,13 +48,6 @@ nothing at all when none are.
 `Project ▸ Close` is how you get there from a project. It closes the
 view and not the project: the project file is left exactly as it was, nothing is
 taken out of it, and every file you have open stays open.
-
-**It was called `ed1.json` until 2026-08-23**, when the last thing still
-carrying the editor's old name was renamed with the rest. **Projects written
-under the old name still open** — the editor reads either, and a project loaded
-as `ed1.json` is saved back as `ed1.json`, so nothing ends up holding both.
-Rename it yourself when you want the new one; nothing here will do it behind
-your back.
 
 **A file's name decides which group it is offered to.** A `.h` or `.hpp` goes
 to Headers, a `.shl` to Shalimar, and the rest of what this editor compiles to

@@ -19,10 +19,10 @@
     this has to be run in the logged-on session, which a scheduled task with
     /IT will do:
 
-        schtasks /create /tn rstudioshot /f /sc once /st 23:59 /it ^
+        schtasks /create /tn rideshot /f /sc once /st 23:59 /it ^
                  /tr "powershell -NoProfile -ExecutionPolicy Bypass -File C:\path\show.ps1"
-        schtasks /run /tn rstudioshot
-        schtasks /delete /tn rstudioshot /f
+        schtasks /run /tn rideshot
+        schtasks /delete /tn rideshot /f
 
     Run from the machine itself, it just works.
 
@@ -39,7 +39,7 @@
     .\show.ps1 -Files examples\smart.cpp -Keys "{F9}{F8}" -Then "{F6}","^2{DOWN 6}{ENTER}"
 #>
 param(
-    # The directory holding RStudio.json, and where paths are counted from.
+    # The directory holding the .pro, and where paths are counted from.
     [string]$Project = ".",
 
     # Files to open, each getting a tab. The last one ends up in front.
@@ -104,7 +104,7 @@ Add-Type -AssemblyName System.Windows.Forms
 Add-Type @"
 using System;
 using System.Runtime.InteropServices;
-public class RStudioWindow {
+public class RIDEWindow {
     [DllImport("user32.dll")] public static extern bool PrintWindow(IntPtr h, IntPtr dc, uint flags);
     [DllImport("user32.dll")] public static extern bool GetWindowRect(IntPtr h, out RECT r);
     [DllImport("user32.dll")] public static extern bool EnumWindows(EnumProc callback, IntPtr p);
@@ -115,12 +115,12 @@ public class RStudioWindow {
 }
 "@
 
-# The window is RStudio.exe since 2026-08-22, and was RStudioGui.exe before that.
+# The window is RIDE.exe since 2026-08-22, and was RIDEGui.exe before that.
 # Both names are looked for and the new one first, because a machine that has
 # built this before still has the old binary sitting beside the new one - and a
 # script that names only the old one photographs yesterday's editor and reports
 # it as today's. That is the harness fault this project has had most often.
-# **The solution's own output directory first.** Since 2026-08-23 RStudio.sln
+# **The solution's own output directory first.** Since 2026-08-23 RIDE.sln
 # builds all four programs into <repo>\x64\Release\ together, so that the
 # editor finds the compilers it drives beside itself - and the window landed
 # there with them. This script went on looking only under winforms\, found
@@ -132,19 +132,19 @@ if ($Editor -eq "") {
     $repo = Split-Path -Parent $here
     $guesses = @()
     # bin\ first since 3.5: the solution and the standalone gui build write
-    # RStudio.exe there now (/p:OutDir=...\bin\). The old x64\ places are kept
+    # RIDE.exe there now (/p:OutDir=...\bin\). The old x64\ places are kept
     # for a tree built before that, newest of them found first.
-    $guesses += "$repo\bin\RStudio.exe"                 # the one place, since 3.5
+    $guesses += "$repo\bin\RIDE.exe"                 # the one place, since 3.5
     foreach ($what in @("Release", "Debug")) {
-        $guesses += "$repo\x64\$what\RStudio.exe"      # the solution's, before bin
-        $guesses += "$here\x64\$what\RStudio.exe"      # the project's own
+        $guesses += "$repo\x64\$what\RIDE.exe"      # the solution's, before bin
+        $guesses += "$here\x64\$what\RIDE.exe"      # the project's own
     }
     # And the name it had before 2026-08-22, because a machine that has built
     # this before still has the old binary sitting beside the new one, and a
     # script that finds that one photographs yesterday's editor and reports it
     # as today's. That is the harness fault this project has had most often.
     foreach ($what in @("Release", "Debug")) {
-        $guesses += "$here\x64\$what\RStudioGui.exe"
+        $guesses += "$here\x64\$what\RIDEGui.exe"
     }
     foreach ($guess in $guesses) {
         if (Test-Path $guess) { $Editor = $guess; break }
@@ -175,18 +175,18 @@ Start-Sleep -Seconds 6
 
 # The one top-level window of that process wide enough to be the editor.
 $script:handle = [IntPtr]::Zero
-$look = [RStudioWindow+EnumProc]{
+$look = [RIDEWindow+EnumProc]{
     param($window, $unused)
     $owner = 0
-    [void][RStudioWindow]::GetWindowThreadProcessId($window, [ref]$owner)
+    [void][RIDEWindow]::GetWindowThreadProcessId($window, [ref]$owner)
     if ($owner -eq $editorProcess.Id) {
-        $box = New-Object RStudioWindow+RECT
-        [void][RStudioWindow]::GetWindowRect($window, [ref]$box)
+        $box = New-Object RIDEWindow+RECT
+        [void][RIDEWindow]::GetWindowRect($window, [ref]$box)
         if (($box.R - $box.L) -gt 300) { $script:handle = $window; return $false }
     }
     return $true
 }
-[void][RStudioWindow]::EnumWindows($look, [IntPtr]::Zero)
+[void][RIDEWindow]::EnumWindows($look, [IntPtr]::Zero)
 
 if ($script:handle -eq [IntPtr]::Zero) {
     Write-Error "the editor started but has no window - is this an interactive session?"
@@ -194,7 +194,7 @@ if ($script:handle -eq [IntPtr]::Zero) {
     exit 1
 }
 
-[void][RStudioWindow]::SetForegroundWindow($script:handle)
+[void][RIDEWindow]::SetForegroundWindow($script:handle)
 Start-Sleep -Milliseconds 700
 
 if ($Build) {
@@ -225,8 +225,8 @@ if ($Panel -ne "") {
     Start-Sleep -Milliseconds 600
 }
 
-$box = New-Object RStudioWindow+RECT
-[void][RStudioWindow]::GetWindowRect($script:handle, [ref]$box)
+$box = New-Object RIDEWindow+RECT
+[void][RIDEWindow]::GetWindowRect($script:handle, [ref]$box)
 
 if ($WithDialogs) {
     $wide = $box.R - $box.L
@@ -249,7 +249,7 @@ $picture = New-Object System.Drawing.Bitmap ($box.R - $box.L), ($box.B - $box.T)
 $canvas = [System.Drawing.Graphics]::FromImage($picture)
 $deviceContext = $canvas.GetHdc()
 # 2 is PW_RENDERFULLCONTENT, which is what gets the text rather than a blank.
-[void][RStudioWindow]::PrintWindow($script:handle, $deviceContext, 2)
+[void][RIDEWindow]::PrintWindow($script:handle, $deviceContext, 2)
 $canvas.ReleaseHdc($deviceContext)
 $picture.Save($Out, [System.Drawing.Imaging.ImageFormat]::Png)
 $canvas.Dispose()

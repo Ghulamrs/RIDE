@@ -1,5 +1,6 @@
 #include "about.h"
 #include "path.h"
+#include "product.h"
 
 #include <cstdio>
 #include <string>
@@ -15,7 +16,7 @@
 namespace editor {
 namespace about {
 
-const char* name() { return "RIDE"; }
+const char* name() { return product::kName; }
 
 const char* version() { return "4.0"; }
 

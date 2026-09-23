@@ -35,7 +35,7 @@ in `../../../Compiler-S/docs/DEBUGGING.md`.
 
 ## Where this stands
 
-Built, linked into `RStudio`, and driven against a real program by
+Built, linked into `RIDE`, and driven against a real program by
 `steppingShalimar()` in `tests/test.cpp`: a breakpoint by file and line, a
 stop, a step in, a step out, the program's own printing coming back with it,
 and a release build refusing to be stopped because it has no code for it.
@@ -50,10 +50,10 @@ actually running.
 **The window reaches it through `winforms/bridge.cpp`**, which holds a
 `Session` beside the `Debugger` and asks which of the two is live — the same
 question `Editor` asks, in the same words, so there is one answer and not two.
-`rstudio_debugger_start` takes the compiler and the target rather than a debugger
+`ride_debugger_start` takes the compiler and the target rather than a debugger
 for that reason: the choosing is native, and the form never learns there are
 two halves. `theWindowStoppingShalimar()` in `tests/test.cpp` drives the whole
-of it through `rstudio_` calls, and it stops a program on Windows, where cc1's own
+of it through `ride_` calls, and it stops a program on Windows, where cc1's own
 debugging cannot go at all.
 
 Three things the routing had to say rather than assume:

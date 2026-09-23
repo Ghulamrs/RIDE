@@ -6,7 +6,7 @@ rem
 rem  Steps: compile every compiler project + the RIDE editor, (re)generate the
 rem  HTML docs, stage the install tree, and compile the Inno Setup installer.
 rem
-rem  Usage:   build-installer.bat [4.0|3.5|3.0]
+rem  Usage:   build-installer.bat [4.0]
 rem  Env overrides (all optional):
 rem     CPP    the C++ compiler clone that carries include\ and lib\ headers
 rem            (default: <repo>\..\VM6747\Compiler-Cppi, else <repo>\..\Compiler-Cpp)
@@ -21,8 +21,12 @@ rem  Requires: Visual Studio 2022 build tools (build.bat finds them) and Inno
 rem  Setup 6. Python is optional - if absent, the committed HTML docs are used.
 rem ===========================================================================
 
+rem  The product's name, once, as product.props, the Makefile and the .iss spell it.
+set "PRODUCT=RIDE"
 set "VER=%~1"
 if "%VER%"=="" set "VER=4.0"
+rem  The 3.x releases are sealed and built from their own tree, not this one.
+if not "%VER%"=="4.0" (echo build-installer.bat: this tree builds 4.0 only & exit /b 2)
 set "NV=%VER:.=%"
 set "HERE=%~dp0"
 for %%I in ("%HERE%..\..") do set "ROOT=%%~fI"
@@ -53,7 +57,7 @@ if not exist "%OUT%" mkdir "%OUT%"
 call "%HERE%stage.cmd" "%ROOT%" "%CPP%" "%STAGE%" "%CC%"
 if errorlevel 1 (echo   STAGE FAILED & exit /b 1)
 
-echo [4/6] Bundling Express Help and (3.5, 4.0) the TI build path ...
+echo [4/6] Bundling Express Help and the TI build path ...
 copy /y "%HERE%EXPRESS-HELP-%VER%.md"   "%STAGE%\EXPRESS-HELP.md"   >nul
 if exist "%HERE%EXPRESS-HELP-%VER%.html" copy /y "%HERE%EXPRESS-HELP-%VER%.html" "%STAGE%\EXPRESS-HELP.html" >nul
 if not "%VER%"=="3.0" (
@@ -67,10 +71,10 @@ echo [5/6] Compiling the installer (Inno Setup) ...
 if "%ISCC%"=="" set "ISCC=%LOCALAPPDATA%\Programs\Inno Setup 6\ISCC.exe"
 if not exist "%ISCC%" set "ISCC=C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
 if not exist "%ISCC%" (echo   ISCC.exe not found - set ISCC=... & exit /b 1)
-"%ISCC%" /DStage="%STAGE%" /DOutDir="%OUT%" "%HERE%RStudio-%VER%.iss"
+"%ISCC%" /DStage="%STAGE%" /DOutDir="%OUT%" "%HERE%%PRODUCT%-%VER%.iss"
 if errorlevel 1 (echo   INNO FAILED & exit /b 1)
 
-echo [6/6] Done.  %OUT%\RIDE-%VER%-setup.exe
+echo [6/6] Done.  %OUT%\%PRODUCT%-%VER%-setup.exe
 exit /b 0
 
 rem ---- HTML docs ------------------------------------------------------------

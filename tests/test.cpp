@@ -13,6 +13,7 @@
 #include "path.h"
 #include "process.h"
 #include "settings.h"
+#include "product.h"
 #include "workspace.h"
 #include "debugger.h"
 #include "help.h"
@@ -588,7 +589,7 @@ void routing() {
 
     // Named for the editor that built it. It used to be one fixed name, so two
     // editors - or an editor and this suite - wrote to the same file.
-    const std::string stem = "rstudio-run-";
+    const std::string stem = "ride-run-";
     size_t named = program.assemblyPath.find(stem);
     check(named != std::string::npos, "and gives it a name of this editor's own");
 
@@ -827,7 +828,7 @@ void undoing() {
 void savedState() {
     std::printf("knowing when the file matches the disk\n");
 
-    file::path dir = file::temp_directory_path() / "rstudio-saved-test";
+    file::path dir = file::temp_directory_path() / "ride-saved-test";
     file::remove_all(dir);
     file::create_directories(dir);
 
@@ -990,7 +991,7 @@ void projects() {
     std::printf("the project\n");
 
     file::path dir =
-        file::temp_directory_path() / "rstudio-project-test";
+        file::temp_directory_path() / "ride-project-test";
     file::remove_all(dir);
     file::create_directories(dir);
 
@@ -1211,20 +1212,20 @@ void projects() {
         check(editor::settings::rememberIncludes(shared) && editor::settings::includes().size() == 2 &&
               editor::settings::includes()[0] == editor::path::absolute((app / "common" / "include").string()),
               "installation-wide include paths, relative to the file");
-        std::string shownShared = rstudio_shown_command(0, "cc1i", "cl", "shci", "cxx1i", editor::ToolCc1,
+        std::string shownShared = ride_shown_command(0, "cc1i", "cl", "shci", "cxx1i", editor::ToolCc1,
                                                         "a.c", editor::LangC, kDarwin.c_str(), editor::ConfigDebug);
         check(shownShared.find("common") != std::string::npos, "reach every compile");
         editor::settings::rememberIncludes(std::vector<std::string>());
         check(editor::settings::rememberDefaultCompiler("cxx1") && editor::settings::defaultCompiler() == "cxx1",
               "and a choice from the menu is written");
-        check(rstudio_default_compiler() == editor::ToolCxx1, "which the window reads back as its kind");
+        check(ride_default_compiler() == editor::ToolCxx1, "which the window reads back as its kind");
 
-        std::string shownC = rstudio_shown_command(0, "cc1i", "cl", "shci", "cxx1i", editor::ToolCc1,
+        std::string shownC = ride_shown_command(0, "cc1i", "cl", "shci", "cxx1i", editor::ToolCc1,
                                                    "a.c", editor::LangC, kDarwin.c_str(), editor::ConfigDebug);
         check(shownC.find("-I\"" + editor::settings::libDir() + "\"") != std::string::npos,
               "the window's cc1 command carries lib/");
         check(shownC.find("include") == std::string::npos, "and not include/");
-        std::string shownCpp = rstudio_shown_command(0, "cc1i", "cl", "shci", "cxx1i", editor::ToolCxx1,
+        std::string shownCpp = ride_shown_command(0, "cc1i", "cl", "shci", "cxx1i", editor::ToolCxx1,
                                                      "a.cpp", editor::LangCpp, kDarwin.c_str(), editor::ConfigDebug);
         check(shownCpp.find("-I\"" + editor::settings::includeDir() + "\"") != std::string::npos,
               "its cxx1 command carries include/");
@@ -1460,7 +1461,7 @@ void projects() {
     // object is a valid project.
     file::path tiny = dir / "tiny";
     file::create_directories(tiny);
-    { std::ofstream f((tiny / "RStudio.json").string().c_str()); f << "{}\n"; }
+    { std::ofstream f((tiny / "project.pro").string().c_str()); f << "{}\n"; }
     editor::Project small;
     check(small.load(tiny.string(), error), "an empty object is a project");
     check(small.builds() && small.target().groups.size() == 1 && small.target().groups[0] == "Sources",
@@ -1472,11 +1473,11 @@ void projects() {
     file::path moved = dir / "moved";
     file::create_directories(moved);
     const char* elsewhere = std::string(editor::hostArch()) == "x86_64-linux" ? "arm64-darwin" : "x86_64-linux";
-    { std::ofstream f((moved / "RStudio.json").string().c_str()); f << "{ \"arch\": \"" << elsewhere << "\" }\n"; }
+    { std::ofstream f((moved / "project.pro").string().c_str()); f << "{ \"arch\": \"" << elsewhere << "\" }\n"; }
     editor::Project came;
     check(came.load(moved.string(), error) && came.arch() == editor::hostArch(),
           "another host's target reads as this host's");
-    { std::ofstream f((moved / "RStudio.json").string().c_str()); f << "{ \"arch\": \"tms6747\" }\n"; }
+    { std::ofstream f((moved / "project.pro").string().c_str()); f << "{ \"arch\": \"tms6747\" }\n"; }
     editor::Project emulated;
     check(emulated.load(moved.string(), error) && emulated.arch() == "tms6747",
           "and the emulated target stays as written");
@@ -1496,7 +1497,7 @@ void projects() {
 void operations() {
     std::printf("changing what the project holds\n");
 
-    file::path dir = file::temp_directory_path() / "rstudio-workspace-test";
+    file::path dir = file::temp_directory_path() / "ride-workspace-test";
     file::remove_all(dir);
     file::create_directories(dir);
 
@@ -1563,12 +1564,12 @@ void operations() {
     editor::Outcome loose = editor::createFile(none, "loose.c", "Sources");
     check(loose.ok, "a file can be made without a project");
     check(file::exists(bare / "loose.c"), "and it is really there");
-    check(!file::exists(bare / "RStudio.json") && !file::exists(bare / "RStudio.json"),
-          "and no project file was invented, under either name");
+    check(editor::Project::projectFilesIn(bare.string()).empty(),
+          "and no project file was invented");
     // Renamed with no project: beside itself, by its bare name.
     {
         editor::Project alone;
-        std::string here = (file::temp_directory_path() / "rstudio-rename-alone").string();
+        std::string here = (file::temp_directory_path() / "ride-rename-alone").string();
         editor::path::makeDirectories(here);
         writeSource(editor::path::join(here, "was.c"), "int main(void) { return 0; }\n");
         editor::Outcome renamed = editor::renameFile(alone, editor::path::join(here, "was.c"), "now.c");
@@ -1697,7 +1698,7 @@ void paths() {
 
     // On disk. A directory made several deep at once, a file moved, a file
     // taken away, and the whole lot removed at the end.
-    std::string dir = p::join(p::tempDir(), "rstudio-path-test");
+    std::string dir = p::join(p::tempDir(), "ride-path-test");
     p::removeTree(dir);
     check(!p::exists(dir), "the temporary directory starts absent");
 
@@ -1854,7 +1855,7 @@ void talkingToAChild() {
     editor::Process missing;
     // The shell is what fails here, not this - it is started either way and
     // says its piece on the same stream.
-    missing.start("no-such-program-rstudio-test");
+    missing.start("no-such-program-ride-test");
     missing.readUntil("<<never>>", &found);
     check(!found, "a command that is not there answers nothing");
     missing.stop();
@@ -2438,7 +2439,7 @@ void stoppingTheHostsOwnCompiler() {
         return;
     }
 
-    std::string dir = editor::path::join(editor::path::tempDir(), "rstudio-hostcpp-debug");
+    std::string dir = editor::path::join(editor::path::tempDir(), "ride-hostcpp-debug");
     editor::path::removeTree(dir);
     editor::path::makeDirectories(dir);
 
@@ -2530,7 +2531,7 @@ void debuggingForReal() {
         return;
     }
 
-    std::string dir = editor::path::join(editor::path::tempDir(), "rstudio-debug-test");
+    std::string dir = editor::path::join(editor::path::tempDir(), "ride-debug-test");
     editor::path::removeTree(dir);
     editor::path::makeDirectories(dir);
 
@@ -2742,8 +2743,8 @@ void whatAConsoleAdds() {
     // The echo: a console gives back what was typed at it, so an answer starts
     // with its own question. Only the first line matching goes - a program
     // that prints the same word keeps it.
-    const std::string echoed = "p\r\nx = 3\r\n.printf \"<<rstudio%cdone>>\\n\", 0x2d\r\n";
-    checkEqual(editor::dbg_withoutEcho(echoed, "p", ".printf \"<<rstudio%cdone>>\\n\", 0x2d"),
+    const std::string echoed = "p\r\nx = 3\r\n.printf \"<<ride%cdone>>\\n\", 0x2d\r\n";
+    checkEqual(editor::dbg_withoutEcho(echoed, "p", ".printf \"<<ride%cdone>>\\n\", 0x2d"),
                "x = 3\n", "the question and the marker command come off the answer");
 
     const std::string twice = "g\r\ng\r\ng\r\n";
@@ -2768,29 +2769,29 @@ void whatTheProgramSaid() {
     const std::string lldbSaid =
         "\n(lldb) run\n"
         "MARKER-ONE\n"
-        "Process 10488 launched: '/var/folders/sb/T/rstudio-run-10477' (arm64)\n"
+        "Process 10488 launched: '/var/folders/sb/T/ride-run-10477' (arm64)\n"
         "Process 10488 stopped\n"
         "* thread #1, queue = 'com.apple.main-thread', stop reason = breakpoint 1.1\n"
-        "    frame #0: 0x0000000100000470 rstudio-run-10477`main at talker.c:8:5\n"
+        "    frame #0: 0x0000000100000470 ride-run-10477`main at talker.c:8:5\n"
         "   5   \tprintf(\"MARKER-ONE\\n\");\n"
         "   6   \tfflush(stdout);\n"
         "   7   \tint x = 1;\n"
         "-> 8   \tx = x + 1;\n"
         "    \t    ^\n"
         "   9   \tprintf(\"MARKER-TWO %d\\n\", x);\n"
-        "Target 0: (rstudio-run-10477) stopped.\n"
-        "(lldb) script print(\"<<rstudio\" + \"-done>>\")\n";
+        "Target 0: (ride-run-10477) stopped.\n"
+        "(lldb) script print(\"<<ride\" + \"-done>>\")\n";
     checkEqual(editor::dbg_programOutput(editor::DebuggerLldb, lldbSaid), "MARKER-ONE\n",
                "lldb: the program's line, and none of the source it echoed");
 
     // gdb. Its prompt carries its own words after it, so the whole line goes.
     const std::string gdbSaid =
-        "\n(gdb) Starting program: /tmp/rstudio-run-2546618 < /dev/null\n"
+        "\n(gdb) Starting program: /tmp/ride-run-2546618 < /dev/null\n"
         "[Thread debugging using libthread_db enabled]\n"
         "Using host libthread_db library \"/lib64/libthread_db.so.1\".\n"
         "MARKER-ONE\n"
         "\n"
-        "Breakpoint 1, main () at /tmp/rstudio-said-probe/talker.c:8\n"
+        "Breakpoint 1, main () at /tmp/ride-said-probe/talker.c:8\n"
         "8\t    x = x + 1;\n"
         "Missing rpms, try: dnf --enablerepo='*debug*' install glibc-debuginfo\n"
         "(gdb) \n";
@@ -2802,14 +2803,14 @@ void whatTheProgramSaid() {
     const std::string cdbSaid =
         "\n0:000> MARKER-ONE\n"
         "Breakpoint 0 hit\n"
-        "rstudio_run_4116!main+0x2a:\n"
+        "ride_run_4116!main+0x2a:\n"
         "00007ff6`08a8718a 8b442420        mov     eax,dword ptr [rsp+20h]\n"
         "0:000> \n"
         "\n0:000> Last event: 2b0c.34b8: Hit breakpoint 0\n"
         "  debugger time: Fri Aug 21 18:06:58.745 2026 (UTC + 5:00)\n"
         "0:000> \n"
         "\n0:000> C:\\Users\\G_R_AKHTAR\\AppData\\Local\\Temp\\talker.cpp(8)\n"
-        "(00007ff6`08a87160)   rstudio_run_4116!main+0x2a   |  (00007ff6`08a871e0)   rstudio_run!printf\n"
+        "(00007ff6`08a87160)   ride_run_4116!main+0x2a   |  (00007ff6`08a871e0)   ride_run!printf\n"
         "0:000> \n";
     checkEqual(editor::dbg_programOutput(editor::DebuggerCdb, cdbSaid), "MARKER-ONE\n",
                "cdb: the line after its prompt is the program's, and is kept");
@@ -2869,7 +2870,7 @@ void whatTheProgramSaid() {
 //
 // A debugged program writes down the debugger's own stream, so what it printed
 // is in `said` along with the debugger's words - and the window had no way to
-// read `said` at all until rstudio_stop_said existed. This is the property that
+// read `said` at all until ride_stop_said existed. This is the property that
 // makes that accessor worth having, so it is checked rather than assumed: the
 // program's own output has to be in there.
 void whatTheDebuggerHeard() {
@@ -2886,7 +2887,7 @@ void whatTheDebuggerHeard() {
         return;
     }
 
-    std::string dir = editor::path::join(editor::path::tempDir(), "rstudio-said-test");
+    std::string dir = editor::path::join(editor::path::tempDir(), "ride-said-test");
     editor::path::removeTree(dir);
     editor::path::makeDirectories(dir);
     std::string source = editor::path::join(dir, "talker.c");
@@ -2905,35 +2906,35 @@ void whatTheDebuggerHeard() {
                 "    return x;\n"
                 "}\n");
 
-    RStudioProgram* built = rstudio_build_program(0, cc1, "cl", "shc", "cxx1", editor::ToolCc1,
+    RIDEProgram* built = ride_build_program(0, cc1, "cl", "shc", "cxx1", editor::ToolCc1,
                                           source.c_str(), editor::LangC, host.c_str(),
                                           editor::ConfigDebug);
-    if (rstudio_program_ok(built) == 0) {
+    if (ride_program_ok(built) == 0) {
         std::printf("  (cc1 did not build it, so there is nothing to stop inside)\n");
-        rstudio_program_free(built);
+        ride_program_free(built);
         editor::path::removeTree(dir);
         return;
     }
 
-    RStudioDebugger* debugger = rstudio_debugger_new();
-    check(rstudio_debugger_start(debugger, editor::ToolCc1, host.c_str(),
-                             rstudio_program_path(built)) != 0,
+    RIDEDebugger* debugger = ride_debugger_new();
+    check(ride_debugger_start(debugger, editor::ToolCc1, host.c_str(),
+                             ride_program_path(built)) != 0,
           "the debugger starts on a program that talks");
 
     // Line 8 is x = x + 1, after the printf and its flush.
-    check(rstudio_debugger_break(debugger, source.c_str(), 8) != 0, "a breakpoint after the printing");
+    check(ride_debugger_break(debugger, source.c_str(), 8) != 0, "a breakpoint after the printing");
 
-    rstudio_debugger_run(debugger);
-    check(rstudio_stop_stopped(debugger) != 0, "and it stops there");
+    ride_debugger_run(debugger);
+    check(ride_stop_stopped(debugger) != 0, "and it stops there");
 
-    const std::string said = rstudio_stop_said(debugger);
+    const std::string said = ride_stop_said(debugger);
     check(!said.empty(), "what the debugger said comes across the seam");
     check(said.find("MARKER-BEFORE") != std::string::npos,
           "and the program's own output is in it, which is why the window wants it");
 
-    rstudio_debugger_stop(debugger);
-    rstudio_debugger_free(debugger);
-    rstudio_program_free(built);
+    ride_debugger_stop(debugger);
+    ride_debugger_free(debugger);
+    ride_program_free(built);
     editor::path::removeTree(dir);
 }
 
@@ -2950,7 +2951,7 @@ void debuggingCppForReal() {
         return;
     }
 
-    std::string dir = editor::path::join(editor::path::tempDir(), "rstudio-cpp-debug-test");
+    std::string dir = editor::path::join(editor::path::tempDir(), "ride-cpp-debug-test");
     editor::path::removeTree(dir);
     editor::path::makeDirectories(dir);
     std::string source = editor::path::join(dir, "counted.cpp");
@@ -3077,24 +3078,24 @@ void debuggingCppForReal() {
 void theWindowsProjectBuild() {
     std::printf("what the window asks about building a project\n");
 
-    file::path dir = file::temp_directory_path() / "rstudio-bridge-target";
+    file::path dir = file::temp_directory_path() / "ride-bridge-target";
     file::remove_all(dir);
     file::create_directories(dir);
     writeSource((dir / "add.c").string(), "int add(int a, int b) { return a + b; }\n");
     writeSource((dir / "main.c").string(), "int add(int, int);\nint main(void) { return add(1, 2); }\n");
-    writeSource((dir / "RStudio.json").string(),
+    writeSource((dir / "project.pro").string(),
                 "{\n  \"name\": \"sums\",\n"
                 "  \"groups\": { \"Sources\": [\"add.c\", \"main.c\"] },\n"
                 "  \"build\": { \"target\": \"sums\", \"groups\": [\"Sources\"] }\n}\n");
 
-    RStudioProject* project = rstudio_project_new();
+    RIDEProject* project = ride_project_new();
     char trouble[512] = {0};
-    check(rstudio_project_load(project, dir.string().c_str(), trouble, sizeof trouble) != 0,
+    check(ride_project_load(project, dir.string().c_str(), trouble, sizeof trouble) != 0,
           "the window loads a project that says what it builds");
-    check(rstudio_project_builds(project) != 0, "and is told that it builds something");
-    check(rstudio_project_target_ready(project) != 0, "the sources come back through the seam");
-    check(rstudio_project_target_sources(project) == 2, "both of them");
-    check(std::string(rstudio_project_target_program(project)).find("sums") != std::string::npos,
+    check(ride_project_builds(project) != 0, "and is told that it builds something");
+    check(ride_project_target_ready(project) != 0, "the sources come back through the seam");
+    check(ride_project_target_sources(project) == 2, "both of them");
+    check(std::string(ride_project_target_program(project)).find("sums") != std::string::npos,
           "with the program named after the target");
 
     // A target of both languages, which the window used to be told was a
@@ -3102,62 +3103,62 @@ void theWindowsProjectBuild() {
     // what the terminal can: an editor with two front ends that disagree about
     // what a project is, is two editors.
     writeSource((dir / "extra.cpp").string(), "int twice(int n) { return n * 2; }\n");
-    writeSource((dir / "RStudio.json").string(),
+    writeSource((dir / "project.pro").string(),
                 "{\n  \"name\": \"sums\",\n"
                 "  \"groups\": { \"Sources\": [\"add.c\", \"main.c\", \"extra.cpp\"] },\n"
                 "  \"build\": { \"target\": \"sums\", \"groups\": [\"Sources\"] }\n}\n");
-    check(rstudio_project_load(project, dir.string().c_str(), trouble, sizeof trouble) != 0,
+    check(ride_project_load(project, dir.string().c_str(), trouble, sizeof trouble) != 0,
           "a project of both languages loads");
-    check(rstudio_project_target_ready(project) != 0, "and is ready to build rather than refused");
-    check(rstudio_project_target_sources(project) == 3, "with all three of its sources");
-    check(rstudio_project_target_parts(project) == 2, "in two parts, one per language");
-    check(rstudio_project_part_language(project, 0) == editor::LangC, "the C first");
-    check(rstudio_project_part_language(project, 1) == editor::LangCpp, "and the C++ after it");
-    check(rstudio_project_part_toolchain(project, 0, "cc1", "cl", "shc", "cxx1", editor::ToolAuto) ==
+    check(ride_project_target_ready(project) != 0, "and is ready to build rather than refused");
+    check(ride_project_target_sources(project) == 3, "with all three of its sources");
+    check(ride_project_target_parts(project) == 2, "in two parts, one per language");
+    check(ride_project_part_language(project, 0) == editor::LangC, "the C first");
+    check(ride_project_part_language(project, 1) == editor::LangCpp, "and the C++ after it");
+    check(ride_project_part_toolchain(project, 0, "cc1", "cl", "shc", "cxx1", editor::ToolAuto) ==
               editor::ToolCc1,
           "which go to cc1");
     // Run file on one of them is Run project: alone it links against nothing.
-    check(rstudio_project_runs_as_project(project, (dir / "main.c").string().c_str()) == 3,
+    check(ride_project_runs_as_project(project, (dir / "main.c").string().c_str()) == 3,
           "Run file on one of three sources runs the project - the window is told three");
-    check(rstudio_project_runs_as_project(project, (dir / "other.c").string().c_str()) == 0,
+    check(ride_project_runs_as_project(project, (dir / "other.c").string().c_str()) == 0,
           "and a file outside the build runs as itself");
-    check(rstudio_project_part_toolchain(project, 1, "cc1", "cl", "shc", "cxx1", editor::ToolAuto) ==
+    check(ride_project_part_toolchain(project, 1, "cc1", "cl", "shc", "cxx1", editor::ToolAuto) ==
               (editor::resolve(editor::Toolchain(), editor::LangCpp)),
           "and to this machine's C++ compiler, without the window being told which");
-    checkEqual(rstudio_project_part_group(project, 0), "Sources",
+    checkEqual(ride_project_part_group(project, 0), "Sources",
                "both out of the one group, which is where they were");
 
     // A group that names its compiler is taken at its word, and the whole group
     // goes there - which is the override, and the only way to make one compiler
     // take another's language on purpose.
-    writeSource((dir / "RStudio.json").string(),
+    writeSource((dir / "project.pro").string(),
                 "{\n  \"name\": \"sums\",\n"
                 "  \"groups\": { \"Sources\": { \"files\": [\"add.c\", \"main.c\", "
                 "\"extra.cpp\"], \"toolchain\": \"cl\" } },\n"
                 "  \"build\": { \"target\": \"sums\", \"groups\": [\"Sources\"] }\n}\n");
-    check(rstudio_project_load(project, dir.string().c_str(), trouble, sizeof trouble) != 0,
+    check(ride_project_load(project, dir.string().c_str(), trouble, sizeof trouble) != 0,
           "a group that names its compiler loads");
-    check(rstudio_project_target_ready(project) != 0, "and is ready");
-    check(rstudio_project_target_parts(project) == 1, "as one part, because one compiler takes it");
-    check(rstudio_project_part_toolchain(project, 0, "cc1", "cl", "shc", "cxx1", editor::ToolAuto) ==
+    check(ride_project_target_ready(project) != 0, "and is ready");
+    check(ride_project_target_parts(project) == 1, "as one part, because one compiler takes it");
+    check(ride_project_part_toolchain(project, 0, "cc1", "cl", "shc", "cxx1", editor::ToolAuto) ==
               editor::ToolMsvc,
           "the one the group named");
 
     // The Target and Tools menus write the project's own target and compiler
     // while it is open (the audit of 2026-09-19: they had never reached the
     // file), and read back as written.
-    check(rstudio_project_set_arch(project, "tms6747") != 0, "the window sets the project's target");
-    check(rstudio_project_set_toolchain(project, editor::ToolCxx1) != 0, "and its compiler");
-    check(rstudio_project_load(project, dir.string().c_str(), trouble, sizeof trouble) != 0 &&
-              std::string(rstudio_project_arch(project)) == "tms6747" &&
-              rstudio_project_toolchain(project) == editor::ToolCxx1,
+    check(ride_project_set_arch(project, "tms6747") != 0, "the window sets the project's target");
+    check(ride_project_set_toolchain(project, editor::ToolCxx1) != 0, "and its compiler");
+    check(ride_project_load(project, dir.string().c_str(), trouble, sizeof trouble) != 0 &&
+              std::string(ride_project_arch(project)) == "tms6747" &&
+              ride_project_toolchain(project) == editor::ToolCxx1,
           "and both are in the .pro when it is read again");
-    RStudioProject* none = rstudio_project_new();
-    check(rstudio_project_set_arch(none, "tms6747") == 0 && rstudio_project_set_toolchain(none, editor::ToolCc1) == 0,
+    RIDEProject* none = ride_project_new();
+    check(ride_project_set_arch(none, "tms6747") == 0 && ride_project_set_toolchain(none, editor::ToolCc1) == 0,
           "with no project open there is nothing to write, and the window is told so");
-    rstudio_project_free(none);
+    ride_project_free(none);
 
-    rstudio_project_free(project);
+    ride_project_free(project);
     file::remove_all(dir);
 }
 
@@ -3165,25 +3166,25 @@ void theSeamTheWindowUses() {
     std::printf("what the window asks the core to do\n");
 
     std::string host = editor::hostArch();
-    check(rstudio_debugger_for(editor::ToolCc1, host.c_str()) ==
+    check(ride_debugger_for(editor::ToolCc1, host.c_str()) ==
               static_cast<int>(editor::dbg_for(editor::ToolCc1, host)),
           "the window is told the same debugger the editor found");
-    check(std::string(rstudio_debugger_name(rstudio_debugger_for(editor::ToolCc1, host.c_str()))) ==
+    check(std::string(ride_debugger_name(ride_debugger_for(editor::ToolCc1, host.c_str()))) ==
               editor::dbg_name(editor::dbg_for(editor::ToolCc1, host)),
           "and the same name for it");
 
     // The two compilers are not in the same position on the same machine, and
     // the reason given has to say which one it is talking about.
-    check(rstudio_debugger_for(editor::ToolCc1, "x86_64-windows") == 0,
+    check(ride_debugger_for(editor::ToolCc1, "x86_64-windows") == 0,
           "what cc1 builds for Windows can never be debugged");
-    check(std::string(rstudio_no_debugger_because(editor::ToolCc1, "x86_64-windows"))
+    check(std::string(ride_no_debugger_because(editor::ToolCc1, "x86_64-windows"))
               .find("MASM") != std::string::npos,
           "and the reason names the MASM that has no line table");
     // cl is a different matter on the same machine, and which way it goes
     // depends on whether Microsoft's own debugger is installed - so the check
     // is that the answer and the reason agree, not that either is fixed.
-    int forCl = rstudio_debugger_for(editor::ToolMsvc, "x86_64-windows");
-    std::string whyNotCl = rstudio_no_debugger_because(editor::ToolMsvc, "x86_64-windows");
+    int forCl = ride_debugger_for(editor::ToolMsvc, "x86_64-windows");
+    std::string whyNotCl = ride_no_debugger_because(editor::ToolMsvc, "x86_64-windows");
     if (forCl == static_cast<int>(editor::DebuggerCdb)) {
         check(whyNotCl.empty(), "where cdb is installed, cl's C++ has nothing standing in its way");
     } else {
@@ -3206,7 +3207,7 @@ void theSeamTheWindowUses() {
         return;
     }
 
-    std::string dir = editor::path::join(editor::path::tempDir(), "rstudio-bridge-test");
+    std::string dir = editor::path::join(editor::path::tempDir(), "ride-bridge-test");
     editor::path::removeTree(dir);
     editor::path::makeDirectories(dir);
     std::string source = editor::path::join(dir, "seam.c");
@@ -3226,89 +3227,89 @@ void theSeamTheWindowUses() {
                 "}\n");
 
     // Built through the bridge, exactly as the window builds it.
-    RStudioProgram* built = rstudio_build_program(0, cc1, "cl", "shc", "cxx1", editor::ToolCc1,
+    RIDEProgram* built = ride_build_program(0, cc1, "cl", "shc", "cxx1", editor::ToolCc1,
                                           source.c_str(), editor::LangC,
                                           editor::hostArch(), editor::ConfigDebug);
-    check(rstudio_program_ok(built) != 0, "the window's build makes a program");
-    if (rstudio_program_ok(built) == 0) { rstudio_program_free(built); editor::path::removeTree(dir); return; }
-    check(editor::path::exists(rstudio_program_path(built)),
+    check(ride_program_ok(built) != 0, "the window's build makes a program");
+    if (ride_program_ok(built) == 0) { ride_program_free(built); editor::path::removeTree(dir); return; }
+    check(editor::path::exists(ride_program_path(built)),
           "and leaves it where it said it did, for a debugger to open");
 
-    RStudioDebugger* debugger = rstudio_debugger_new();
-    check(rstudio_debugger_start(debugger, editor::ToolCc1, host.c_str(),
-                             rstudio_program_path(built)) != 0,
+    RIDEDebugger* debugger = ride_debugger_new();
+    check(ride_debugger_start(debugger, editor::ToolCc1, host.c_str(),
+                             ride_program_path(built)) != 0,
           "the debugger starts on it");
-    check(rstudio_debugger_running(debugger) != 0, "and says it is running");
+    check(ride_debugger_running(debugger) != 0, "and says it is running");
 
-    check(rstudio_debugger_break(debugger, source.c_str(), 10) != 0, "a breakpoint is set");
+    check(ride_debugger_break(debugger, source.c_str(), 10) != 0, "a breakpoint is set");
 
-    rstudio_debugger_run(debugger);
-    check(rstudio_stop_stopped(debugger) != 0, "running stops on it");
-    check(rstudio_stop_line(debugger) == 10, "on the line asked for");
-    check(std::string(rstudio_stop_function(debugger)) == "main", "in the right function");
+    ride_debugger_run(debugger);
+    check(ride_stop_stopped(debugger) != 0, "running stops on it");
+    check(ride_stop_line(debugger) == 10, "on the line asked for");
+    check(std::string(ride_stop_function(debugger)) == "main", "in the right function");
 
     // The locals are read once when it stops and handed over one string at a
     // time, because the managed side cannot hold a std::vector.
-    int howMany = rstudio_locals_count(debugger);
+    int howMany = ride_locals_count(debugger);
     bool sawTotal = false;
     for (int i = 0; i < howMany; ++i)
-        if (std::string(rstudio_local_name(debugger, i)) == "total" &&
-            std::string(rstudio_local_value(debugger, i)) == "0") sawTotal = true;
+        if (std::string(ride_local_name(debugger, i)) == "total" &&
+            std::string(ride_local_value(debugger, i)) == "0") sawTotal = true;
     check(howMany > 0 && sawTotal, "and what is in scope comes back one name at a time");
-    check(std::string(rstudio_local_name(debugger, howMany + 5)).empty(),
+    check(std::string(ride_local_name(debugger, howMany + 5)).empty(),
           "an index past the end answers with nothing rather than reading past it");
 
-    rstudio_debugger_step_into(debugger);
-    check(std::string(rstudio_stop_function(debugger)) == "twice", "stepping into arrives inside");
+    ride_debugger_step_into(debugger);
+    check(std::string(ride_stop_function(debugger)) == "twice", "stepping into arrives inside");
 
     // And the stack, handed over the same way and for the same reason. The
     // window has nowhere to put a vector either.
-    check(rstudio_stack_count(debugger) == 2, "the stack inside the call has two frames");
-    check(std::string(rstudio_stack_function(debugger, 1)) == "main",
+    check(ride_stack_count(debugger) == 2, "the stack inside the call has two frames");
+    check(std::string(ride_stack_function(debugger, 1)) == "main",
           "the second of them being what called it");
-    check(rstudio_stack_line(debugger, 1) == 10, "on the line waiting for it to come back");
-    check(std::string(rstudio_stack_function(debugger, rstudio_stack_count(debugger))).empty() &&
-              rstudio_stack_line(debugger, -1) == 0,
+    check(ride_stack_line(debugger, 1) == 10, "on the line waiting for it to come back");
+    check(std::string(ride_stack_function(debugger, ride_stack_count(debugger))).empty() &&
+              ride_stack_line(debugger, -1) == 0,
           "and an index off either end answers with nothing");
 
     // And the line the window writes for a frame, read back to say which frame
     // the row it was clicked on is - the window counts no rows of its own.
-    std::string written = rstudio_stack_text(debugger, 1);
+    std::string written = ride_stack_text(debugger, 1);
     check(written == "  main   seam.c:10", "the window is given the line to write");
-    check(rstudio_stack_on_line(debugger, written.c_str()) == 1,
+    check(ride_stack_on_line(debugger, written.c_str()) == 1,
           "and reads it back as the frame it was written for");
-    check(rstudio_stack_on_line(debugger, "  (nothing in scope here)") == -1,
+    check(ride_stack_on_line(debugger, "  (nothing in scope here)") == -1,
           "while a row that is not a frame answers -1 rather than a frame");
 
     // Looking at a caller through the seam: the locals the window reads
     // afterwards are that frame's, and the line it writes for it is marked.
-    check(rstudio_looking_at(debugger) == 0, "the window starts at the frame it stopped in");
-    check(rstudio_debugger_look_at(debugger, 1) != 0, "and can be told to look at the caller");
-    check(rstudio_looking_at(debugger) == 1, "which is where it says it is looking");
-    check(std::string(rstudio_looking_text(debugger)).find("main's") != std::string::npos,
+    check(ride_looking_at(debugger) == 0, "the window starts at the frame it stopped in");
+    check(ride_debugger_look_at(debugger, 1) != 0, "and can be told to look at the caller");
+    check(ride_looking_at(debugger) == 1, "which is where it says it is looking");
+    check(std::string(ride_looking_text(debugger)).find("main's") != std::string::npos,
           "with a line saying whose variables these now are");
-    check(std::string(rstudio_stack_text(debugger, 1)).compare(0, 1, ">") == 0,
+    check(std::string(ride_stack_text(debugger, 1)).compare(0, 1, ">") == 0,
           "and that frame written with its mark");
 
     bool sawCaller = false;
-    for (int i = 0; i < rstudio_locals_count(debugger); ++i)
-        if (std::string(rstudio_local_name(debugger, i)) == "total") sawCaller = true;
+    for (int i = 0; i < ride_locals_count(debugger); ++i)
+        if (std::string(ride_local_name(debugger, i)) == "total") sawCaller = true;
     check(sawCaller, "the variables read through the seam are the caller's");
 
-    check(rstudio_debugger_look_at(debugger, 0) != 0, "and it goes back to the stop");
-    check(std::string(rstudio_looking_text(debugger)).empty(),
+    check(ride_debugger_look_at(debugger, 0) != 0, "and it goes back to the stop");
+    check(std::string(ride_looking_text(debugger)).empty(),
           "where nothing is said about whose variables they are, the top line saying it");
-    check(rstudio_debugger_look_at(debugger, 9) == 0,
+    check(ride_debugger_look_at(debugger, 9) == 0,
           "a frame that is not there is refused rather than answered with another's");
 
     // Setting one through the seam, which is the window's only way to it. The
     // line it writes for a variable is read back the same way a frame's is.
-    check(rstudio_debugger_look_at(debugger, 0) != 0, "back at the frame it stopped in");
-    std::string variableLine = rstudio_local_text(debugger, 0);   // n, inside twice
+    check(ride_debugger_look_at(debugger, 0) != 0, "back at the frame it stopped in");
+    std::string variableLine = ride_local_text(debugger, 0);   // n, inside twice
     check(!variableLine.empty(), "the window is given the line to write for a variable");
-    check(rstudio_locals_on_line(debugger, variableLine.c_str()) == 0,
+    check(ride_locals_on_line(debugger, variableLine.c_str()) == 0,
           "and reads it back as the variable it was written for");
-    check(rstudio_locals_on_line(debugger, "called from") == -1,
+    check(ride_locals_on_line(debugger, "called from") == -1,
           "while a row that is not a variable answers -1");
 
     // In the caller's frame, which is where the window's own gesture would be
@@ -3316,61 +3317,61 @@ void theSeamTheWindowUses() {
     // program returns at the end of this test is still what it worked out
     // rather than what was written into it. The reaching-the-program half is
     // checked on its own run in debuggingForReal.
-    check(rstudio_debugger_look_at(debugger, 1) != 0, "looking at the caller to set one of its own");
-    check(rstudio_set_variable(debugger, "total", "100") != 0, "a variable is set through it");
+    check(ride_debugger_look_at(debugger, 1) != 0, "looking at the caller to set one of its own");
+    check(ride_set_variable(debugger, "total", "100") != 0, "a variable is set through it");
     bool setThrough = false;
-    for (int i = 0; i < rstudio_locals_count(debugger); ++i)
-        if (std::string(rstudio_local_name(debugger, i)) == "total" &&
-            std::string(rstudio_local_value(debugger, i)) == "100") setThrough = true;
+    for (int i = 0; i < ride_locals_count(debugger); ++i)
+        if (std::string(ride_local_name(debugger, i)) == "total" &&
+            std::string(ride_local_value(debugger, i)) == "100") setThrough = true;
     check(setThrough, "and the locals it reads afterwards say so");
 
-    check(rstudio_set_variable(debugger, "nosuch", "1") == 0, "a name that is not there is refused");
-    check(std::string(rstudio_set_complaint(debugger)).size() > 0,
+    check(ride_set_variable(debugger, "nosuch", "1") == 0, "a name that is not there is refused");
+    check(std::string(ride_set_complaint(debugger)).size() > 0,
           "with the debugger's own words to show for it");
 
-    check(rstudio_set_variable(debugger, "total", "0") != 0, "and it is put back where it was");
-    check(rstudio_debugger_look_at(debugger, 0) != 0, "with the frame put back too");
+    check(ride_set_variable(debugger, "total", "0") != 0, "and it is put back where it was");
+    check(ride_debugger_look_at(debugger, 0) != 0, "with the frame put back too");
 
     // A watch through the seam, which is the window's only way to one. The
     // list is the core's, so what is checked here is that the window can put
     // one in it, read the line to write for it, and find it again from that
     // line - the same three questions it asks about a frame.
-    rstudio_watch_add(debugger, "n + 1");
-    check(rstudio_watch_count(debugger) == 1, "the window can add a watch");
-    std::string watchLine = rstudio_watch_text(debugger, 0);
+    ride_watch_add(debugger, "n + 1");
+    check(ride_watch_count(debugger) == 1, "the window can add a watch");
+    std::string watchLine = ride_watch_text(debugger, 0);
     check(watchLine.find("n + 1 = ") != std::string::npos,
           "and is given the line to write for it, answered");
-    check(rstudio_watch_on_line(debugger, watchLine.c_str()) == 0,
+    check(ride_watch_on_line(debugger, watchLine.c_str()) == 0,
           "which reads back as the watch it was written for");
-    check(rstudio_watch_on_line(debugger, "  total = 0   [int]") == -1,
+    check(ride_watch_on_line(debugger, "  total = 0   [int]") == -1,
           "while a variable is not read as one");
-    checkEqual(std::string(rstudio_watch_expression(debugger, 0)), "n + 1",
+    checkEqual(std::string(ride_watch_expression(debugger, 0)), "n + 1",
                "and the expression itself comes back for the box that changes it");
 
-    rstudio_watch_set(debugger, 0, "");
-    check(rstudio_watch_count(debugger) == 0, "an empty answer takes the watch away");
+    ride_watch_set(debugger, 0, "");
+    check(ride_watch_count(debugger) == 0, "an empty answer takes the watch away");
 
     // And the line the window writes at the top, which it compares a clicked
     // row against to know that the row means the frame it stopped in.
-    checkEqual(std::string(rstudio_stop_line_text("/tmp/seam.c", 10, "main")),
+    checkEqual(std::string(ride_stop_line_text("/tmp/seam.c", 10, "main")),
                "stopped at seam.c:10 in main", "the window is given that line too");
 
-    rstudio_debugger_step_out(debugger);
-    check(std::string(rstudio_stop_function(debugger)) == "main", "and stepping out comes back");
+    ride_debugger_step_out(debugger);
+    check(std::string(ride_stop_function(debugger)) == "main", "and stepping out comes back");
 
-    rstudio_debugger_clear(debugger);
-    rstudio_debugger_resume(debugger);
-    check(rstudio_stop_exited(debugger) != 0, "with no breakpoints left it runs to the end");
-    check(rstudio_stop_status(debugger) == 12, "returning what it worked out");
+    ride_debugger_clear(debugger);
+    ride_debugger_resume(debugger);
+    check(ride_stop_exited(debugger) != 0, "with no breakpoints left it runs to the end");
+    check(ride_stop_status(debugger) == 12, "returning what it worked out");
 
-    rstudio_debugger_stop(debugger);
-    check(rstudio_debugger_running(debugger) == 0, "and stops when it is told to");
-    rstudio_debugger_free(debugger);
+    ride_debugger_stop(debugger);
+    check(ride_debugger_running(debugger) == 0, "and stops when it is told to");
+    ride_debugger_free(debugger);
 
     // Freeing the handle takes the program with it, which is what stops a
     // debugging session leaving one behind in the temporary directory.
-    std::string was = rstudio_program_path(built);
-    rstudio_program_free(built);
+    std::string was = ride_program_path(built);
+    ride_program_free(built);
     check(!editor::path::exists(was), "freeing the build removes the program it made");
 
     editor::path::removeTree(dir);
@@ -3382,7 +3383,7 @@ void aProjectMadeFromWhatIsThere() {
     std::printf("a project made where there was none\n");
 
     namespace pth = editor::path;
-    std::string dir = pth::join(pth::tempDir(), "rstudio-made-project");
+    std::string dir = pth::join(pth::tempDir(), "ride-made-project");
     pth::removeTree(dir);
     pth::makeDirectories(pth::join(dir, "src"));
     pth::makeDirectories(pth::join(dir, "obj"));
@@ -3397,12 +3398,12 @@ void aProjectMadeFromWhatIsThere() {
     editor::Outcome made = editor::beginFromWhatIsThere(project, dir);
     check(made.ok, "a project is made where there was none");
     check(project.loaded(), "and the project says it is loaded");
-    check(pth::exists(pth::join(dir, "rstudio-made-project.pro")),
+    check(pth::exists(pth::join(dir, "ride-made-project.pro")),
           "and the file is written, named after the directory");
-    check(project.name() == "rstudio-made-project", "named after the directory it is in");
+    check(project.name() == "ride-made-project", "named after the directory it is in");
 
     // What it picked up, and what it left alone.
-    std::string written = readWholeFile(pth::join(dir, "rstudio-made-project.pro"));
+    std::string written = readWholeFile(pth::join(dir, "ride-made-project.pro"));
     check(written.find("one.c") != std::string::npos, "source in the directory is in it");
     check(written.find("src/two.cpp") != std::string::npos, "and source one level down");
     check(written.find("src/two.h") != std::string::npos, "headers as well as sources");
@@ -3435,23 +3436,13 @@ void aProjectMadeFromWhatIsThere() {
 }
 
 
-// The project file's old name, which is a different promise from the settings
-// file's: a project written as ed1.json opens, and stays ed1.json. Nothing here
-// migrates, because the file is somebody else's - in their directory, quite
-// possibly in their version control.
-//
-// This had no test until 2026-08-23, and the gap cost an afternoon. Every case
-// in this file wrote its project as "ed1.json", so a rename that turned those
-// strings into the wrong case went unnoticed on a Mac - where the filesystem
-// does not care - and surfaced on Linux as four failures and a segfault, in a
-// test that had gone on using a project that never loaded.
 // One rule for which group a file belongs in, asked by three callers.
 // JSON, which the editor colours and compiles nothing from.
 void jsonIsALanguage() {
     std::printf("JSON, and the project file being legible\n");
 
     check(editor::languageFor("prime.pro") == editor::LangJson, "a .pro is JSON");
-    check(editor::languageFor("RStudio.json") == editor::LangJson, "and so is a .json");
+    check(editor::languageFor("settings.json") == editor::LangJson, "and so is a .json");
     check(editor::languageFor("PRIME.PRO") == editor::LangJson, "whatever the case");
     checkEqual(editor::languageName(editor::LangJson), "JSON", "and it is named");
 
@@ -3509,12 +3500,12 @@ void whereAFileBelongs() {
     checkEqual(editor::groupForFile("READ.H"), "Headers", "whatever the case of the suffix");
 }
 
-// Named project files: prime.pro rather than one RStudio.json per directory.
+// Named project files: prime.pro, one file of its own per project.
 void namedProjectFiles() {
     std::printf("named project files\n");
     namespace pth = editor::path;
 
-    std::string dir = pth::join(pth::tempDir(), "rstudio-named-projects");
+    std::string dir = pth::join(pth::tempDir(), "ride-named-projects");
     pth::removeTree(dir);
     pth::makeDirectories(dir);
     writeSource(pth::join(dir, "a.c"), "int a(void) { return 1; }\n");
@@ -3564,65 +3555,21 @@ void namedProjectFiles() {
     pth::removeTree(dir);
 }
 
-void theProjectFilesOldName() {
-    std::printf("a project written under the old name\n");
-
-    file::path dir = file::temp_directory_path() / "rstudio-former-name";
-    file::remove_all(dir);
-    file::create_directories(dir / "src");
-    writeSource((dir / "src" / "one.c").string(), "int one(void) { return 1; }\n");
-    writeSource((dir / "ed1.json").string(),
-                "{\n  \"name\": \"Older\",\n"
-                "  \"groups\": { \"Sources\": [\"src/one.c\"] }\n}\n");
-
-    std::string error;
-    editor::Project project;
-    check(project.load(dir.string(), error), "a project called ed1.json still opens");
-    check(project.name() == "Older", "with everything it said");
-    check(editor::path::filename(project.file()) == "ed1.json",
-          "and it knows which of the two names it was found under");
-
-    // Saving keeps it there, rather than leaving the directory holding both.
-    project.addFile("src/two.c", "Sources");
-    std::string why;
-    check(project.save(why), "it saves");
-    check(file::exists(dir / "ed1.json"), "back to the name it came from");
-    check(!file::exists(dir / "RStudio.json"), "and no second project file appears beside it");
-    check(readWholeFile((dir / "ed1.json").string()).find("src/two.c") != std::string::npos,
-          "with the change in it");
-
-    // The current name wins when a directory somehow holds both.
-    writeSource((dir / "RStudio.json").string(),
-                "{\n  \"name\": \"Newer\",\n  \"groups\": { \"Sources\": [] }\n}\n");
-    editor::Project both;
-    check(both.load(dir.string(), error), "a directory holding both loads");
-    check(both.name() == "Newer", "and the current name is the one that is read");
-
-    file::remove_all(dir);
-}
-
 void whatItRemembers() {
     std::printf("what it remembers, and where a first run opens\n");
 
     namespace pth = editor::path;
     std::string realHome = pth::homeDir();
 
-    std::string home = pth::join(pth::tempDir(), "rstudio-home-test");
+    std::string home = pth::join(pth::tempDir(), "ride-home-test");
     pth::removeTree(home);
     pth::makeDirectories(home);
     sayWhereHomeIs(home);
 
     check(pth::homeDir() == home, "home is where the machine says it is");
-    check(editor::settings::fileName().find(".rstudio/config.json") != std::string::npos ||
-              editor::settings::fileName().find(".rstudio\\config.json") != std::string::npos,
-          "the editor's own configuration is under a directory of its own");
-    // Two renames in one day, so this names whichever earlier one is on this
-    // machine, and the most recent of them when neither is.
-    std::string before = editor::settings::formerFileName();
-    check(before.find(".rstudioconfig.json") != std::string::npos ||
-              before.find(".ed1config.json") != std::string::npos,
-          "and a name it had before is still known, so it can be read once");
-    check(before != editor::settings::fileName(), "and it is not the current one");
+    check(editor::settings::fileName() ==
+              pth::join(pth::join(home, editor::product::kStateDirectory), editor::product::kStateFile),
+          "what the editor remembers is under a directory of its own, named for the product");
     check(editor::settings::lastProject().empty(), "and remembers nothing to begin with");
 
     // A configuration that will not parse is not silently buried. It is kept
@@ -3763,7 +3710,7 @@ void whereTheProgramCannotGo() {
     // The installer's examples\ under Program Files, as a normal user sees
     // it: readable, not writable. The portable stand-in is a directory that
     // is a file - nothing can be made inside one anywhere.
-    std::string dir = editor::path::join(editor::path::tempDir(), "rstudio-unwritable-test");
+    std::string dir = editor::path::join(editor::path::tempDir(), "ride-unwritable-test");
     editor::path::removeTree(dir);
     editor::path::makeDirectories(dir);
     std::string notADir = editor::path::join(dir, "examples");
@@ -3813,7 +3760,7 @@ void whatALinkFailureSays() {
         return;
     }
 
-    std::string dir = editor::path::join(editor::path::tempDir(), "rstudio-link-test");
+    std::string dir = editor::path::join(editor::path::tempDir(), "ride-link-test");
     editor::path::removeTree(dir);
     editor::path::makeDirectories(dir);
     std::string source = editor::path::join(dir, "calls.c");
@@ -3837,7 +3784,7 @@ void whatALinkFailureSays() {
     editor::path::removeTree(dir);
 }
 
-// A compiler per group: what RStudio.json says, what survives being written back,
+// A compiler per group: what the .pro says, what survives being written back,
 // and the two commands that used to be one.
 // The manual's contents, against the manual.
 //
@@ -3903,7 +3850,7 @@ void theManualsContents() {
 void aCompilerPerGroup() {
     std::printf("a compiler per group, and the link at the end\n");
 
-    file::path dir = file::temp_directory_path() / "rstudio-per-group-test";
+    file::path dir = file::temp_directory_path() / "ride-per-group-test";
     file::remove_all(dir);
     file::create_directories(dir);
 
@@ -3913,7 +3860,7 @@ void aCompilerPerGroup() {
     // Two spellings of a group, and the plain one is not deprecated: a project
     // written before any of this has to keep working, and has to keep looking
     // the way its author left it after the editor saves it.
-    writeSource((dir / "RStudio.json").string(),
+    writeSource((dir / "project.pro").string(),
                 "{\n  \"name\": \"mix\",\n"
                 "  \"groups\": {\n"
                 "    \"Sources\": [\"main.c\"],\n"
@@ -3950,7 +3897,7 @@ void aCompilerPerGroup() {
 
     // Written back: the plain group stays plain, the named one keeps its name.
     check(project.save(error), "it saves");
-    std::string written = readWholeFile((dir / "RStudio.json").string());
+    std::string written = readWholeFile((dir / "project.pro").string());
     check(written.find("\"Sources\"") != std::string::npos, "Sources is still there");
     // "msvc", not "cl": both are read and msvc is what the project file has
     // always written for that compiler, at the top level as well as here. One
@@ -4024,10 +3971,10 @@ void aCompilerPerGroup() {
 // registration does it, not the object - and the only cure is the shape
 // scratch() in bridge.cpp has: made once with new, never destroyed. That was
 // found on the day the window was built and found again on 2026-09-11, when
-// rstudio_group_for_file arrived with a plain `static std::string` and New
+// ride_group_for_file arrived with a plain `static std::string` and New
 // File took a name and died. The window builds on one machine in three and
 // has no suite of its own, so the rule is held here, over exactly the files
-// RStudioGui.vcxproj compiles, read out of that file rather than listed twice.
+// RIDEGui.vcxproj compiles, read out of that file rather than listed twice.
 void theWindowsRuleAboutStatics() {
     std::printf("no static with a destructor in what the window compiles\n");
 
@@ -4035,7 +3982,7 @@ void theWindowsRuleAboutStatics() {
         std::printf("  (no winforms/ from here, so the window's sources are not scanned)\n");
         return;
     }
-    std::string project = readWholeFile("winforms/RStudioGui.vcxproj");
+    std::string project = readWholeFile("winforms/RIDEGui.vcxproj");
     check(!project.empty(), "the window's project can be read");
 
     std::vector<std::string> sources;
@@ -4095,7 +4042,7 @@ void theFourthCompiler() {
     }
     const std::string host = editor::hostArch();
 
-    std::string dir = editor::path::join(editor::path::tempDir(), "rstudio-cxx1-test");
+    std::string dir = editor::path::join(editor::path::tempDir(), "ride-cxx1-test");
     editor::path::removeTree(dir);
     editor::path::makeDirectories(dir);
     std::string source = editor::path::join(dir, "owned.cpp");
@@ -4259,11 +4206,11 @@ void aDirectoryInAQuotedArgument() {
 void whatTheProjectBuilds() {
     std::printf("what a project says it builds\n");
 
-    file::path dir = file::temp_directory_path() / "rstudio-target-test";
+    file::path dir = file::temp_directory_path() / "ride-target-test";
     file::remove_all(dir);
     file::create_directories(dir);
 
-    writeSource((dir / "RStudio.json").string(),
+    writeSource((dir / "project.pro").string(),
               "{\n"
               "  \"name\": \"sums\",\n"
               "  \"groups\": {\n"
@@ -4326,7 +4273,7 @@ void whatTheProjectBuilds() {
           "and the build is refused before a compiler runs");
     check(why.find("nowhere.c") != std::string::npos, "naming the file that is not there");
     check(why.find("not on disk") != std::string::npos, "and saying what is wrong with it");
-    check(detail.find("RStudio.json") != std::string::npos, "with where the list lives");
+    check(detail.find("project.pro") != std::string::npos, "with where the list lives");
     check(sources.empty(), "and nothing handed back to compile");
 
     // A group that is not there, and a target with no source in it.
@@ -4347,17 +4294,17 @@ void whatTheProjectBuilds() {
     // window wrote every project without a build entry until then. An
     // empty Sources is then a refusal with a reason, not a silence.
     editor::Project quiet;
-    file::path bare = file::temp_directory_path() / "rstudio-target-bare";
+    file::path bare = file::temp_directory_path() / "ride-target-bare";
     file::remove_all(bare);
     file::create_directories(bare);
-    writeSource((bare / "RStudio.json").string(),
+    writeSource((bare / "project.pro").string(),
                 "{ \"name\": \"quiet\", \"groups\": { \"Sources\": [] } }\n");
     check(quiet.load(bare.string(), error), "a project with no build entry still loads");
     check(quiet.builds(), "and builds its Sources group by default");
     check(!quiet.targetSources(sources, lang, why, &detail), "which, empty, hands nothing back");
     check(!why.empty(), "and it says so rather than saying nothing");
     // Said and empty is a different thing: that project builds nothing.
-    writeSource((bare / "RStudio.json").string(),
+    writeSource((bare / "project.pro").string(),
                 "{ \"name\": \"quiet\", \"groups\": { \"Sources\": [\"a.c\"] }, \"build\": {} }\n");
     check(quiet.load(bare.string(), error) && !quiet.builds(), "a build entry that names no group builds nothing");
 
@@ -4543,7 +4490,7 @@ void theThirdLanguage() {
     {
         editor::Project project;
         std::string error;
-        std::string dir = editor::path::join(editor::path::tempDir(), "rstudio-shmproj");
+        std::string dir = editor::path::join(editor::path::tempDir(), "ride-shmproj");
         editor::path::removeTree(dir);
         editor::path::makeDirectories(editor::path::join(dir, "src"));
         writeSource(editor::path::join(dir, "src/hello.shl"),
@@ -4551,7 +4498,7 @@ void theThirdLanguage() {
         writeSource(editor::path::join(dir, "src/other.shl"),
                     "fun <> = main() {\n  ? 2\n}\n");
 
-        writeSource(editor::path::join(dir, "RStudio.json"),
+        writeSource(editor::path::join(dir, "project.pro"),
                     "{\n  \"name\": \"hello\",\n"
                     "  \"build\": { \"target\": \"hello\", \"groups\": [\"Sources\"] },\n"
                     "  \"groups\": { \"Sources\": [\"src/hello.shl\"] }\n}\n");
@@ -4566,7 +4513,7 @@ void theThirdLanguage() {
         check(sources.size() == 1, "and is one source");
 
         // Two programs, and the target names one of them.
-        writeSource(editor::path::join(dir, "RStudio.json"),
+        writeSource(editor::path::join(dir, "project.pro"),
                     "{\n  \"name\": \"hello\",\n"
                     "  \"build\": { \"target\": \"hello\", \"groups\": [\"Sources\"] },\n"
                     "  \"groups\": { \"Sources\": [\"src/other.shl\", \"src/hello.shl\"] }\n}\n");
@@ -4579,7 +4526,7 @@ void theThirdLanguage() {
               "with the target's own first, not the one listed first");
 
         // Two programs and a target named after neither: refused, not guessed.
-        writeSource(editor::path::join(dir, "RStudio.json"),
+        writeSource(editor::path::join(dir, "project.pro"),
                     "{\n  \"name\": \"hello\",\n"
                     "  \"build\": { \"target\": \"neither\", \"groups\": [\"Sources\"] },\n"
                     "  \"groups\": { \"Sources\": [\"src/other.shl\", \"src/hello.shl\"] }\n}\n");
@@ -4596,7 +4543,7 @@ void theThirdLanguage() {
 
         // Shalimar beside C is the refusal C beside C++ already had.
         writeSource(editor::path::join(dir, "src/bit.c"), "int bit(void) { return 1; }\n");
-        writeSource(editor::path::join(dir, "RStudio.json"),
+        writeSource(editor::path::join(dir, "project.pro"),
                     "{\n  \"name\": \"hello\",\n"
                     "  \"build\": { \"target\": \"hello\", \"groups\": [\"Sources\"] },\n"
                     "  \"groups\": { \"Sources\": [\"src/hello.shl\", \"src/bit.c\"] }\n}\n");
@@ -4613,7 +4560,7 @@ void theThirdLanguage() {
         // three startup symbols whatever file it came from, so two of them
         // collide, and the language has no declarations, so a call across a
         // link could not be checked. Compiler-S/docs/LINKING.md, in full.
-        writeSource(editor::path::join(dir, "RStudio.json"),
+        writeSource(editor::path::join(dir, "project.pro"),
                     "{\n  \"name\": \"hello\",\n"
                     "  \"build\": { \"target\": \"hello\", \"groups\": [\"S\", \"C\"] },\n"
                     "  \"groups\": { \"S\": [\"src/hello.shl\"], \"C\": [\"src/bit.c\"] }\n}\n");
@@ -4658,7 +4605,7 @@ void steppingShalimar() {
         return;
     }
 
-    std::string dir = editor::path::join(editor::path::tempDir(), "rstudio-shm-step");
+    std::string dir = editor::path::join(editor::path::tempDir(), "ride-shm-step");
     editor::path::removeTree(dir);
     if (!editor::path::makeDirectories(dir)) {
         std::printf("  (could not make %s - this case is about shc, not about that)\n",
@@ -4763,7 +4710,7 @@ void steppingShalimar() {
 
 // The same program stopped through the seam the window uses, rather than
 // through the Session directly - which is the whole of what the window could
-// not do. Everything here is a rstudio_ call and nothing names a C++ type,
+// not do. Everything here is a ride_ call and nothing names a C++ type,
 // because that is the only vocabulary the form has.
 void theWindowStoppingShalimar() {
     std::printf("the window stopping a Shalimar program\n");
@@ -4771,42 +4718,42 @@ void theWindowStoppingShalimar() {
     // The order the window has to ask in. dbg_for answers "none" for shc and
     // is right to; a front end that reads that as a refusal refuses the one
     // language that needs nothing installed.
-    check(rstudio_debugger_stops_itself(editor::ToolShc) != 0,
+    check(ride_debugger_stops_itself(editor::ToolShc) != 0,
           "a Shalimar program is known to stop itself");
-    check(rstudio_debugger_stops_itself(editor::ToolCc1) == 0 &&
-              rstudio_debugger_stops_itself(editor::ToolMsvc) == 0 &&
-              rstudio_debugger_stops_itself(editor::ToolCxx) == 0,
+    check(ride_debugger_stops_itself(editor::ToolCc1) == 0 &&
+              ride_debugger_stops_itself(editor::ToolMsvc) == 0 &&
+              ride_debugger_stops_itself(editor::ToolCxx) == 0,
           "and nothing else is - the other three need a debugger");
-    check(rstudio_debugger_for(editor::ToolShc, editor::hostArch()) == 0,
+    check(ride_debugger_for(editor::ToolShc, editor::hostArch()) == 0,
           "there is no gdb, lldb or cdb in it at all");
 
     // And when something does ask in the wrong order, what it is told names
     // shc rather than the compiler that has nothing to do with it. This used
     // to answer with cc1's MASM, which is a sentence about another language.
-    check(std::string(rstudio_no_debugger_because(editor::ToolShc, editor::hostArch()))
+    check(std::string(ride_no_debugger_because(editor::ToolShc, editor::hostArch()))
               .find("stops itself") != std::string::npos,
           "and asking why there is no debugger says so, naming no other compiler");
 
     // The two release refusals are different sentences because they are
     // different facts: one build is missing -g and the other never had one.
-    check(std::string(rstudio_release_cannot_stop(editor::ToolShc)).find("no debugger in it") !=
+    check(std::string(ride_release_cannot_stop(editor::ToolShc)).find("no debugger in it") !=
               std::string::npos,
           "release says what a Shalimar build has not got");
-    check(std::string(rstudio_release_cannot_stop(editor::ToolCc1)).find("-g") !=
+    check(std::string(ride_release_cannot_stop(editor::ToolCc1)).find("-g") !=
               std::string::npos,
           "where a C build says what was left out of it");
-    check(std::string(rstudio_why_it_did_not_start(editor::ToolShc, editor::hostArch()))
+    check(std::string(ride_why_it_did_not_start(editor::ToolShc, editor::hostArch()))
               .find("did not arm") != std::string::npos,
           "and a start that failed is a program that did not arm, not a debugger to install");
 
     // Nothing is running yet, so nothing is refused yet: the window may put a
     // watch down before it starts, as the terminal may.
-    RStudioDebugger* idle = rstudio_debugger_new();
-    check(std::string(rstudio_cannot_watch(idle)).empty(),
+    RIDEDebugger* idle = ride_debugger_new();
+    check(std::string(ride_cannot_watch(idle)).empty(),
           "with nothing running, watching is not refused");
-    check(std::string(rstudio_locals_none_because(idle)) == "  (nothing in scope here)",
+    check(std::string(ride_locals_none_because(idle)) == "  (nothing in scope here)",
           "and an empty scope is this place having none");
-    rstudio_debugger_free(idle);
+    ride_debugger_free(idle);
 
     const char* shc = std::getenv("SHC");
     if (!shc || !*shc) {
@@ -4814,7 +4761,7 @@ void theWindowStoppingShalimar() {
         return;
     }
 
-    std::string dir = editor::path::join(editor::path::tempDir(), "rstudio-window-shm");
+    std::string dir = editor::path::join(editor::path::tempDir(), "ride-window-shm");
     editor::path::removeTree(dir);
     if (!editor::path::makeDirectories(dir)) {
         std::printf("  (could not make %s - this case is about the seam, not about that)\n",
@@ -4843,70 +4790,70 @@ void theWindowStoppingShalimar() {
     // Built through the bridge, exactly as the window builds it - and in the
     // debug configuration, which for shc is what --debug means: the compiler's
     // output is the same either way and the runtime archive is not.
-    RStudioProgram* built = rstudio_build_program(0, "cc1", "cl", shc, "cxx1", editor::ToolShc, source.c_str(),
+    RIDEProgram* built = ride_build_program(0, "cc1", "cl", shc, "cxx1", editor::ToolShc, source.c_str(),
                                           editor::LangShalimar, editor::hostArch(),
                                           editor::ConfigDebug);
-    check(rstudio_program_ok(built) != 0, "the window's build makes a program");
-    if (rstudio_program_ok(built) == 0) {
-        std::printf("   it said: %s\n", rstudio_program_output(built));
-        rstudio_program_free(built);
+    check(ride_program_ok(built) != 0, "the window's build makes a program");
+    if (ride_program_ok(built) == 0) {
+        std::printf("   it said: %s\n", ride_program_output(built));
+        ride_program_free(built);
         editor::path::removeTree(dir);
         return;
     }
 
-    RStudioDebugger* debugger = rstudio_debugger_new();
-    check(rstudio_debugger_start(debugger, editor::ToolShc, editor::hostArch(),
-                             rstudio_program_path(built)) != 0,
+    RIDEDebugger* debugger = ride_debugger_new();
+    check(ride_debugger_start(debugger, editor::ToolShc, editor::hostArch(),
+                             ride_program_path(built)) != 0,
           "the program starts with its session armed");
-    check(rstudio_debugger_running(debugger) != 0,
+    check(ride_debugger_running(debugger) != 0,
           "and the window is told something is running, as it is for the other three");
-    check(rstudio_debugging_shalimar(debugger) != 0, "and which of the two halves it is");
+    check(ride_debugging_shalimar(debugger) != 0, "and which of the two halves it is");
 
-    check(rstudio_debugger_break(debugger, source.c_str(), 8) != 0,
+    check(ride_debugger_break(debugger, source.c_str(), 8) != 0,
           "a breakpoint is set by file and line");
-    rstudio_debugger_run(debugger);
-    check(rstudio_stop_stopped(debugger) != 0 && rstudio_stop_line(debugger) == 8,
+    ride_debugger_run(debugger);
+    check(ride_stop_stopped(debugger) != 0 && ride_stop_line(debugger) == 8,
           "running stops on the line it was set on");
-    check(std::string(editor::path::filename(rstudio_stop_file(debugger))) == "steps.shl",
+    check(std::string(editor::path::filename(ride_stop_file(debugger))) == "steps.shl",
           "in the file it was set in");
 
     // The three things this cannot do, each said rather than left blank. An
     // empty variable list would read as "this line has none".
-    check(rstudio_locals_count(debugger) == 0, "there are no variables to read");
-    check(std::string(rstudio_locals_none_because(debugger)).find("not what is in it") !=
+    check(ride_locals_count(debugger) == 0, "there are no variables to read");
+    check(std::string(ride_locals_none_because(debugger)).find("not what is in it") !=
               std::string::npos,
           "and the tab is given the reason there are none, not an empty list");
-    check(std::string(rstudio_cannot_watch(debugger)).find("nothing to watch with") !=
+    check(std::string(ride_cannot_watch(debugger)).find("nothing to watch with") !=
               std::string::npos,
           "watching is refused in the same voice");
-    check(std::string(rstudio_cannot_walk_stack(debugger)).find("how deep it is") !=
+    check(std::string(ride_cannot_walk_stack(debugger)).find("how deep it is") !=
               std::string::npos,
           "and so is walking the stack");
 
-    check(rstudio_stack_count(debugger) == 1, "one frame: where it is standing");
-    check(std::string(rstudio_stack_function(debugger, 0)).find("1 call") != std::string::npos,
+    check(ride_stack_count(debugger) == 1, "one frame: where it is standing");
+    check(std::string(ride_stack_function(debugger, 0)).find("1 call") != std::string::npos,
           "which says how deep it is rather than inventing a name for it");
 
-    rstudio_debugger_step_into(debugger);
-    check(rstudio_stop_stopped(debugger) != 0 && rstudio_stop_line(debugger) == 2,
+    ride_debugger_step_into(debugger);
+    check(ride_stop_stopped(debugger) != 0 && ride_stop_line(debugger) == 2,
           "stepping into the call reaches its first line");
-    rstudio_debugger_step_out(debugger);
-    check(rstudio_stop_stopped(debugger) != 0 && rstudio_stop_line(debugger) == 9,
+    ride_debugger_step_out(debugger);
+    check(ride_stop_stopped(debugger) != 0 && ride_stop_line(debugger) == 9,
           "and stepping out comes back to the statement after the call");
 
-    rstudio_debugger_step_over(debugger);
-    check(rstudio_stop_exited(debugger) != 0, "carrying on from the last statement ends it");
+    ride_debugger_step_over(debugger);
+    check(ride_stop_exited(debugger) != 0, "carrying on from the last statement ends it");
 
     // The last thing it printed comes back with the stop that says it ended -
     // and unfiltered, which is what ownsTheStop is for. Running has gone false
     // by now, the channel having closed with the program.
-    check(std::string(rstudio_stop_output(debugger)).find("2") != std::string::npos,
+    check(std::string(ride_stop_output(debugger)).find("2") != std::string::npos,
           "and what it printed on the way out reaches the console");
-    check(rstudio_debugger_running(debugger) == 0, "with nothing running afterwards");
+    check(ride_debugger_running(debugger) == 0, "with nothing running afterwards");
 
-    rstudio_debugger_stop(debugger);
-    rstudio_debugger_free(debugger);
-    rstudio_program_free(built);
+    ride_debugger_stop(debugger);
+    ride_debugger_free(debugger);
+    ride_program_free(built);
     editor::path::removeTree(dir);
 }
 
@@ -4952,68 +4899,68 @@ void theConversionSeam() {
     std::printf("what the window asks the core to convert\n");
 
     int toShalimar = -1;
-    check(rstudio_converts_from(editor::LangC, &toShalimar) == 1 && toShalimar == 1,
+    check(ride_converts_from(editor::LangC, &toShalimar) == 1 && toShalimar == 1,
           "C converts to Shalimar");
     toShalimar = -1;
-    check(rstudio_converts_from(editor::LangShalimar, &toShalimar) == 1 && toShalimar == 0,
+    check(ride_converts_from(editor::LangShalimar, &toShalimar) == 1 && toShalimar == 0,
           "and Shalimar back to C");
-    check(rstudio_converts_from(editor::LangCpp, &toShalimar) == 0,
+    check(ride_converts_from(editor::LangCpp, &toShalimar) == 0,
           "C++ has no other side");
-    check(rstudio_converts_from(editor::LangPlain, &toShalimar) == 0,
+    check(ride_converts_from(editor::LangPlain, &toShalimar) == 0,
           "and neither has plain text");
 
-    char* named = rstudio_converted_name("/a/b/prime.c", 1);
+    char* named = ride_converted_name("/a/b/prime.c", 1);
     checkEqual(named, "/a/b/prime.shl", "the window is told the same name the editor uses");
-    rstudio_free(named);
+    ride_free(named);
 
-    named = rstudio_converted_name("/a.b/prime", 1);
+    named = ride_converted_name("/a.b/prime", 1);
     checkEqual(named, "/a.b/prime.shl", "including that a dot in a directory is not an extension");
-    rstudio_free(named);
+    ride_free(named);
 
-    char* found = rstudio_find_converter();
+    char* found = ride_find_converter();
     check(found != 0, "asking where c2s is always answers something");
-    rstudio_free(found);
+    ride_free(found);
 
-    RStudioConversion* made = rstudio_convert("", "", "", 1);
-    check(rstudio_conversion_ran(made) == 0, "a conversion with nothing named did not run");
-    check(rstudio_conversion_ok(made) == 0, "and is not ok");
-    check(std::string(rstudio_conversion_produced(made)).empty(),
+    RIDEConversion* made = ride_convert("", "", "", 1);
+    check(ride_conversion_ran(made) == 0, "a conversion with nothing named did not run");
+    check(ride_conversion_ok(made) == 0, "and is not ok");
+    check(std::string(ride_conversion_produced(made)).empty(),
           "and wrote no file");
-    rstudio_conversion_free(made);
+    ride_conversion_free(made);
 }
 
 void theWindowsProjectDebug() {
     std::printf("what the window asks about debugging a project\n");
 
-    file::path dir = file::temp_directory_path() / "rstudio-bridge-debug";
+    file::path dir = file::temp_directory_path() / "ride-bridge-debug";
     file::remove_all(dir);
     file::create_directories(dir);
     writeSource((dir / "add.c").string(), "int add(int a, int b) { return a + b; }\n");
     writeSource((dir / "main.c").string(),
                 "int add(int, int);\nint main(void) { return add(1, 2); }\n");
-    writeSource((dir / "RStudio.json").string(),
+    writeSource((dir / "project.pro").string(),
                 "{\n  \"name\": \"sums\",\n"
                 "  \"groups\": { \"Sources\": [\"add.c\", \"main.c\"] },\n"
                 "  \"build\": { \"target\": \"sums\", \"groups\": [\"Sources\"] }\n}\n");
 
     const std::string host = editor::hostArch();
-    RStudioProject* project = rstudio_project_new();
+    RIDEProject* project = ride_project_new();
     char trouble[512] = {0};
-    check(rstudio_project_load(project, dir.string().c_str(), trouble, sizeof trouble) != 0,
+    check(ride_project_load(project, dir.string().c_str(), trouble, sizeof trouble) != 0,
           "a project that says what it builds loads");
 
-    int can = rstudio_project_debug_plan(project, "cc1", "cl", "shc", "cxx1", editor::ToolAuto,
+    int can = ride_project_debug_plan(project, "cc1", "cl", "shc", "cxx1", editor::ToolAuto,
                                      host.c_str());
-    if (rstudio_debugger_for(editor::ToolCc1, host.c_str()) == 0) {
+    if (ride_debugger_for(editor::ToolCc1, host.c_str()) == 0) {
         // Windows, where cc1 generates MASM and MASM carries no line table.
         check(can == 0, "a C project cannot be debugged where nothing reads what cc1 writes");
-        check(std::string(rstudio_project_why_not_debug(project)).find("MASM") != std::string::npos,
+        check(std::string(ride_project_why_not_debug(project)).find("MASM") != std::string::npos,
               "and the reason names the MASM that has no line table");
     } else {
         check(can != 0, "a C project can be debugged where cc1's DWARF can be read");
-        check(rstudio_project_debug_kind(project) == editor::ToolCc1,
+        check(ride_project_debug_kind(project) == editor::ToolCc1,
               "through cc1, whose debug information it is");
-        check(rstudio_project_blind_groups(project) == 0,
+        check(ride_project_blind_groups(project) == 0,
               "with no group the debugger would be blind in");
     }
 
@@ -5022,30 +4969,30 @@ void theWindowsProjectDebug() {
     // the rule rather than a number: every part with no debugger of its own is
     // named, and the one being read is a part that has one.
     writeSource((dir / "extra.cpp").string(), "int twice(int n) { return n * 2; }\n");
-    writeSource((dir / "RStudio.json").string(),
+    writeSource((dir / "project.pro").string(),
                 "{\n  \"name\": \"sums\",\n"
                 "  \"groups\": { \"Sources\": [\"add.c\", \"main.c\", \"extra.cpp\"] },\n"
                 "  \"build\": { \"target\": \"sums\", \"groups\": [\"Sources\"] }\n}\n");
-    check(rstudio_project_load(project, dir.string().c_str(), trouble, sizeof trouble) != 0,
+    check(ride_project_load(project, dir.string().c_str(), trouble, sizeof trouble) != 0,
           "a project of both languages loads");
-    can = rstudio_project_debug_plan(project, "cc1", "cl", "shc", "cxx1", editor::ToolAuto, host.c_str());
+    can = ride_project_debug_plan(project, "cc1", "cl", "shc", "cxx1", editor::ToolAuto, host.c_str());
 
-    int parts = rstudio_project_target_parts(project);
+    int parts = ride_project_target_parts(project);
     int sightless = 0;
     for (int i = 0; i < parts; ++i) {
-        int theirs = rstudio_project_part_toolchain(project, i, "cc1", "cl", "shc", "cxx1",
+        int theirs = ride_project_part_toolchain(project, i, "cc1", "cl", "shc", "cxx1",
                                                 editor::ToolAuto);
-        if (rstudio_debugger_for(theirs, host.c_str()) == 0) ++sightless;
+        if (ride_debugger_for(theirs, host.c_str()) == 0) ++sightless;
     }
-    check(rstudio_project_blind_groups(project) == sightless,
+    check(ride_project_blind_groups(project) == sightless,
           "every part with no debugger of its own is named as one the debugger is blind in");
     check(can != 0 || sightless == parts,
           "and the program is refused only when none of its parts can be seen at all");
     if (can != 0)
-        check(rstudio_debugger_for(rstudio_project_debug_kind(project), host.c_str()) != 0,
+        check(ride_debugger_for(ride_project_debug_kind(project), host.c_str()) != 0,
               "the compiler chosen to read is one whose debug information can be read");
 
-    rstudio_project_free(project);
+    ride_project_free(project);
     file::remove_all(dir);
 
     // Shalimar, which is the case none of the above describes: no debugger
@@ -5053,7 +5000,7 @@ void theWindowsProjectDebug() {
     // out possible on every machine this runs on - that is the whole point of
     // asking dbg_stopsItself before dbg_for.
     const char* shc = std::getenv("SHC");
-    file::path shmDir = file::temp_directory_path() / "rstudio-bridge-debug-shm";
+    file::path shmDir = file::temp_directory_path() / "ride-bridge-debug-shm";
     file::remove_all(shmDir);
     file::create_directories(shmDir);
     writeSource((shmDir / "steps.shl").string(),
@@ -5067,56 +5014,56 @@ void theWindowsProjectDebug() {
                 "  int b : twice(a)\n"
                 "  ? b\n"
                 "}\n");
-    writeSource((shmDir / "RStudio.json").string(),
+    writeSource((shmDir / "project.pro").string(),
                 "{\n  \"name\": \"steps\",\n"
                 "  \"groups\": { \"Sources\": [\"steps.shl\"] },\n"
                 "  \"build\": { \"target\": \"steps\", \"groups\": [\"Sources\"] }\n}\n");
 
-    RStudioProject* shm = rstudio_project_new();
-    check(rstudio_project_load(shm, shmDir.string().c_str(), trouble, sizeof trouble) != 0,
+    RIDEProject* shm = ride_project_new();
+    check(ride_project_load(shm, shmDir.string().c_str(), trouble, sizeof trouble) != 0,
           "a Shalimar project loads");
-    check(rstudio_project_debug_plan(shm, "cc1", "cl", shc && *shc ? shc : "shc", "cxx1",
+    check(ride_project_debug_plan(shm, "cc1", "cl", shc && *shc ? shc : "shc", "cxx1",
                                  editor::ToolAuto, host.c_str()) != 0,
           "and can be debugged on every machine, needing nothing installed");
-    check(rstudio_project_debug_kind(shm) == editor::ToolShc, "by shc, which reads nothing");
+    check(ride_project_debug_kind(shm) == editor::ToolShc, "by shc, which reads nothing");
 
     // The fix this test exists for. The walk over the parts puts every group
     // with no debugger into the blind list, and shc has none - so a Shalimar
     // project was told its own group carried no debug information and that the
     // debugger could not stop in it, immediately before stopping in it.
-    check(rstudio_project_blind_groups(shm) == 0,
+    check(ride_project_blind_groups(shm) == 0,
           "and is not warned that the debugger cannot stop where it is about to stop");
 
     if (shc && *shc) {
         // And the whole of the window's new path: build the project's program,
         // attach to that rather than to a temporary one, and stop in it.
-        RStudioBuild* made = rstudio_build_target(shm, "cc1", "cl", shc, "cxx1", editor::ToolAuto,
+        RIDEBuild* made = ride_build_target(shm, "cc1", "cl", shc, "cxx1", editor::ToolAuto,
                                           host.c_str(), editor::ConfigDebug);
-        check(made != nullptr && rstudio_build_ok(made) != 0, "the project's program builds");
-        if (made != nullptr && rstudio_build_ok(made) != 0) {
-            std::string program = rstudio_project_target_program(shm);
+        check(made != nullptr && ride_build_ok(made) != 0, "the project's program builds");
+        if (made != nullptr && ride_build_ok(made) != 0) {
+            std::string program = ride_project_target_program(shm);
             check(editor::path::exists(program),
                   "and is left where the project keeps it, for a debugger to open");
 
-            RStudioDebugger* debugger = rstudio_debugger_new();
-            check(rstudio_debugger_start(debugger, rstudio_project_debug_kind(shm), host.c_str(),
+            RIDEDebugger* debugger = ride_debugger_new();
+            check(ride_debugger_start(debugger, ride_project_debug_kind(shm), host.c_str(),
                                      program.c_str()) != 0,
                   "the session starts on the project's own program");
-            check(rstudio_debugger_break(debugger,
+            check(ride_debugger_break(debugger,
                                      (shmDir / "steps.shl").string().c_str(), 8) != 0,
                   "a breakpoint is set in one of its files");
-            rstudio_debugger_run(debugger);
-            check(rstudio_stop_stopped(debugger) != 0 && rstudio_stop_line(debugger) == 8,
+            ride_debugger_run(debugger);
+            check(ride_stop_stopped(debugger) != 0 && ride_stop_line(debugger) == 8,
                   "and it stops there");
-            rstudio_debugger_stop(debugger);
-            rstudio_debugger_free(debugger);
+            ride_debugger_stop(debugger);
+            ride_debugger_free(debugger);
         }
-        if (made != nullptr) rstudio_build_free(made);
+        if (made != nullptr) ride_build_free(made);
     } else {
         std::printf("  (no $SHC, so the project's program is not built and stopped)\n");
     }
 
-    rstudio_project_free(shm);
+    ride_project_free(shm);
     file::remove_all(shmDir);
 }
 
@@ -5129,7 +5076,6 @@ int main(int argc, char** argv) {
     steppingOffTheEnd();
     aProjectMadeFromWhatIsThere();
     whatItRemembers();
-    theProjectFilesOldName();
     namedProjectFiles();
     whereAFileBelongs();
     jsonIsALanguage();

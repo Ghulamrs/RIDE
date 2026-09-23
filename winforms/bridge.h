@@ -1,384 +1,385 @@
-#ifndef RSTUDIO_BRIDGE_H
-#define RSTUDIO_BRIDGE_H
+#ifndef RIDE_BRIDGE_H
+#define RIDE_BRIDGE_H
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 enum {
-    RSTUDIO_KIND_NORMAL = 0, RSTUDIO_KIND_KEYWORD, RSTUDIO_KIND_TYPE, RSTUDIO_KIND_STRING,
-    RSTUDIO_KIND_CHAR, RSTUDIO_KIND_COMMENT, RSTUDIO_KIND_PREPROC, RSTUDIO_KIND_NUMBER,
-    RSTUDIO_KIND_LABEL
+    RIDE_KIND_NORMAL = 0, RIDE_KIND_KEYWORD, RIDE_KIND_TYPE, RIDE_KIND_STRING,
+    RIDE_KIND_CHAR, RIDE_KIND_COMMENT, RIDE_KIND_PREPROC, RIDE_KIND_NUMBER,
+    RIDE_KIND_LABEL
 };
-enum { RSTUDIO_LANG_PLAIN = 0, RSTUDIO_LANG_C, RSTUDIO_LANG_CPP, RSTUDIO_LANG_SHALIMAR,
-       RSTUDIO_LANG_ASM, RSTUDIO_LANG_JSON };
+enum { RIDE_LANG_PLAIN = 0, RIDE_LANG_C, RIDE_LANG_CPP, RIDE_LANG_SHALIMAR,
+       RIDE_LANG_ASM, RIDE_LANG_JSON };
 
-enum { RSTUDIO_DIALECT_C = 0, RSTUDIO_DIALECT_SHALIMAR };
-enum { RSTUDIO_TOOL_AUTO = 0, RSTUDIO_TOOL_CC1, RSTUDIO_TOOL_MSVC, RSTUDIO_TOOL_SHC, RSTUDIO_TOOL_CXX,
-       RSTUDIO_TOOL_CXX1 };
-enum { RSTUDIO_CONFIG_DEBUG = 0, RSTUDIO_CONFIG_RELEASE };
+enum { RIDE_DIALECT_C = 0, RIDE_DIALECT_SHALIMAR };
+enum { RIDE_TOOL_AUTO = 0, RIDE_TOOL_CC1, RIDE_TOOL_MSVC, RIDE_TOOL_SHC, RIDE_TOOL_CXX,
+       RIDE_TOOL_CXX1 };
+enum { RIDE_CONFIG_DEBUG = 0, RIDE_CONFIG_RELEASE };
 
-void rstudio_watch_for_faults(const char* logPath);
+void ride_watch_for_faults(const char* logPath);
 
-char* rstudio_reindent(const char* text, int width, int tabs, int caseIndent,
+char* ride_reindent(const char* text, int width, int tabs, int caseIndent,
                    int dialect);
 
-char* rstudio_indent_after_newline(const char* text, int row, int col,
+char* ride_indent_after_newline(const char* text, int row, int col,
                                int width, int tabs, int caseIndent, int dialect);
 
-char* rstudio_indent_for(const char* text, int row, int width, int tabs, int caseIndent,
+char* ride_indent_for(const char* text, int row, int width, int tabs, int caseIndent,
                      int dialect);
 
-void rstudio_free(char* what);
+void ride_free(char* what);
 
-int rstudio_find_next(const char* text, const char* needle, int row, int col,
+int ride_find_next(const char* text, const char* needle, int row, int col,
                   int* foundRow, int* foundCol);
-int rstudio_find_previous(const char* text, const char* needle, int row, int col,
+int ride_find_previous(const char* text, const char* needle, int row, int col,
                       int* foundRow, int* foundCol);
 
-char* rstudio_replace_all(const char* text, const char* needle, const char* with,
+char* ride_replace_all(const char* text, const char* needle, const char* with,
                       int* howMany);
 
-const char* rstudio_settings_set_aside(void);
+const char* ride_settings_set_aside(void);
 
-const char* rstudio_code_font(void);
-int rstudio_remember_code_font(const char* described);
+const char* ride_code_font(void);
+int ride_remember_code_font(const char* described);
 
-void rstudio_undo_suspend(void* windowHandle);
-void rstudio_undo_resume(void* windowHandle);
+void ride_undo_suspend(void* windowHandle);
+void ride_undo_resume(void* windowHandle);
 
-int rstudio_language_for(const char* path);
+int ride_language_for(const char* path);
 
-int rstudio_dialect_for(int language);
+int ride_dialect_for(int language);
 
-int rstudio_highlight(const char* line, int language, int* state,
+int ride_highlight(const char* line, int language, int* state,
                   unsigned char* kinds, int kindsSize);
 
-char* rstudio_describe_build(const char* assembly);
+char* ride_describe_build(const char* assembly);
 
-char* rstudio_debug_note(int kind, const char* arch);
+char* ride_debug_note(int kind, const char* arch);
 
-typedef struct RStudioProject RStudioProject;
+typedef struct RIDEProject RIDEProject;
 
-RStudioProject* rstudio_project_new(void);
-void rstudio_project_free(RStudioProject* project);
+RIDEProject* ride_project_new(void);
+void ride_project_free(RIDEProject* project);
 
-int rstudio_project_load(RStudioProject* project, const char* directory,
+int ride_project_load(RIDEProject* project, const char* directory,
                      char* error, int errorSize);
 
-const char* rstudio_project_name(RStudioProject* project);
-int rstudio_project_groups(RStudioProject* project);
-const char* rstudio_project_group_name(RStudioProject* project, int group);
-int rstudio_project_files(RStudioProject* project, int group);
-const char* rstudio_project_file(RStudioProject* project, int group, int file);
-const char* rstudio_project_absolute(RStudioProject* project, const char* relative);
+const char* ride_project_name(RIDEProject* project);
+int ride_project_groups(RIDEProject* project);
+const char* ride_project_group_name(RIDEProject* project, int group);
+int ride_project_files(RIDEProject* project, int group);
+const char* ride_project_file(RIDEProject* project, int group, int file);
+const char* ride_project_absolute(RIDEProject* project, const char* relative);
 
-int rstudio_project_indent_width(RStudioProject* project);
-int rstudio_project_indent_tabs(RStudioProject* project);
-int rstudio_project_case_indent(RStudioProject* project);
-int rstudio_project_toolchain(RStudioProject* project);
+int ride_project_indent_width(RIDEProject* project);
+int ride_project_indent_tabs(RIDEProject* project);
+int ride_project_case_indent(RIDEProject* project);
+int ride_project_toolchain(RIDEProject* project);
 
-int rstudio_configuration(void);
-void rstudio_remember_configuration(int config);
-const char* rstudio_project_arch(RStudioProject* project);
+int ride_configuration(void);
+void ride_remember_configuration(int config);
+const char* ride_project_arch(RIDEProject* project);
 /* Run file on one source of a several-source build: the count of sources it
    is one of, or 0 - then the window runs the project instead. */
-int rstudio_project_runs_as_project(RStudioProject* project, const char* source);
+int ride_project_runs_as_project(RIDEProject* project, const char* source);
 // The project's own target and compiler, set from the Target and Tools
 // menus while it is open and written to its .pro at once; 0 with no project.
-int rstudio_project_set_arch(RStudioProject* project, const char* arch);
-int rstudio_project_set_toolchain(RStudioProject* project, int kind);
+int ride_project_set_arch(RIDEProject* project, const char* arch);
+int ride_project_set_toolchain(RIDEProject* project, int kind);
 
-int rstudio_project_allows(const char* relative, char* why, int whySize);
+int ride_project_allows(const char* relative, char* why, int whySize);
 
-const char* rstudio_group_for_file(const char* name);
+const char* ride_group_for_file(const char* name);
 
-const char* rstudio_project_suffix(void);
-const char* rstudio_version(void);
+const char* ride_project_suffix(void);
+// The product's name, from product.h: the window's title, its message boxes, its logs.
+const char* ride_product_name(void);
+const char* ride_version(void);
 
 // A project's header directories and libraries, as one ';'-separated line
 // each, relative to the root as the file has them; setting one saves.
-const char* rstudio_project_includes(RStudioProject* project);
-const char* rstudio_project_libraries(RStudioProject* project);
-int rstudio_project_set_includes(RStudioProject* project, const char* line);
-int rstudio_project_set_libraries(RStudioProject* project, const char* line);
+const char* ride_project_includes(RIDEProject* project);
+const char* ride_project_libraries(RIDEProject* project);
+int ride_project_set_includes(RIDEProject* project, const char* line);
+int ride_project_set_libraries(RIDEProject* project, const char* line);
 
 // The installation's settings.json, above bin/: where cxx1's headers
 // (include) and cc1's (lib) are, and the vcvars64.bat named there if any.
-const char* rstudio_install_file(void);
+const char* ride_install_file(void);
 // The installation's include directories and libraries, one ';'-separated
 // line each as settings.json has them; setting one writes the file.
-const char* rstudio_includes(void);
-const char* rstudio_libraries(void);
-int rstudio_set_includes(const char* line);
+const char* ride_includes(void);
+const char* ride_libraries(void);
+int ride_set_includes(const char* line);
 /* The window's way of asking the build's question - "the project's own
    masm/link/lnk6x did not build it; use the native tools instead?" - a yes
    builds again through them (compile.h: setAskNative). Installed once, at
    start; the function is called on whichever thread is building. */
-void rstudio_ask_native(int (*ask)(const char* question));
-int rstudio_set_libraries(const char* line);
-const char* rstudio_include_dir(void);
-const char* rstudio_lib_dir(void);
-int rstudio_remember_header_dirs(const char* include, const char* lib);
-const char* rstudio_vcvars(void);
-// The default compiler in settings.json, as an RSTUDIO_TOOL_* number, and
+void ride_ask_native(int (*ask)(const char* question));
+int ride_set_libraries(const char* line);
+const char* ride_include_dir(void);
+const char* ride_lib_dir(void);
+int ride_remember_header_dirs(const char* include, const char* lib);
+const char* ride_vcvars(void);
+// The default compiler in settings.json, as an RIDE_TOOL_* number, and
 // the choice written back when one is made from the menu.
-int rstudio_default_compiler(void);
-int rstudio_default_indent_width(void);
-int rstudio_default_indent_tabs(void);
-int rstudio_remember_default_compiler(int kind);
-int rstudio_remember_vcvars(const char* file);
+int ride_default_compiler(void);
+int ride_default_indent_width(void);
+int ride_default_indent_tabs(void);
+int ride_remember_default_compiler(int kind);
+int ride_remember_vcvars(const char* file);
 // The assembler named for x86_64-windows, and the choice written back.
-const char* rstudio_assembler(void);
-int rstudio_remember_assembler(const char* file);
+const char* ride_assembler(void);
+int ride_remember_assembler(const char* file);
 // TI's C6000 compiler directory and the runtime directory beside it, for a
 // tms6747 build's .out, and the choice written back.
 // The linkers named for x86_64-windows and tms6747, and the choices written back.
-const char* rstudio_linker(void);
-int rstudio_remember_linker(const char* file);
-const char* rstudio_tilinker(void);
-int rstudio_remember_tilinker(const char* file);
-const char* rstudio_ti(void);
-const char* rstudio_tilib(void);
-int rstudio_remember_ti(const char* dir, const char* lib);
+const char* ride_linker(void);
+int ride_remember_linker(const char* file);
+const char* ride_tilinker(void);
+int ride_remember_tilinker(const char* file);
+const char* ride_ti(void);
+const char* ride_tilib(void);
+int ride_remember_ti(const char* dir, const char* lib);
 
-int rstudio_project_save_as(RStudioProject* project, const char* file,
+int ride_project_save_as(RIDEProject* project, const char* file,
                             char* why, int whySize);
 
-int rstudio_project_loaded(RStudioProject* project);
-const char* rstudio_project_root(RStudioProject* project);
-void rstudio_project_set_root(RStudioProject* project, const char* path);
+int ride_project_loaded(RIDEProject* project);
+const char* ride_project_root(RIDEProject* project);
+void ride_project_set_root(RIDEProject* project, const char* path);
 
-void rstudio_project_close(RStudioProject* project);
-const char* rstudio_project_relative(RStudioProject* project, const char* path);
-const char* rstudio_project_file_name(void);
+void ride_project_close(RIDEProject* project);
+const char* ride_project_relative(RIDEProject* project, const char* path);
 
-// kind is the compiler chosen (RSTUDIO_TOOL_*): a name with no extension
+// kind is the compiler chosen (RIDE_TOOL_*): a name with no extension
 // gets that compiler's, or with the choice on automatic the project's usual.
-int rstudio_create_file(RStudioProject* project, const char* relative, const char* group, int kind);
-int rstudio_rename_file(RStudioProject* project, const char* fromAbsolute, const char* toRelative);
-int rstudio_delete_file(RStudioProject* project, const char* absolute);
-int rstudio_move_to_group(RStudioProject* project, const char* absolute, const char* group);
-int rstudio_add_existing(RStudioProject* project, const char* absolute, const char* group);
+int ride_create_file(RIDEProject* project, const char* relative, const char* group, int kind);
+int ride_rename_file(RIDEProject* project, const char* fromAbsolute, const char* toRelative);
+int ride_delete_file(RIDEProject* project, const char* absolute);
+int ride_move_to_group(RIDEProject* project, const char* absolute, const char* group);
+int ride_add_existing(RIDEProject* project, const char* absolute, const char* group);
 // A file just saved under the project's root joins it; 0 when that did not
 // apply, and nothing to say then.
-int rstudio_adopt_saved(RStudioProject* project, const char* absolute);
+int ride_adopt_saved(RIDEProject* project, const char* absolute);
 // Whether the project lists this file, in any group.
-int rstudio_project_holds(RStudioProject* project, const char* absolute);
+int ride_project_holds(RIDEProject* project, const char* absolute);
 // The file the project opens with, relative to its root - its own choice,
 // else the one defining main, else the first - and remembering the one in
 // front when the project is closed or the window left.
-const char* rstudio_project_file_to_open(RStudioProject* project);
-int rstudio_remember_open(RStudioProject* project, const char* absolute);
+const char* ride_project_file_to_open(RIDEProject* project);
+int ride_remember_open(RIDEProject* project, const char* absolute);
 
-int rstudio_remove_from_project(RStudioProject* project, const char* absolute);
+int ride_remove_from_project(RIDEProject* project, const char* absolute);
 
-int rstudio_begin_from_what_is_there(RStudioProject* project, const char* directory);
-const char* rstudio_last_project(void);
-int rstudio_remember_project(const char* directory);
+int ride_begin_from_what_is_there(RIDEProject* project, const char* directory);
+const char* ride_last_project(void);
+int ride_remember_project(const char* directory);
 // The last three projects opened, most recent first; empty past the end.
-const char* rstudio_recent_project(int index);
-const char* rstudio_recent_file(int index);
-int rstudio_remember_file(const char* path);
-const char* rstudio_demo_directory(void);
+const char* ride_recent_project(int index);
+const char* ride_recent_file(int index);
+int ride_remember_file(const char* path);
+const char* ride_demo_directory(void);
 
-int rstudio_begin_project(RStudioProject* project, const char* directory, const char* name,
+int ride_begin_project(RIDEProject* project, const char* directory, const char* name,
                       const char* firstFile);
-int rstudio_save_project(RStudioProject* project);
+int ride_save_project(RIDEProject* project);
 
-const char* rstudio_outcome_message(RStudioProject* project);
-const char* rstudio_outcome_path(RStudioProject* project);
+const char* ride_outcome_message(RIDEProject* project);
+const char* ride_outcome_path(RIDEProject* project);
 
-const char* rstudio_arch(int index);
-int rstudio_arch_count(void);
-const char* rstudio_toolchain_name(int kind);
+const char* ride_arch(int index);
+int ride_arch_count(void);
+const char* ride_toolchain_name(int kind);
 
-const char* rstudio_language_name(int language);
-const char* rstudio_config_name(int config);
-int rstudio_resolve(int toolchainKind, int language);
-int rstudio_can_compile(int kind, int language);
-const char* rstudio_refusal(int kind, int language);
-int rstudio_uses_arch(int kind);
+const char* ride_language_name(int language);
+const char* ride_config_name(int config);
+int ride_resolve(int toolchainKind, int language);
+int ride_can_compile(int kind, int language);
+const char* ride_refusal(int kind, int language);
+int ride_uses_arch(int kind);
 
-int rstudio_runs_here(int kind, const char* arch);
-const char* rstudio_why_not_run(int kind, const char* arch);
-const char* rstudio_host_arch(void);
+int ride_runs_here(int kind, const char* arch);
+const char* ride_why_not_run(int kind, const char* arch);
+const char* ride_host_arch(void);
 
-const char* rstudio_shown_command(RStudioProject* project, const char* cc1, const char* cl, const char* shc, const char* cxx1, int kind,
+const char* ride_shown_command(RIDEProject* project, const char* cc1, const char* cl, const char* shc, const char* cxx1, int kind,
                               const char* source, int language, const char* arch,
                               int config);
 
-int rstudio_converts_from(int language, int* toShalimar);
-char* rstudio_find_converter(void);
-char* rstudio_converted_name(const char* source, int toShalimar);
+int ride_converts_from(int language, int* toShalimar);
+char* ride_find_converter(void);
+char* ride_converted_name(const char* source, int toShalimar);
 
-typedef struct RStudioConversion RStudioConversion;
+typedef struct RIDEConversion RIDEConversion;
 
-RStudioConversion* rstudio_convert(const char* converter, const char* source,
+RIDEConversion* ride_convert(const char* converter, const char* source,
                                    const char* output, int toShalimar);
-void rstudio_conversion_free(RStudioConversion* made);
-int rstudio_conversion_ran(RStudioConversion* made);
-int rstudio_conversion_ok(RStudioConversion* made);
-const char* rstudio_conversion_produced(RStudioConversion* made);
-const char* rstudio_conversion_output(RStudioConversion* made);
+void ride_conversion_free(RIDEConversion* made);
+int ride_conversion_ran(RIDEConversion* made);
+int ride_conversion_ok(RIDEConversion* made);
+const char* ride_conversion_produced(RIDEConversion* made);
+const char* ride_conversion_output(RIDEConversion* made);
 
-typedef struct RStudioBuild RStudioBuild;
+typedef struct RIDEBuild RIDEBuild;
 
-RStudioBuild* rstudio_build(RStudioProject* project, const char* cc1, const char* cl, const char* shc, const char* cxx1, int kind, const char* source,
+RIDEBuild* ride_build(RIDEProject* project, const char* cc1, const char* cl, const char* shc, const char* cxx1, int kind, const char* source,
                     int language, const char* arch, int config);
 
-int rstudio_project_builds(RStudioProject* project);
-int rstudio_project_target_ready(RStudioProject* project);
-const char* rstudio_project_target_why(RStudioProject* project);
-const char* rstudio_project_target_detail(RStudioProject* project);
-int rstudio_project_target_language(RStudioProject* project);
-int rstudio_project_target_sources(RStudioProject* project);
+int ride_project_builds(RIDEProject* project);
+int ride_project_target_ready(RIDEProject* project);
+const char* ride_project_target_why(RIDEProject* project);
+const char* ride_project_target_detail(RIDEProject* project);
+int ride_project_target_language(RIDEProject* project);
+int ride_project_target_sources(RIDEProject* project);
 
-int rstudio_project_target_parts(RStudioProject* project);
-const char* rstudio_project_part_group(RStudioProject* project, int index);
-int rstudio_project_part_language(RStudioProject* project, int index);
-int rstudio_project_part_toolchain(RStudioProject* project, int index, const char* cc1,
+int ride_project_target_parts(RIDEProject* project);
+const char* ride_project_part_group(RIDEProject* project, int index);
+int ride_project_part_language(RIDEProject* project, int index);
+int ride_project_part_toolchain(RIDEProject* project, int index, const char* cc1,
                                const char* cl, const char* shc, const char* cxx1, int kind);
-const char* rstudio_project_target_source(RStudioProject* project, int index);
-const char* rstudio_project_target_program(RStudioProject* project);
+const char* ride_project_target_source(RIDEProject* project, int index);
+const char* ride_project_target_program(RIDEProject* project);
 
-int rstudio_project_debug_plan(RStudioProject* project, const char* cc1, const char* cl,
+int ride_project_debug_plan(RIDEProject* project, const char* cc1, const char* cl,
                            const char* shc, const char* cxx1, int kind, const char* arch);
-int rstudio_project_debug_kind(RStudioProject* project);
-const char* rstudio_project_why_not_debug(RStudioProject* project);
-int rstudio_project_blind_groups(RStudioProject* project);
-const char* rstudio_project_blind_group(RStudioProject* project, int index);
+int ride_project_debug_kind(RIDEProject* project);
+const char* ride_project_why_not_debug(RIDEProject* project);
+int ride_project_blind_groups(RIDEProject* project);
+const char* ride_project_blind_group(RIDEProject* project, int index);
 
-RStudioBuild* rstudio_build_target(RStudioProject* project, const char* cc1, const char* cl, const char* shc, const char* cxx1,
+RIDEBuild* ride_build_target(RIDEProject* project, const char* cc1, const char* cl, const char* shc, const char* cxx1,
                            int kind, const char* arch, int config);
-void rstudio_build_free(RStudioBuild* built);
+void ride_build_free(RIDEBuild* built);
 
-int rstudio_build_ok(RStudioBuild* built);
-const char* rstudio_build_output(RStudioBuild* built);
-const char* rstudio_build_assembly(RStudioBuild* built);
-int rstudio_build_assembly_lines(RStudioBuild* built);
-int rstudio_build_has_error(RStudioBuild* built);
+int ride_build_ok(RIDEBuild* built);
+const char* ride_build_output(RIDEBuild* built);
+const char* ride_build_assembly(RIDEBuild* built);
+int ride_build_assembly_lines(RIDEBuild* built);
+int ride_build_has_error(RIDEBuild* built);
 
-const char* rstudio_build_error_file(RStudioBuild* built);
-int rstudio_build_error_line(RStudioBuild* built);
-int rstudio_build_error_column(RStudioBuild* built);
-const char* rstudio_build_error_message(RStudioBuild* built);
+const char* ride_build_error_file(RIDEBuild* built);
+int ride_build_error_line(RIDEBuild* built);
+int ride_build_error_column(RIDEBuild* built);
+const char* ride_build_error_message(RIDEBuild* built);
 
-typedef struct RStudioRan RStudioRan;
+typedef struct RIDERan RIDERan;
 
-RStudioRan* rstudio_run(RStudioProject* project, const char* cc1, const char* cl, const char* shc, const char* cxx1, int kind, const char* source,
+RIDERan* ride_run(RIDEProject* project, const char* cc1, const char* cl, const char* shc, const char* cxx1, int kind, const char* source,
                 int language, const char* arch, int config);
 
-RStudioRan* rstudio_run_built(const char* program);
-void rstudio_run_free(RStudioRan* ran);
+RIDERan* ride_run_built(const char* program);
+void ride_run_free(RIDERan* ran);
 
-int rstudio_ran_built(RStudioRan* ran);
-int rstudio_ran_ran(RStudioRan* ran);
-int rstudio_ran_status(RStudioRan* ran);
-const char* rstudio_ran_output(RStudioRan* ran);
-int rstudio_ran_has_error(RStudioRan* ran);
-int rstudio_ran_error_line(RStudioRan* ran);
-int rstudio_ran_error_column(RStudioRan* ran);
-const char* rstudio_ran_error_message(RStudioRan* ran);
+int ride_ran_built(RIDERan* ran);
+int ride_ran_ran(RIDERan* ran);
+int ride_ran_status(RIDERan* ran);
+const char* ride_ran_output(RIDERan* ran);
+int ride_ran_has_error(RIDERan* ran);
+int ride_ran_error_line(RIDERan* ran);
+int ride_ran_error_column(RIDERan* ran);
+const char* ride_ran_error_message(RIDERan* ran);
 
-const char* rstudio_shown_run_command(RStudioProject* project, const char* cc1, const char* cl, const char* shc, const char* cxx1, int kind,
+const char* ride_shown_run_command(RIDEProject* project, const char* cc1, const char* cl, const char* shc, const char* cxx1, int kind,
                                   const char* source, int language, const char* arch,
                                   int config);
 
-char* rstudio_about(void);
+char* ride_about(void);
 
-typedef struct RStudioProgram RStudioProgram;
+typedef struct RIDEProgram RIDEProgram;
 
-RStudioProgram* rstudio_build_program(RStudioProject* project, const char* cc1, const char* cl, const char* shc, const char* cxx1, int kind, const char* source,
+RIDEProgram* ride_build_program(RIDEProject* project, const char* cc1, const char* cl, const char* shc, const char* cxx1, int kind, const char* source,
                               int language, const char* arch, int config);
-void rstudio_program_free(RStudioProgram* built);
+void ride_program_free(RIDEProgram* built);
 
-int rstudio_program_ok(RStudioProgram* built);
-const char* rstudio_program_path(RStudioProgram* built);
-const char* rstudio_program_output(RStudioProgram* built);
-int rstudio_program_has_error(RStudioProgram* built);
-int rstudio_program_error_line(RStudioProgram* built);
-int rstudio_program_error_column(RStudioProgram* built);
-const char* rstudio_program_error_message(RStudioProgram* built);
+int ride_program_ok(RIDEProgram* built);
+const char* ride_program_path(RIDEProgram* built);
+const char* ride_program_output(RIDEProgram* built);
+int ride_program_has_error(RIDEProgram* built);
+int ride_program_error_line(RIDEProgram* built);
+int ride_program_error_column(RIDEProgram* built);
+const char* ride_program_error_message(RIDEProgram* built);
 
-int rstudio_debugger_for(int kind, const char* arch);
-const char* rstudio_debugger_name(int kind);
-const char* rstudio_no_debugger_because(int kind, const char* arch);
+int ride_debugger_for(int kind, const char* arch);
+const char* ride_debugger_name(int kind);
+const char* ride_no_debugger_because(int kind, const char* arch);
 
-int rstudio_debugger_stops_itself(int kind);
+int ride_debugger_stops_itself(int kind);
 
-const char* rstudio_release_cannot_stop(int kind);
+const char* ride_release_cannot_stop(int kind);
 
-const char* rstudio_why_it_did_not_start(int kind, const char* arch);
+const char* ride_why_it_did_not_start(int kind, const char* arch);
 
-typedef struct RStudioDebugger RStudioDebugger;
+typedef struct RIDEDebugger RIDEDebugger;
 
-RStudioDebugger* rstudio_debugger_new(void);
-void rstudio_debugger_free(RStudioDebugger* debugger);
+RIDEDebugger* ride_debugger_new(void);
+void ride_debugger_free(RIDEDebugger* debugger);
 
-int rstudio_debugger_start(RStudioDebugger* debugger, int kind, const char* arch,
+int ride_debugger_start(RIDEDebugger* debugger, int kind, const char* arch,
                        const char* program);
-int rstudio_debugger_running(RStudioDebugger* debugger);
-void rstudio_debugger_stop(RStudioDebugger* debugger);
+int ride_debugger_running(RIDEDebugger* debugger);
+void ride_debugger_stop(RIDEDebugger* debugger);
 
-int rstudio_debugging_shalimar(RStudioDebugger* debugger);
+int ride_debugging_shalimar(RIDEDebugger* debugger);
 
-const char* rstudio_locals_none_because(RStudioDebugger* debugger);
-const char* rstudio_cannot_watch(RStudioDebugger* debugger);
-const char* rstudio_cannot_walk_stack(RStudioDebugger* debugger);
+const char* ride_locals_none_because(RIDEDebugger* debugger);
+const char* ride_cannot_watch(RIDEDebugger* debugger);
+const char* ride_cannot_walk_stack(RIDEDebugger* debugger);
 
-int rstudio_debugger_break(RStudioDebugger* debugger, const char* file, int line);
-int rstudio_debugger_clear(RStudioDebugger* debugger);
+int ride_debugger_break(RIDEDebugger* debugger, const char* file, int line);
+int ride_debugger_clear(RIDEDebugger* debugger);
 
-void rstudio_debugger_run(RStudioDebugger* debugger);
-void rstudio_debugger_resume(RStudioDebugger* debugger);
-void rstudio_debugger_step_over(RStudioDebugger* debugger);
-void rstudio_debugger_step_into(RStudioDebugger* debugger);
-void rstudio_debugger_step_out(RStudioDebugger* debugger);
+void ride_debugger_run(RIDEDebugger* debugger);
+void ride_debugger_resume(RIDEDebugger* debugger);
+void ride_debugger_step_over(RIDEDebugger* debugger);
+void ride_debugger_step_into(RIDEDebugger* debugger);
+void ride_debugger_step_out(RIDEDebugger* debugger);
 
-int rstudio_stop_stopped(RStudioDebugger* debugger);
-int rstudio_stop_exited(RStudioDebugger* debugger);
-int rstudio_stop_status(RStudioDebugger* debugger);
-const char* rstudio_stop_file(RStudioDebugger* debugger);
-int rstudio_stop_line(RStudioDebugger* debugger);
-const char* rstudio_stop_function(RStudioDebugger* debugger);
+int ride_stop_stopped(RIDEDebugger* debugger);
+int ride_stop_exited(RIDEDebugger* debugger);
+int ride_stop_status(RIDEDebugger* debugger);
+const char* ride_stop_file(RIDEDebugger* debugger);
+int ride_stop_line(RIDEDebugger* debugger);
+const char* ride_stop_function(RIDEDebugger* debugger);
 
-const char* rstudio_stop_said(RStudioDebugger* debugger);
+const char* ride_stop_said(RIDEDebugger* debugger);
 
-const char* rstudio_stop_output(RStudioDebugger* debugger);
+const char* ride_stop_output(RIDEDebugger* debugger);
 
-int rstudio_stop_no_source(RStudioDebugger* debugger);
+int ride_stop_no_source(RIDEDebugger* debugger);
 
-int rstudio_locals_count(RStudioDebugger* debugger);
-const char* rstudio_local_name(RStudioDebugger* debugger, int index);
-const char* rstudio_local_type(RStudioDebugger* debugger, int index);
-const char* rstudio_local_value(RStudioDebugger* debugger, int index);
+int ride_locals_count(RIDEDebugger* debugger);
+const char* ride_local_name(RIDEDebugger* debugger, int index);
+const char* ride_local_type(RIDEDebugger* debugger, int index);
+const char* ride_local_value(RIDEDebugger* debugger, int index);
 
-const char* rstudio_local_text(RStudioDebugger* debugger, int index);
-int rstudio_locals_on_line(RStudioDebugger* debugger, const char* line);
-int rstudio_set_variable(RStudioDebugger* debugger, const char* name, const char* value);
-const char* rstudio_set_complaint(RStudioDebugger* debugger);
+const char* ride_local_text(RIDEDebugger* debugger, int index);
+int ride_locals_on_line(RIDEDebugger* debugger, const char* line);
+int ride_set_variable(RIDEDebugger* debugger, const char* name, const char* value);
+const char* ride_set_complaint(RIDEDebugger* debugger);
 
-void rstudio_watch_add(RStudioDebugger* debugger, const char* expression);
-int rstudio_watch_count(RStudioDebugger* debugger);
-const char* rstudio_watch_text(RStudioDebugger* debugger, int index);
-const char* rstudio_watch_expression(RStudioDebugger* debugger, int index);
-int rstudio_watch_on_line(RStudioDebugger* debugger, const char* line);
-void rstudio_watch_set(RStudioDebugger* debugger, int index, const char* expression);
+void ride_watch_add(RIDEDebugger* debugger, const char* expression);
+int ride_watch_count(RIDEDebugger* debugger);
+const char* ride_watch_text(RIDEDebugger* debugger, int index);
+const char* ride_watch_expression(RIDEDebugger* debugger, int index);
+int ride_watch_on_line(RIDEDebugger* debugger, const char* line);
+void ride_watch_set(RIDEDebugger* debugger, int index, const char* expression);
 
-int rstudio_stack_count(RStudioDebugger* debugger);
-const char* rstudio_stack_function(RStudioDebugger* debugger, int index);
-const char* rstudio_stack_file(RStudioDebugger* debugger, int index);
-int rstudio_stack_line(RStudioDebugger* debugger, int index);
+int ride_stack_count(RIDEDebugger* debugger);
+const char* ride_stack_function(RIDEDebugger* debugger, int index);
+const char* ride_stack_file(RIDEDebugger* debugger, int index);
+int ride_stack_line(RIDEDebugger* debugger, int index);
 
-const char* rstudio_stack_text(RStudioDebugger* debugger, int index);
-int rstudio_stack_on_line(RStudioDebugger* debugger, const char* line);
+const char* ride_stack_text(RIDEDebugger* debugger, int index);
+int ride_stack_on_line(RIDEDebugger* debugger, const char* line);
 
-int rstudio_debugger_look_at(RStudioDebugger* debugger, int which);
+int ride_debugger_look_at(RIDEDebugger* debugger, int which);
 
-const char* rstudio_stop_line_text(const char* file, int line, const char* function);
-int rstudio_looking_at(RStudioDebugger* debugger);
-const char* rstudio_looking_text(RStudioDebugger* debugger);
+const char* ride_stop_line_text(const char* file, int line, const char* function);
+int ride_looking_at(RIDEDebugger* debugger);
+const char* ride_looking_text(RIDEDebugger* debugger);
 
 #ifdef __cplusplus
 }

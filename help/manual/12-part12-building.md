@@ -7,9 +7,9 @@ workspace, and the verification discipline the project holds itself to.
 --------------------------------------------------------------------------------
 ## 60. The pieces and where they live
 
-RStudio is one repository; the compilers are their own repositories beside it:
+RIDE is one repository; the compilers are their own repositories beside it:
 
-    RStudio            the editor, the workspace build, the packaging
+    RIDE            the editor, the workspace build, the packaging
     Compiler-C  (cc1)  the C compiler        (i-line: Compiler-Ci → cc1i)
     C++         (cxx1) the C++ compiler      (i-line: Compiler-Cppi → cxx1i)
     Compiler-S  (shc)  the Shalimar compiler (i-line: Compiler-Si → shci)
@@ -26,9 +26,9 @@ originals stay sealed. RIDE 3.0 drove the originals.
 Each platform opens one thing and builds all of it, editor and compilers
 together, into one directory (`bin/`):
 
-- **macOS** — `RStudio.xcworkspace` (opens the editor and every compiler at
+- **macOS** — `RIDE.xcworkspace` (opens the editor and every compiler at
   once), or `make -f workspace.mk`.
-- **Windows** — `RStudio.sln`, or `build.bat solution`.
+- **Windows** — `RIDE.sln`, or `build.bat solution`.
 - **Linux** — `make -f workspace.mk`.
 
 The reason they build together is the reason for a workspace at all: a change to a
@@ -44,7 +44,7 @@ and a compiler without its runtime beside it passes a build and fails at the
 first link.
 
 **`build.bat`** on Windows: `build.bat` alone builds the console editor;
-`build.bat solution` builds the whole `RStudio.sln` (into `bin\` via
+`build.bat solution` builds the whole `RIDE.sln` (into `bin\` via
 `/p:OutDir`); `build.bat gui` builds just the window; `build.bat check` runs the
 suites; `build.bat product` lays down the install tree.
 
@@ -55,7 +55,7 @@ Development happens on more than one machine. Two scripts relay a Mac checkout t
 the other boxes and build there:
 
 - **`tools/to-windows.sh`** — tars the editor and the i-line, copies them to the
-  Windows box as siblings, and builds `RStudio.sln` and runs the suites. The box
+  Windows box as siblings, and builds `RIDE.sln` and runs the suites. The box
   has no `make`; the solution is the build.
 - **`tools/to-linux.sh`** — relays to the Linux box and runs
   `make -f workspace.mk`.
@@ -68,7 +68,7 @@ what travels and re-run the suites on the far side.
 ## 63. The generated project files
 
 The IDE project files are **generated**, not hand-kept, by
-`RStudio/tools/make-projects.py` from each compiler's Makefile:
+`RIDE/tools/make-projects.py` from each compiler's Makefile:
 
     python3 tools/make-projects.py            write them
     python3 tools/make-projects.py --check    say whether they are current
@@ -76,7 +76,7 @@ The IDE project files are **generated**, not hand-kept, by
 A hand-kept project drifts — someone adds a source to the Makefile, forgets the
 project, and the IDE quietly builds a smaller program with no error. `--check`
 rebuilds every project in memory and compares, catching exactly that. Two
-projects are kept by hand and only checked (the window's `RStudioGui.vcxproj`,
+projects are kept by hand and only checked (the window's `RIDEGui.vcxproj`,
 which compiles one file managed and the rest native, and `cc1.vcxproj`, which
 belongs to another repository); their *source lists* are still checked against the
 Makefiles.

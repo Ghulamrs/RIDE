@@ -25,7 +25,7 @@ shift and an arrow do nothing else; on Console, enter goes to the line the
 compiler named; on Debug, enter on a frame looks at it and enter on the top
 line goes back.
 
-**`RStudio.exe` on Windows differs on ten keys deliberately** — `Ctrl+PageDown` and
+**`RIDE.exe` on Windows differs on ten keys deliberately** — `Ctrl+PageDown` and
 `Ctrl+PageUp` move between files there, because `F2` and `F3` are Rename and
 Find next in a Windows application and pretending otherwise would be worse.
 
@@ -56,7 +56,7 @@ is the most downstream of the three, which is why it comes last.
 ## The command line
 
 ```
-RStudio.exe [file] [--project dir] [--toolchain auto|cc1|cxx1|msvc|shc|c++]
+RIDE.exe [file] [--project dir] [--toolchain auto|cc1|cxx1|msvc|shc|c++]
     [--config debug|release] [--cc1 path] [--cxx1 path] [--cl path] [--shc path]
     [--cxx path] [--c2s path] [--width n] [--tabs] [--case-indent] [--plain]
 ```
@@ -102,7 +102,7 @@ exist to check what is in front of you before it is committed.
 make                                     the terminal editor
 make check CC1=$HOME/... SHC=$HOME/...   both suites
 build.bat check                          the same on Windows
-build.bat gui                            the window, as RStudio.exe
+build.bat gui                            the window, as RIDE.exe
 ```
 
 Spell those paths with `$HOME` and never `~`: make hands a literal `~` to the

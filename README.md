@@ -7,8 +7,8 @@ elsewhere, one key away for the first two. It runs on Windows, which is what
 it is for, and on a Mac and a Linux box, which are where it is written and
 checked.
 
-Two programs over one core: **`RStudio`**, which is a terminal editor, and
-**`RStudioGui`**, which is the same editor in a window. Those are the names of the
+Two programs over one core: **`RIDE`**, which is a terminal editor, and
+**`RIDEGui`**, which is the same editor in a window. Those are the names of the
 binaries and of nothing else - every rule they share lives in `src/`, and the
 name above is what the pair of them is called.
 
@@ -267,7 +267,7 @@ and neither is guessable. It must be put in synchronous mode with `script
 lldb.debugger.SetAsync(False)`, or over a pipe it forwards each command to the
 program instead of running it, and every answer after `run` is an echo. And the
 marker used to know an answer is complete has to be printed in two halves -
-`print("<<RStudio" + "-done>>")` - because lldb echoes the command that contains it,
+`print("<<RIDE" + "-done>>")` - because lldb echoes the command that contains it,
 so a marker written whole appears before the answer rather than after it, and
 every reply read that way is the one before the one asked for.
 
@@ -364,7 +364,7 @@ line, and rows are what a terminal has least of.
 
 **If your console draws them badly, `--plain` frames it with `-`, `|` and `+`
 instead**, and Edit ▸ Plain frame switches between the two and remembers which
-you chose in `~/.rstudioconfig.json`. That is not a matter of taste: a font that has
+you chose in `~/.ride/state.json`. That is not a matter of taste: a font that has
 the plain line but not the junctions makes the console fetch `┬` from a second
 face, whose crossbar sits at a different height, and the frame appears to break
 at every join. Nothing in the program can mend that, so this is the way round
@@ -532,7 +532,7 @@ project and left a closed file's name sitting in it.
 
 ```json
 {
-  "name": "RStudio",
+  "name": "RIDE",
   "toolchain": "auto",
   "config": "debug",
   "arch": "x86_64-windows",
@@ -717,7 +717,7 @@ Three tabs:
 ## Trying it
 
 ```
-RStudio examples/smart.cpp --project examples
+RIDE examples/smart.cpp --project examples
 ```
 
 `examples/smart.cpp` is the one to open first. It is a small owning class - one
@@ -748,9 +748,9 @@ builds it.
 
 | | what it is | built from | built by |
 | --- | --- | --- | --- |
-| **RStudio** | the console editor on Linux and macOS | `src/*.cpp` with `src/terminal.cpp` | `make` |
+| **RIDE** | the console editor on Linux and macOS | `src/*.cpp` with `src/terminal.cpp` | `make` |
 | **WinConsole** | the console editor on Windows | the same `src/*.cpp` with `src/terminal_win.cpp` | `build.bat` |
-| **RStudioGui** | the C++/CLI window, WinForms | `winforms/*.cpp` and the core files named in `winforms/RStudioGui.vcxproj` | `msbuild winforms\RStudioGui.vcxproj` |
+| **RIDEGui** | the C++/CLI window, WinForms | `winforms/*.cpp` and the core files named in `winforms/RIDEGui.vcxproj` | `msbuild winforms\RIDEGui.vcxproj` |
 
 **The two consoles are one front end and two terminals.** `src/editor.cpp` draws
 the screen for both; `src/terminal.cpp` and `src/terminal_win.cpp` are the halves
@@ -758,9 +758,9 @@ that differ, and only they know anything about the machine. That is why the box
 the panes are drawn in arrived on Windows the day it arrived on Linux - it is
 not two pieces of work and there is no version of it that is only on one of
 them. The binary takes its name from the command it was started as, so the
-usage line names the program it was started as, which is `RStudio` on all three.
+usage line names the program it was started as, which is `RIDE` on all three.
 
-**The window shares the core and nothing else.** `RStudioGui.vcxproj` compiles
+**The window shares the core and nothing else.** `RIDEGui.vcxproj` compiles
 `bridge.cpp`, `Program.cpp` and `MainForm.h` together with `buffer`, `indent`,
 `syntax`, `find`, `utf8`, `json`, `project`, `workspace`, `symbols`, `compile`,
 `toolchain`, `path`, `process`, `debugger`, `settings` and `about` - and not
@@ -813,8 +813,8 @@ comes with a change to the editor. There is one thing to open on each machine
 that builds all five, with the editor built *after* the four it drives:
 
 ```
-RStudio.xcworkspace                    macOS - RStudio, cc1, cxx1, shc, c2s
-RStudio.sln                            Visual Studio 2022 - the same, plus the window
+RIDE.xcworkspace                    macOS - RIDE, cc1, cxx1, shc, c2s
+RIDE.sln                            Visual Studio 2022 - the same, plus the window
 make -f workspace.mk                   Linux - the same, since make is what Linux has
 make -f workspace.mk check             and every suite, all five projects
 ```
@@ -828,7 +828,7 @@ in one day before the check existed.
 **Two are kept by hand, and are checked instead of written.**
 `Compiler-C/msvc/cc1.vcxproj` predates this and belongs to another repository;
 the solution references it rather than writing over it, and reads its GUID out
-of it so the two cannot disagree. `winforms/RStudioGui.vcxproj` is C++/CLI: one
+of it so the two cannot disagree. `winforms/RIDEGui.vcxproj` is C++/CLI: one
 file is compiled managed and every other file must be compiled native, and
 those per-file settings are the project's whole reason for existing - a
 generator that got one wrong would produce a binary that corrupts its heap
@@ -853,7 +853,7 @@ any of this makes, and `workspace.mk` takes `CC1_DIR`, `CXX1_DIR`, `SHC_DIR`
 and `C2S_DIR` for the machine where they are not called that. cxx1's is the
 one whose name differs by machine: `C++` beside this checkout on the Mac,
 `Compiler-Cpp` - the repository's name - on the Windows box, which is what
-`RStudio.sln` says, and `~/cxx1` on the Linux box. Its two project files here,
+`RIDE.sln` says, and `~/cxx1` on the Linux box. Its two project files here,
 `cxx1.xcodeproj` and `cxx1.vcxproj` at its root, are the workspace's and are
 written by the generator; the ones in its `ide/` are its own, and its release
 seal covers neither of the generated pair.
@@ -899,7 +899,7 @@ recognized" - which reads as a broken box and is nothing of the kind.
 ### As a Windows Forms application
 
 ```
-winforms\RStudioGui.vcxproj
+winforms\RIDEGui.vcxproj
 ```
 
 An ordinary macOS-style menu-and-panes window: the project down the left, the
@@ -919,7 +919,7 @@ table below.
 whatever this machine has - fixed-pitch only, since the gutter's numbers are
 laid out on every character being the same width. It applies to every tab at
 once, because a file does not have a typeface: the person reading it does. And
-it is remembered in `~/.rstudioconfig.json`, beside the last project and the frame
+it is remembered in `~/.ride/state.json`, beside the last project and the frame
 style, for the same reason those are there. A font is not a property of a
 project at all: it belongs to the person reading, and often only to the hour -
 a face that is comfortable in the morning is not the one wanted at the end of a
@@ -1144,8 +1144,8 @@ to be respected, and each one was found the hard way:
 The second of those was found by giving the program its own debugger: there was
 no debugger on that machine at the time, so `bridge.cpp` installs a vectored
 exception handler
-that walks and symbolises its own stack into `RStudioGui-fault.log` (in `%TEMP%`
-since 2026-09-16, beside the window's own `RStudioGui.log`). It printed
+that walks and symbolises its own stack into `RIDEGui-fault.log` (in `%TEMP%`
+since 2026-09-16, beside the window's own `RIDEGui.log`). It printed
 `Json::get -> atexit -> register_onexit_function -> RtlSizeHeap` and named the
 line.
 
@@ -1245,7 +1245,7 @@ thing for cmd to eat. Until then the compiler was never reached, and cmd said
 ## Usage
 
 ```
-RStudio [file] [--project dir] [--toolchain auto|cc1|cxx1|msvc|shc|c++]
+RIDE [file] [--project dir] [--toolchain auto|cc1|cxx1|msvc|shc|c++]
     [--config debug|release] [--cc1 path] [--cxx1 path] [--cl path]
     [--shc path] [--cxx path] [--c2s path]
     [--width n] [--tabs] [--case-indent] [--plain]

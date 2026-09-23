@@ -1,7 +1,7 @@
 #!/bin/sh
-# RIDE's Linux toolchain (~/rstudio/bin): x86 through gcc/as/ld, C6000 on vm6747.
+# RIDE's Linux toolchain (~/ride/bin): x86 through gcc/as/ld, C6000 on vm6747.
 set -u
-BIN=$HOME/rstudio/bin; P=$HOME/rc/progs; W=$HOME/rc/w; rm -rf $W; mkdir -p $W; R=$HOME/rc/results.txt; : > $R; : > $R.detail
+BIN=$HOME/ride/bin; P=$HOME/rc/progs; W=$HOME/rc/w; rm -rf $W; mkdir -p $W; R=$HOME/rc/results.txt; : > $R; : > $R.detail
 ls $BIN/lib | tr '\n' ' ' >> $R.detail; echo >> $R.detail
 tool() { case $1 in c) echo cc1i;; cpp) echo cxx1i;; shl) echo shci;; esac; }
 norm() { tr -d '\r' < "$1" | md5sum | cut -c1-8; }

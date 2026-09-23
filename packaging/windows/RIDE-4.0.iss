@@ -1,26 +1,36 @@
-; Inno Setup script for RIDE 3.0 - three languages (C, C++, Shalimar),
+; Inno Setup script for RIDE 4.0 - three languages (C, C++, Shalimar),
 ; four targets (x86_64-windows, x86_64-linux, arm64-darwin, tms6747), the
-; VM6747 C6000 emulator and the C<->Shalimar converter.
-#define MyName "RIDE 3.0"
-#define MyVer  "3.0"
+; VM6747 C6000 emulator, the C<->Shalimar converter, and the project's own
+; assemblers for both machine targets: asm6x for the C6000 and, new in 4.0,
+; masm for x86-64, which the installed settings.json names in place of ml64,
+; and the project's own linkers beside them, link.exe (LINK, x86-64) and
+; lnk6x.exe (LNK6x, C6000), named too: ours are the tools by default, and
+; "askNative": true has a failure of ours ask for the vendor's tools.
+; The product's name, once: the programs are {#PRODUCT}.exe and
+; {#PRODUCT}Console.exe. The Makefile's PRODUCT, product.props and
+; src/product.h spell it the same.
+#define PRODUCT "RIDE"
+#define MyVer  "4.0"
+#define MyName PRODUCT + " " + MyVer
 #ifndef Stage
-#define Stage "C:\Users\GRA\rstudio-pkg\stage30"
+#define Stage "C:\Users\GRA\ride-pkg\stage40"
 #endif
 #ifndef OutDir
-#define OutDir "C:\Users\GRA\rstudio-pkg"
+#define OutDir "C:\Users\GRA\ride-pkg"
 #endif
 
 [Setup]
-AppId={{6B2D8F04-30C0-4A19-8D22-1E4C7A5B0C30}
+AppId={{4A0D1E8B-40C1-4F2E-9B7A-6D3E5F8A9C40}
 AppName={#MyName}
 AppVersion={#MyVer}
 AppPublisher=G. R. Akhtar
 DefaultDirName={autopf}\{#MyName}
 DefaultGroupName={#MyName}
 DisableProgramGroupPage=yes
-UninstallDisplayIcon={app}\bin\RStudio.exe
+UninstallDisplayIcon={app}\bin\{#PRODUCT}.exe
+SetupIconFile=..\..\winforms\ride.ico
 OutputDir={#OutDir}
-OutputBaseFilename=RIDE-3.0-setup
+OutputBaseFilename={#PRODUCT}-{#MyVer}-setup
 Compression=lzma2/max
 SolidCompression=yes
 ArchitecturesInstallIn64BitMode=x64compatible
@@ -33,18 +43,32 @@ LicenseFile={#Stage}\README.md
 [Files]
 Source: "{#Stage}\*"; DestDir: "{app}"; Flags: recursesubdirs createallsubdirs ignoreversion
 
+[Dirs]
+; New projects default to {app}\projects and single programs to {app}\programs;
+; make them so a normal user can write there even under Program Files. And
+; examples\, where both shortcuts start the editor and whose projects are the
+; first thing anyone builds: without this line a build there died in the
+; linker ("LNK1104: cannot open file ...\examples\demo.exe") for every user
+; but an administrator - 2026-09-20, the first 4.0 install under Program
+; Files. The editor now refuses such a build and names the directory.
+Name: "{app}\projects"; Permissions: users-modify
+Name: "{app}\programs"; Permissions: users-modify
+Name: "{app}\examples"; Permissions: users-modify
+
 [Icons]
-Name: "{group}\RIDE 3.0"; Filename: "{app}\bin\RStudio.exe"; WorkingDir: "{app}\examples"
-Name: "{group}\RIDE 3.0 (console)"; Filename: "{app}\bin\RStudioConsole.exe"; WorkingDir: "{app}\examples"
+Name: "{group}\{#MyName}"; Filename: "{app}\bin\{#PRODUCT}.exe"; WorkingDir: "{app}\examples"
+Name: "{group}\{#MyName} (console)"; Filename: "{app}\bin\{#PRODUCT}Console.exe"; WorkingDir: "{app}\examples"
 Name: "{group}\Express Help"; Filename: "{app}\EXPRESS-HELP.html"; WorkingDir: "{app}"
 Name: "{group}\Manual"; Filename: "{app}\help\manual.html"; WorkingDir: "{app}"
 Name: "{group}\User Guide"; Filename: "{app}\help\guide.html"; WorkingDir: "{app}"
-Name: "{group}\Uninstall RIDE 3.0"; Filename: "{uninstallexe}"
-Name: "{autodesktop}\RIDE 3.0"; Filename: "{app}\bin\RStudio.exe"; WorkingDir: "{app}\examples"; Tasks: desktopicon
+Name: "{group}\Uninstall {#MyName}"; Filename: "{uninstallexe}"
+Name: "{autodesktop}\{#MyName}"; Filename: "{app}\bin\{#PRODUCT}.exe"; WorkingDir: "{app}\examples"; Tasks: desktopicon
 
 [Tasks]
 Name: "desktopicon"; Description: "Create a desktop shortcut"
-Name: "addtopath"; Description: "Add the bin folder to PATH (cc1i, cxx1i, shci, c2s on the command line)"; Flags: unchecked
+; bin holds a link.exe of the project's own. Appended, it sits after everything
+; already on PATH, and a Developer Command Prompt puts Microsoft's first anyway.
+Name: "addtopath"; Description: "Add the bin folder to PATH (cc1i, cxx1i, shci, masm, asm6x, vm6747, c2s on the command line)"; Flags: unchecked
 
 [Registry]
 ; The user's own PATH, HKCU\Environment, on purpose. The machine-wide one is
@@ -57,7 +81,7 @@ Root: HKCU; Subkey: "Environment"; ValueType: expandsz; ValueName: "Path"; Value
     Tasks: addtopath; Check: NeedsAddPath(ExpandConstant('{app}\bin'))
 
 [Run]
-Filename: "{app}\bin\RStudio.exe"; Description: "Launch RIDE 3.0"; Flags: nowait postinstall skipifsilent
+Filename: "{app}\bin\{#PRODUCT}.exe"; Description: "Launch {#MyName}"; Flags: nowait postinstall skipifsilent
 
 [Code]
 function NeedsAddPath(Param: string): boolean;

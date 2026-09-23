@@ -280,8 +280,7 @@ Outcome adoptSaved(Project& project, const std::string& absolute) {
     std::string why;
     if (!Project::allows(relative, why)) return quiet;
     if (project.groupOf(relative) < project.groups().size()) return quiet;
-    if (path::filename(absolute) == Project::fileName() ||
-        path::filename(absolute) == path::filename(project.file()))
+    if (path::filename(absolute) == path::filename(project.file()))
         return quiet;
 
     std::string group = groupForFile(path::filename(absolute));

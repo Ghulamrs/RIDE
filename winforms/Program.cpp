@@ -12,7 +12,7 @@ using namespace System::Windows::Forms;
 
 // The window's own log, and the fault log beside it, live in %TEMP% - not
 // in the working directory, which is wherever the shortcut said and used to
-// leave RStudioGui.log in bin\ and examples\ and nowhere when the start it
+// leave RIDEGui.log in bin\ and examples\ and nowhere when the start it
 // records failed before anything could be written there.
 // (Spelled through the environment: <windows.h> is included above, and its
 // GetTempPath macro would rewrite the .NET method's name.)
@@ -25,7 +25,7 @@ static String^ LogPath(String^ leaf) {
 
 static void Note(String^ what) {
     try {
-        System::IO::File::AppendAllText(LogPath("RStudioGui.log"),
+        System::IO::File::AppendAllText(LogPath(gcnew String(ride_product_name()) + ".log"),
                                         DateTime::Now.ToString("HH:mm:ss") + "  " + what +
                                             Environment::NewLine);
     } catch (Exception^) {
@@ -58,15 +58,15 @@ int main(array<String^>^ arguments) {
     // destructor gets into this program (settings.cpp says how), and that death
     // comes before main - so reaching this line and leaving is the whole test.
     if (arguments->Length == 1 && arguments[0] == "--version") {
-        Console::WriteLine("RIDE " + gcnew String(rstudio_version()));
+        Console::WriteLine(gcnew String(ride_product_name()) + " " + gcnew String(ride_version()));
         return 0;
     }
     Note("main entered");
 
     {
-        array<Byte>^ bytes = System::Text::Encoding::UTF8->GetBytes(LogPath("RStudioGui-fault.log") + "\0");
+        array<Byte>^ bytes = System::Text::Encoding::UTF8->GetBytes(LogPath(gcnew String(ride_product_name()) + "-fault.log") + "\0");
         pin_ptr<Byte> pinned = &bytes[0];
-        rstudio_watch_for_faults(reinterpret_cast<const char*>(pinned));
+        ride_watch_for_faults(reinterpret_cast<const char*>(pinned));
     }
     Note("faults watched");
     QuietConsoleForChildren();
@@ -87,7 +87,7 @@ int main(array<String^>^ arguments) {
         for (int i = 1; i < arguments->Length; ++i) files[i - 1] = arguments[i];
 
         Note("building the window");
-        rstudiogui::MainForm^ window = gcnew rstudiogui::MainForm(directory, files);
+        ridegui::MainForm^ window = gcnew ridegui::MainForm(directory, files);
         Note("window built, running");
         Application::Run(window);
         Note("closed cleanly");

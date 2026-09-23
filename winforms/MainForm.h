@@ -3,7 +3,7 @@
 #include "bridge.h"
 #include <cstring>
 
-namespace rstudiogui {
+namespace ridegui {
 
 using namespace System;
 using namespace System::Windows::Forms;
@@ -39,7 +39,7 @@ public delegate void TabCloseHandler(int index);
 static int AskNativeInWindow(const char* question) {
     String^ text = gcnew String(question, 0, static_cast<int>(std::strlen(question)),
                                 System::Text::Encoding::UTF8);
-    return MessageBox::Show(text, "RIDE", MessageBoxButtons::YesNo, MessageBoxIcon::Question,
+    return MessageBox::Show(text, gcnew String(ride_product_name()), MessageBoxButtons::YesNo, MessageBoxIcon::Question,
                             MessageBoxDefaultButton::Button1) == System::Windows::Forms::DialogResult::Yes ? 1 : 0;
 }
 
@@ -146,7 +146,7 @@ protected:
         }
     }
 
-    static String^ ProductName() { return "RIDE"; }
+    static String^ ProductName() { return gcnew String(ride_product_name()); }
 
     // The window title: the product and its version, then the project it is in,
     // then the file in front - "RIDE 4.0 - demo - main.c". With no project it
@@ -154,9 +154,9 @@ protected:
     // opening a file, loading or closing a project and saving-as all say it the
     // same way.
     void RefreshTitle() {
-        String^ title = ProductName() + " " + FromUtf8(rstudio_version());
+        String^ title = ProductName() + " " + FromUtf8(ride_version());
         String^ project = project_ == nullptr ? nullptr
-                                              : FromUtf8(rstudio_project_name(project_));
+                                              : FromUtf8(ride_project_name(project_));
         if (project != nullptr && project->Length > 0) title += " - " + project;
         if (path_ != nullptr && path_->Length > 0)
             title += " - " + System::IO::Path::GetFileName(path_);
@@ -166,26 +166,26 @@ protected:
     ~MainForm() { this->!MainForm(); }
     !MainForm() {
         if (project_ != nullptr) {
-            rstudio_project_free(project_);
+            ride_project_free(project_);
             project_ = nullptr;
         }
 
         if (built_ != nullptr) {
-            rstudio_program_free(built_);
+            ride_program_free(built_);
             built_ = nullptr;
         }
         if (targetBuilt_ != nullptr) {
-            rstudio_build_free(targetBuilt_);
+            ride_build_free(targetBuilt_);
             targetBuilt_ = nullptr;
         }
         if (debugger_ != nullptr) {
-            rstudio_debugger_free(debugger_);
+            ride_debugger_free(debugger_);
             debugger_ = nullptr;
         }
     }
 
 private:
-    RStudioProject* project_;
+    RIDEProject* project_;
 
     String^ arch_;
     String^ cc1_;
@@ -198,8 +198,8 @@ private:
     int indentTabs_;
     int indentCase_;
 
-    RStudioDebugger* debugger_;
-    RStudioProgram* built_;
+    RIDEDebugger* debugger_;
+    RIDEProgram* built_;
 
     ToolStripMenuItem^ upTheStack_;
     ToolStripMenuItem^ downTheStack_;
@@ -212,7 +212,7 @@ private:
 
     String^ workProgram_;
 
-    RStudioBuild* targetBuilt_;
+    RIDEBuild* targetBuilt_;
 
     System::Collections::Generic::Dictionary<String^,
         System::Collections::Generic::List<int>^>^ breaks_;
@@ -309,14 +309,14 @@ private:
 
     static String^ TakeUtf8(char* text) {
         String^ out = FromUtf8(text);
-        rstudio_free(text);
+        ride_free(text);
         return out;
     }
 
     void Start(String^ projectDirectory, array<String^>^ files) {
-        project_ = rstudio_project_new();
+        project_ = ride_project_new();
         arch_ = "x86_64-windows";
-        rstudio_ask_native(AskNativeInWindow);
+        ride_ask_native(AskNativeInWindow);
 
         // The i-line names, since 3.5: the compilers docked beside the editor
         // are cc1i, cxx1i and shci (the Toolchain struct defaults to the same).
@@ -328,10 +328,10 @@ private:
         cl_ = Named("CL", "cl");
         shc_ = Named("SHC", "shci");
         cxx1_ = Named("CXX1", "cxx1i");
-        toolKind_ = rstudio_default_compiler();
+        toolKind_ = ride_default_compiler();
         languageChoice_ = -1;
-        config_ = RSTUDIO_CONFIG_DEBUG;
-        debugger_ = rstudio_debugger_new();
+        config_ = RIDE_CONFIG_DEBUG;
+        debugger_ = ride_debugger_new();
         built_ = nullptr;
         targetBuilt_ = nullptr;
         workProgram_ = nullptr;
@@ -352,8 +352,8 @@ private:
         codeFont_ = RememberedFont();
         numbers_ = true;
         ForgetError();
-        indentWidth_ = rstudio_default_indent_width();
-        indentTabs_ = rstudio_default_indent_tabs();
+        indentWidth_ = ride_default_indent_width();
+        indentTabs_ = ride_default_indent_tabs();
         indentCase_ = 0;
 
         Lay();
@@ -384,7 +384,7 @@ private:
             files_->TabPages->Remove(spare->page);
             text_ = nullptr;
             path_ = nullptr;
-            if (rstudio_project_loaded(project_) == 0) paneMode_ = PaneMode::PaneFiles;
+            if (ride_project_loaded(project_) == 0) paneMode_ = PaneMode::PaneFiles;
             RefreshTitle();
             FillTree();
             SayBuild();
@@ -394,7 +394,7 @@ private:
 
     void Lay() {
         RefreshTitle();
-        // The icon the exe carries (winforms/RStudioGui.rc, resource 1), for
+        // The icon the exe carries (winforms/RIDEGui.rc, resource 1), for
         // the title bar and the taskbar; a build without it keeps the
         // default. Through LoadIcon rather than .NET's ExtractAssociatedIcon,
         // whose name <windows.h> rewrites into a Win32 call.
@@ -610,9 +610,9 @@ private:
 
         ToolStripMenuItem^ target = gcnew ToolStripMenuItem("&Target");
         targetItems_ = gcnew System::Collections::Generic::List<ToolStripMenuItem^>();
-        for (int i = 0; i < rstudio_arch_count(); ++i) {
+        for (int i = 0; i < ride_arch_count(); ++i) {
             ToolStripMenuItem^ one = gcnew ToolStripMenuItem(
-                FromUtf8(rstudio_arch(i)), nullptr, gcnew EventHandler(this, &MainForm::OnTarget));
+                FromUtf8(ride_arch(i)), nullptr, gcnew EventHandler(this, &MainForm::OnTarget));
             one->ShortcutKeyDisplayString = "Ctrl+T";
             targetItems_->Add(one);
             target->DropDownItems->Add(one);
@@ -823,7 +823,7 @@ private:
         Controls->Add(status_);
         SayBuild();
 
-        String^ kept = FromUtf8(rstudio_settings_set_aside());
+        String^ kept = FromUtf8(ride_settings_set_aside());
         if (kept != nullptr && kept->Length > 0)
             what_->Text = "bad configuration file - kept as " +
                           System::IO::Path::GetFileName(kept) + ", a new one made";
@@ -867,12 +867,12 @@ private:
     // The project's own choice of file first, then the one that defines
     // main, then the first file there is.
     void OpenFirstOfProject() {
-        String^ relative = FromUtf8(rstudio_project_file_to_open(project_));
+        String^ relative = FromUtf8(ride_project_file_to_open(project_));
         if (relative->Length == 0) return;
         array<Byte>^ bytes = Utf8Of(relative);
         pin_ptr<Byte> pinned = &bytes[0];
         String^ full = FromUtf8(
-            rstudio_project_absolute(project_, reinterpret_cast<const char*>(pinned)));
+            ride_project_absolute(project_, reinterpret_cast<const char*>(pinned)));
         if (full->Length > 0 && System::IO::File::Exists(full)) OpenPath(full);
     }
 
@@ -880,16 +880,16 @@ private:
         if (path_ == nullptr || path_->Length == 0) return;
         array<Byte>^ bytes = Utf8Of(path_);
         pin_ptr<Byte> pinned = &bytes[0];
-        rstudio_remember_open(project_, reinterpret_cast<const char*>(pinned));
+        ride_remember_open(project_, reinterpret_cast<const char*>(pinned));
     }
 
     String^ RootNow() {
-        String^ root = FromUtf8(rstudio_project_root(project_));
+        String^ root = FromUtf8(ride_project_root(project_));
         if (root == nullptr || root->Length == 0) root = projectDirectory_;
         return root;
     }
 
-    // {app} is the folder above bin\, where RStudio.exe lives. New projects
+    // {app} is the folder above bin\, where RIDE.exe lives. New projects
     // default under {app}\projects and single programs under {app}\programs, so
     // they land in a known place beside the install instead of on the Desktop or
     // in the read-only directory the shortcut starts in. Made on demand (the
@@ -946,7 +946,7 @@ private:
                                            int flags);
 
     System::Drawing::Font^ RememberedFont() {
-        String^ said = FromUtf8(rstudio_code_font());
+        String^ said = FromUtf8(ride_code_font());
         if (said != nullptr && said->Length > 0) {
             int cut = said->LastIndexOf(' ');
             if (cut > 0) {
@@ -1328,12 +1328,12 @@ private:
     void SayDebugTab(String^ assembly) {
         array<Byte>^ bytes = Utf8Of(assembly == nullptr ? "" : assembly);
         pin_ptr<Byte> pinned = &bytes[0];
-        String^ found = TakeUtf8(rstudio_describe_build(reinterpret_cast<const char*>(pinned)));
+        String^ found = TakeUtf8(ride_describe_build(reinterpret_cast<const char*>(pinned)));
 
         array<Byte>^ archBytes = Utf8Of(arch_ == nullptr ? "" : arch_);
         pin_ptr<Byte> archPin = &archBytes[0];
-        String^ note = TakeUtf8(rstudio_debug_note(
-            rstudio_resolve(toolKind_, LanguageNow()),
+        String^ note = TakeUtf8(ride_debug_note(
+            ride_resolve(toolKind_, LanguageNow()),
             reinterpret_cast<const char*>(archPin)));
 
         debug_->Text = String::Join(
@@ -1352,17 +1352,17 @@ private:
         if (languageChoice_ >= 0) return languageChoice_;
         array<Byte>^ bytes = Utf8Of(path_ == nullptr ? "" : path_);
         pin_ptr<Byte> pinned = &bytes[0];
-        return rstudio_language_for(reinterpret_cast<const char*>(pinned));
+        return ride_language_for(reinterpret_cast<const char*>(pinned));
     }
 
-    int DialectNow() { return rstudio_dialect_for(LanguageNow()); }
+    int DialectNow() { return ride_dialect_for(LanguageNow()); }
 
     void OnLayOut(Object^, EventArgs^) {
         if (text_ == nullptr) { what_->Text = "no file is open"; return; }
         array<Byte>^ bytes = Utf8Of(text_->Text->Replace("\r\n", "\n"));
         pin_ptr<Byte> pinned = &bytes[0];
 
-        String^ laid = TakeUtf8(rstudio_reindent(reinterpret_cast<const char*>(pinned),
+        String^ laid = TakeUtf8(ride_reindent(reinterpret_cast<const char*>(pinned),
                                              indentWidth_, indentTabs_, indentCase_,
                                              DialectNow()));
 
@@ -1429,7 +1429,7 @@ private:
         array<Byte>^ bytes = Utf8Of(text_->Text->Replace("\r\n", "\n"));
         pin_ptr<Byte> pinned = &bytes[0];
 
-        String^ lead = TakeUtf8(rstudio_indent_after_newline(
+        String^ lead = TakeUtf8(ride_indent_after_newline(
             reinterpret_cast<const char*>(pinned), row, column, indentWidth_, indentTabs_,
             indentCase_, DialectNow()));
 
@@ -1440,12 +1440,12 @@ private:
     void BeginColouring() {
         colouring_ = true;
         if (text_ != nullptr && text_->IsHandleCreated)
-            rstudio_undo_suspend(text_->Handle.ToPointer());
+            ride_undo_suspend(text_->Handle.ToPointer());
     }
 
     void EndColouring() {
         if (text_ != nullptr && text_->IsHandleCreated)
-            rstudio_undo_resume(text_->Handle.ToPointer());
+            ride_undo_resume(text_->Handle.ToPointer());
         colouring_ = false;
     }
 
@@ -1554,7 +1554,7 @@ private:
             pin_ptr<Byte> abovePin = &above[0];
             array<Byte>^ ignored = gcnew array<Byte>(above->Length);
             pin_ptr<Byte> ignoredPin = &ignored[0];
-            rstudio_highlight(reinterpret_cast<const char*>(abovePin), language, &state,
+            ride_highlight(reinterpret_cast<const char*>(abovePin), language, &state,
                           ignoredPin, ignored->Length);
         }
 
@@ -1575,7 +1575,7 @@ private:
             array<Byte>^ kinds = gcnew array<Byte>(bytes->Length);
             pin_ptr<Byte> kindPin = &kinds[0];
 
-            int howMany = rstudio_highlight(reinterpret_cast<const char*>(linePin), language,
+            int howMany = ride_highlight(reinterpret_cast<const char*>(linePin), language,
                                         &state, kindPin, kinds->Length);
 
             int at = text_->GetFirstCharIndexFromLine(row);
@@ -1590,7 +1590,7 @@ private:
 
                 int width =
                     System::Text::Encoding::UTF8->GetString(bytes, byte, end - byte)->Length;
-                if (width > 0 && kind != RSTUDIO_KIND_NORMAL) {
+                if (width > 0 && kind != RIDE_KIND_NORMAL) {
                     text_->Select(at + column, width);
                     text_->SelectionColor = ColourOf(kind);
                 }
@@ -1630,7 +1630,7 @@ private:
                 pin_ptr<Byte> linePin = &bytes[0];
                 array<Byte>^ kinds = gcnew array<Byte>(bytes->Length);
                 pin_ptr<Byte> kindPin = &kinds[0];
-                rstudio_highlight(reinterpret_cast<const char*>(linePin), language, &state,
+                ride_highlight(reinterpret_cast<const char*>(linePin), language, &state,
                               kindPin, kinds->Length);
             }
             stateGood_ = true;
@@ -1651,7 +1651,7 @@ private:
             pin_ptr<Byte> linePin = &bytes[0];
             array<Byte>^ kinds = gcnew array<Byte>(bytes->Length);
             pin_ptr<Byte> kindPin = &kinds[0];
-            int howMany = rstudio_highlight(reinterpret_cast<const char*>(linePin), language,
+            int howMany = ride_highlight(reinterpret_cast<const char*>(linePin), language,
                                         &state, kindPin, kinds->Length);
 
             int column = 0;
@@ -1663,7 +1663,7 @@ private:
 
                 int width =
                     System::Text::Encoding::UTF8->GetString(bytes, byte, end - byte)->Length;
-                if (width > 0 && kind != RSTUDIO_KIND_NORMAL) {
+                if (width > 0 && kind != RIDE_KIND_NORMAL) {
                     text_->Select(at + column, width);
                     text_->SelectionColor = ColourOf(kind);
                 }
@@ -1680,14 +1680,14 @@ private:
 
     System::Drawing::Color ColourOf(Byte kind) {
         switch (kind) {
-            case RSTUDIO_KIND_KEYWORD: return System::Drawing::Color::Blue;
-            case RSTUDIO_KIND_TYPE:    return System::Drawing::Color::Teal;
-            case RSTUDIO_KIND_STRING:  return System::Drawing::Color::FromArgb(0, 128, 0);
-            case RSTUDIO_KIND_CHAR:    return System::Drawing::Color::FromArgb(0, 128, 0);
-            case RSTUDIO_KIND_COMMENT: return System::Drawing::Color::Gray;
-            case RSTUDIO_KIND_PREPROC: return System::Drawing::Color::Purple;
-            case RSTUDIO_KIND_NUMBER:  return System::Drawing::Color::FromArgb(180, 100, 0);
-            case RSTUDIO_KIND_LABEL:   return System::Drawing::Color::FromArgb(150, 120, 0);
+            case RIDE_KIND_KEYWORD: return System::Drawing::Color::Blue;
+            case RIDE_KIND_TYPE:    return System::Drawing::Color::Teal;
+            case RIDE_KIND_STRING:  return System::Drawing::Color::FromArgb(0, 128, 0);
+            case RIDE_KIND_CHAR:    return System::Drawing::Color::FromArgb(0, 128, 0);
+            case RIDE_KIND_COMMENT: return System::Drawing::Color::Gray;
+            case RIDE_KIND_PREPROC: return System::Drawing::Color::Purple;
+            case RIDE_KIND_NUMBER:  return System::Drawing::Color::FromArgb(180, 100, 0);
+            case RIDE_KIND_LABEL:   return System::Drawing::Color::FromArgb(150, 120, 0);
             default:               return System::Drawing::Color::Black;
         }
     }
@@ -1746,10 +1746,10 @@ private:
         pin_ptr<Byte> needlePin = &needle[0];
 
         int foundRow = 0, foundColumn = 0;
-        int found = forwards ? rstudio_find_next(reinterpret_cast<const char*>(textPin),
+        int found = forwards ? ride_find_next(reinterpret_cast<const char*>(textPin),
                                              reinterpret_cast<const char*>(needlePin), row,
                                              column, &foundRow, &foundColumn)
-                             : rstudio_find_previous(reinterpret_cast<const char*>(textPin),
+                             : ride_find_previous(reinterpret_cast<const char*>(textPin),
                                                  reinterpret_cast<const char*>(needlePin), row,
                                                  column, &foundRow, &foundColumn);
         if (found == 0) {
@@ -1789,7 +1789,7 @@ private:
         pin_ptr<Byte> replacementPin = &replacement[0];
 
         int howMany = 0;
-        String^ changed = TakeUtf8(rstudio_replace_all(
+        String^ changed = TakeUtf8(ride_replace_all(
             reinterpret_cast<const char*>(textPin), reinterpret_cast<const char*>(needlePin),
             reinterpret_cast<const char*>(replacementPin), &howMany));
 
@@ -1816,7 +1816,7 @@ private:
 
         array<Byte>^ text = WholeText();
         pin_ptr<Byte> textPin = &text[0];
-        String^ want = TakeUtf8(rstudio_indent_for(reinterpret_cast<const char*>(textPin), row,
+        String^ want = TakeUtf8(ride_indent_for(reinterpret_cast<const char*>(textPin), row,
                                                indentWidth_, indentTabs_, indentCase_,
                                                DialectNow()));
         if (want == line->Substring(0, lead)) return;
@@ -1888,7 +1888,7 @@ private:
         array<Byte>^ error = gcnew array<Byte>(512);
         pin_ptr<Byte> errorPin = &error[0];
 
-        int loaded = rstudio_project_load(project_, reinterpret_cast<const char*>(pinned),
+        int loaded = ride_project_load(project_, reinterpret_cast<const char*>(pinned),
                                       reinterpret_cast<char*>(errorPin), error->Length);
         if (loaded == 0) {
             String^ why = FromUtf8(reinterpret_cast<const char*>(errorPin));
@@ -1896,51 +1896,51 @@ private:
             array<Byte>^ dirBytes = Utf8Of(directory);
             pin_ptr<Byte> dirPin = &dirBytes[0];
             if (why->Length == 0 &&
-                rstudio_begin_from_what_is_there(project_,
+                ride_begin_from_what_is_there(project_,
                                              reinterpret_cast<const char*>(dirPin)) != 0) {
                 FillTree();
-                indentWidth_ = rstudio_project_indent_width(project_);
-                indentTabs_ = rstudio_project_indent_tabs(project_);
-                indentCase_ = rstudio_project_case_indent(project_);
-                toolKind_ = rstudio_project_toolchain(project_) != RSTUDIO_TOOL_AUTO
-                        ? rstudio_project_toolchain(project_) : rstudio_default_compiler();
-                config_ = rstudio_configuration();
-                arch_ = FromUtf8(rstudio_project_arch(project_));
+                indentWidth_ = ride_project_indent_width(project_);
+                indentTabs_ = ride_project_indent_tabs(project_);
+                indentCase_ = ride_project_case_indent(project_);
+                toolKind_ = ride_project_toolchain(project_) != RIDE_TOOL_AUTO
+                        ? ride_project_toolchain(project_) : ride_default_compiler();
+                config_ = ride_configuration();
+                arch_ = FromUtf8(ride_project_arch(project_));
                 ShowChoices();
-                rstudio_remember_project(reinterpret_cast<const char*>(pinned));
+                ride_remember_project(reinterpret_cast<const char*>(pinned));
                 RefreshRecent();
-                what_->Text = FromUtf8(rstudio_outcome_message(project_));
+                what_->Text = FromUtf8(ride_outcome_message(project_));
                 SayWhere();
                 RefreshTitle();
                 return;
             }
 
-            what_->Text = why->Length > 0 ? why : "no RStudio.json in that directory";
+            what_->Text = why->Length > 0 ? why : "no .pro project in that directory";
 
-            rstudio_project_set_root(project_, reinterpret_cast<const char*>(pinned));
+            ride_project_set_root(project_, reinterpret_cast<const char*>(pinned));
             SayWhere();
             return;
         }
 
         FillTree();
 
-        indentWidth_ = rstudio_project_indent_width(project_);
-        indentTabs_ = rstudio_project_indent_tabs(project_);
-        indentCase_ = rstudio_project_case_indent(project_);
-        toolKind_ = rstudio_project_toolchain(project_) != RSTUDIO_TOOL_AUTO
-                        ? rstudio_project_toolchain(project_) : rstudio_default_compiler();
-        config_ = rstudio_configuration();
-        arch_ = FromUtf8(rstudio_project_arch(project_));
+        indentWidth_ = ride_project_indent_width(project_);
+        indentTabs_ = ride_project_indent_tabs(project_);
+        indentCase_ = ride_project_case_indent(project_);
+        toolKind_ = ride_project_toolchain(project_) != RIDE_TOOL_AUTO
+                        ? ride_project_toolchain(project_) : ride_default_compiler();
+        config_ = ride_configuration();
+        arch_ = FromUtf8(ride_project_arch(project_));
         ShowChoices();
 
         array<Byte>^ opened = Utf8Of(directory);
         pin_ptr<Byte> openedPin = &opened[0];
-        rstudio_remember_project(reinterpret_cast<const char*>(openedPin));
+        ride_remember_project(reinterpret_cast<const char*>(openedPin));
         RefreshRecent();
 
         what_->Text = String::Format("ready - {0}, {1} groups",
-                                     FromUtf8(rstudio_project_name(project_)),
-                                     rstudio_project_groups(project_));
+                                     FromUtf8(ride_project_name(project_)),
+                                     ride_project_groups(project_));
         SayWhere();
         RefreshTitle();
 
@@ -1964,7 +1964,7 @@ private:
     void FillTree() {
         tree_->Nodes->Clear();
 
-        if (paneMode_ == PaneMode::PaneFiles || rstudio_project_loaded(project_) == 0) {
+        if (paneMode_ == PaneMode::PaneFiles || ride_project_loaded(project_) == 0) {
             for (int i = 0; i < sheets_->Count; ++i) {
                 String^ full = sheets_[i]->path;
 
@@ -1978,35 +1978,35 @@ private:
             return;
         }
 
-        int groups = rstudio_project_groups(project_);
+        int groups = ride_project_groups(project_);
         for (int group = 0; group < groups; ++group) {
-            TreeNode^ node = gcnew TreeNode(FromUtf8(rstudio_project_group_name(project_, group)));
-            int files = rstudio_project_files(project_, group);
+            TreeNode^ node = gcnew TreeNode(FromUtf8(ride_project_group_name(project_, group)));
+            int files = ride_project_files(project_, group);
             for (int file = 0; file < files; ++file) {
-                String^ relative = FromUtf8(rstudio_project_file(project_, group, file));
+                String^ relative = FromUtf8(ride_project_file(project_, group, file));
                 TreeNode^ leaf = gcnew TreeNode(relative);
 
                 array<Byte>^ rel = Utf8Of(relative);
                 pin_ptr<Byte> relPin = &rel[0];
                 leaf->Tag = FromUtf8(
-                    rstudio_project_absolute(project_, reinterpret_cast<const char*>(relPin)));
+                    ride_project_absolute(project_, reinterpret_cast<const char*>(relPin)));
                 node->Nodes->Add(leaf);
             }
             tree_->Nodes->Add(node);
         }
         tree_->ExpandAll();
 
-        indentWidth_ = rstudio_project_indent_width(project_);
-        indentTabs_ = rstudio_project_indent_tabs(project_);
-        indentCase_ = rstudio_project_case_indent(project_);
-        toolKind_ = rstudio_project_toolchain(project_) != RSTUDIO_TOOL_AUTO
-                        ? rstudio_project_toolchain(project_) : rstudio_default_compiler();
-        config_ = rstudio_configuration();
-        arch_ = FromUtf8(rstudio_project_arch(project_));
+        indentWidth_ = ride_project_indent_width(project_);
+        indentTabs_ = ride_project_indent_tabs(project_);
+        indentCase_ = ride_project_case_indent(project_);
+        toolKind_ = ride_project_toolchain(project_) != RIDE_TOOL_AUTO
+                        ? ride_project_toolchain(project_) : ride_default_compiler();
+        config_ = ride_configuration();
+        arch_ = FromUtf8(ride_project_arch(project_));
         ShowChoices();
 
         what_->Text = String::Format("ready - {0}, {1} groups",
-                                     FromUtf8(rstudio_project_name(project_)), groups);
+                                     FromUtf8(ride_project_name(project_)), groups);
     }
 
     String^ TargetFile() {
@@ -2022,17 +2022,17 @@ private:
     }
 
     bool Did(int outcome) {
-        what_->Text = FromUtf8(rstudio_outcome_message(project_));
+        what_->Text = FromUtf8(ride_outcome_message(project_));
         return outcome != 0;
     }
 
-    String^ OutcomePath() { return FromUtf8(rstudio_outcome_path(project_)); }
+    String^ OutcomePath() { return FromUtf8(ride_outcome_path(project_)); }
 
     String^ GroupForFile(String^ name) {
         if (name == nullptr || name->Length == 0) return "";
         array<Byte>^ leaf = Utf8Of(System::IO::Path::GetFileName(name));
         pin_ptr<Byte> pinned = &leaf[0];
-        return FromUtf8(rstudio_group_for_file(reinterpret_cast<const char*>(pinned)));
+        return FromUtf8(ride_group_for_file(reinterpret_cast<const char*>(pinned)));
     }
 
     void OnNewFile(Object^, EventArgs^) {
@@ -2048,8 +2048,8 @@ private:
             // The extension picks the compiler; a name without one gets the
             // chosen compiler's, and C when the choice is automatic.
             if (System::IO::Path::GetFileName(only)->IndexOf('.') < 0)
-                only += toolKind_ == RSTUDIO_TOOL_SHC ? ".shl"
-                      : toolKind_ == RSTUDIO_TOOL_CC1 || toolKind_ == RSTUDIO_TOOL_AUTO ? ".c"
+                only += toolKind_ == RIDE_TOOL_SHC ? ".shl"
+                      : toolKind_ == RIDE_TOOL_CC1 || toolKind_ == RIDE_TOOL_AUTO ? ".c"
                                                                                         : ".cpp";
             String^ target = System::IO::Path::Combine(programs, only);
             if (System::IO::File::Exists(target)) {
@@ -2081,7 +2081,7 @@ private:
         array<Byte>^ group = Utf8Of(wanted);
         pin_ptr<Byte> groupPin = &group[0];
 
-        if (!Did(rstudio_create_file(project_, reinterpret_cast<const char*>(relativePin),
+        if (!Did(ride_create_file(project_, reinterpret_cast<const char*>(relativePin),
                                  reinterpret_cast<const char*>(groupPin), toolKind_)))
             return;
 
@@ -2109,7 +2109,7 @@ private:
             codeFont_->FontFamily->Name, codeFont_->SizeInPoints);
         array<Byte>^ bytes = Utf8Of(said);
         pin_ptr<Byte> pinned = &bytes[0];
-        rstudio_remember_code_font(reinterpret_cast<const char*>(pinned));
+        ride_remember_code_font(reinterpret_cast<const char*>(pinned));
         what_->Text = said;
     }
 
@@ -2172,8 +2172,8 @@ private:
         pin_ptr<Byte> wasPin = &was[0];
         // Offered by its name in the project, or by its bare name when it
         // is not in one - which is what the new name is taken relative to.
-        String^ shown = rstudio_project_holds(project_, reinterpret_cast<const char*>(wasPin)) != 0
-                            ? FromUtf8(rstudio_project_relative(project_, reinterpret_cast<const char*>(wasPin)))
+        String^ shown = ride_project_holds(project_, reinterpret_cast<const char*>(wasPin)) != 0
+                            ? FromUtf8(ride_project_relative(project_, reinterpret_cast<const char*>(wasPin)))
                             : System::IO::Path::GetFileName(target);
 
         String^ name = Ask("Rename " + shown + " to", shown);
@@ -2184,7 +2184,7 @@ private:
         array<Byte>^ to = Utf8Of(name);
         pin_ptr<Byte> toPin = &to[0];
 
-        if (!Did(rstudio_rename_file(project_, reinterpret_cast<const char*>(fromPin),
+        if (!Did(ride_rename_file(project_, reinterpret_cast<const char*>(fromPin),
                                  reinterpret_cast<const char*>(toPin))))
             return;
 
@@ -2233,7 +2233,7 @@ private:
 
         array<Byte>^ path = Utf8Of(target);
         pin_ptr<Byte> pathPin = &path[0];
-        if (!Did(rstudio_delete_file(project_, reinterpret_cast<const char*>(pathPin)))) return;
+        if (!Did(ride_delete_file(project_, reinterpret_cast<const char*>(pathPin)))) return;
 
         for (int i = sheets_->Count - 1; i >= 0; --i) {
             if (sheets_[i]->path == nullptr) continue;
@@ -2265,7 +2265,7 @@ private:
         array<Byte>^ into = Utf8Of(group);
         pin_ptr<Byte> intoPin = &into[0];
 
-        if (Did(rstudio_move_to_group(project_, reinterpret_cast<const char*>(pathPin),
+        if (Did(ride_move_to_group(project_, reinterpret_cast<const char*>(pathPin),
                                   reinterpret_cast<const char*>(intoPin))))
             FillTree();
     }
@@ -2287,7 +2287,7 @@ private:
         array<Byte>^ into = Utf8Of(group);
         pin_ptr<Byte> intoPin = &into[0];
 
-        if (Did(rstudio_add_existing(project_, reinterpret_cast<const char*>(pathPin),
+        if (Did(ride_add_existing(project_, reinterpret_cast<const char*>(pathPin),
                                  reinterpret_cast<const char*>(intoPin))))
             FillTree();
     }
@@ -2307,7 +2307,7 @@ private:
         array<Byte>^ path = Utf8Of(path_);
         pin_ptr<Byte> pathPin = &path[0];
 
-        if (Did(rstudio_remove_from_project(project_, reinterpret_cast<const char*>(pathPin))))
+        if (Did(ride_remove_from_project(project_, reinterpret_cast<const char*>(pathPin))))
             FillTree();
     }
 
@@ -2315,28 +2315,28 @@ private:
     // edited as one line each with ';' between the entries; every compile
     // searches them after a project's own.
     void OnSharedIncludes(Object^, EventArgs^) {
-        String^ file = FromUtf8(rstudio_install_file());
+        String^ file = FromUtf8(ride_install_file());
         if (file->Length == 0) { what_->Text = "no installation directory to keep this in"; return; }
         String^ line = Ask("Shared include paths", "kept in " + file + ", ';' between them",
-                           FromUtf8(rstudio_includes()));
+                           FromUtf8(ride_includes()));
         if (line == nullptr) { what_->Text = "shared include paths unchanged"; return; }
         array<Byte>^ bytes = Utf8Of(line);
         pin_ptr<Byte> pinned = &bytes[0];
-        what_->Text = rstudio_set_includes(reinterpret_cast<const char*>(pinned)) != 0
-                          ? "shared include paths: " + FromUtf8(rstudio_includes()) + " - written to " + file
+        what_->Text = ride_set_includes(reinterpret_cast<const char*>(pinned)) != 0
+                          ? "shared include paths: " + FromUtf8(ride_includes()) + " - written to " + file
                           : "cannot write " + file;
     }
 
     void OnSharedLibraries(Object^, EventArgs^) {
-        String^ file = FromUtf8(rstudio_install_file());
+        String^ file = FromUtf8(ride_install_file());
         if (file->Length == 0) { what_->Text = "no installation directory to keep this in"; return; }
         String^ line = Ask("Shared libraries", "kept in " + file + ", ';' between them, linked after the objects",
-                           FromUtf8(rstudio_libraries()));
+                           FromUtf8(ride_libraries()));
         if (line == nullptr) { what_->Text = "shared libraries unchanged"; return; }
         array<Byte>^ bytes = Utf8Of(line);
         pin_ptr<Byte> pinned = &bytes[0];
-        what_->Text = rstudio_set_libraries(reinterpret_cast<const char*>(pinned)) != 0
-                          ? "shared libraries: " + FromUtf8(rstudio_libraries()) + " - written to " + file
+        what_->Text = ride_set_libraries(reinterpret_cast<const char*>(pinned)) != 0
+                          ? "shared libraries: " + FromUtf8(ride_libraries()) + " - written to " + file
                           : "cannot write " + file;
     }
 
@@ -2344,63 +2344,63 @@ private:
     // and linked before the installation's. The bridge calls were there
     // from the start; the audit of 2026-09-19 found nothing calling them.
     void OnProjectIncludes(Object^, EventArgs^) {
-        if (project_ == nullptr || rstudio_project_loaded(project_) == 0) {
+        if (project_ == nullptr || ride_project_loaded(project_) == 0) {
             what_->Text = "there is no project open - these are a project's own; Shared include paths... is the installation's";
             return;
         }
         String^ line = Ask("Project include paths", "kept in the project's .pro, relative to it, ';' between them",
-                           FromUtf8(rstudio_project_includes(project_)));
+                           FromUtf8(ride_project_includes(project_)));
         if (line == nullptr) { what_->Text = "the project's include paths are unchanged"; return; }
         array<Byte>^ bytes = Utf8Of(line);
         pin_ptr<Byte> pinned = &bytes[0];
-        if (Did(rstudio_project_set_includes(project_, reinterpret_cast<const char*>(pinned))))
-            what_->Text = "the project's include paths: " + FromUtf8(rstudio_project_includes(project_)) + " - written";
+        if (Did(ride_project_set_includes(project_, reinterpret_cast<const char*>(pinned))))
+            what_->Text = "the project's include paths: " + FromUtf8(ride_project_includes(project_)) + " - written";
     }
 
     void OnProjectLibraries(Object^, EventArgs^) {
-        if (project_ == nullptr || rstudio_project_loaded(project_) == 0) {
+        if (project_ == nullptr || ride_project_loaded(project_) == 0) {
             what_->Text = "there is no project open - these are a project's own; Shared libraries... is the installation's";
             return;
         }
         String^ line = Ask("Project libraries", "kept in the project's .pro, relative to it, ';' between them, linked before the shared ones",
-                           FromUtf8(rstudio_project_libraries(project_)));
+                           FromUtf8(ride_project_libraries(project_)));
         if (line == nullptr) { what_->Text = "the project's libraries are unchanged"; return; }
         array<Byte>^ bytes = Utf8Of(line);
         pin_ptr<Byte> pinned = &bytes[0];
-        if (Did(rstudio_project_set_libraries(project_, reinterpret_cast<const char*>(pinned))))
-            what_->Text = "the project's libraries: " + FromUtf8(rstudio_project_libraries(project_)) + " - written";
+        if (Did(ride_project_set_libraries(project_, reinterpret_cast<const char*>(pinned))))
+            what_->Text = "the project's libraries: " + FromUtf8(ride_project_libraries(project_)) + " - written";
     }
 
     // The installation's settings.json: where the shipped headers are.
     void OnHeaderDirs(Object^, EventArgs^) {
-        String^ file = FromUtf8(rstudio_install_file());
+        String^ file = FromUtf8(ride_install_file());
         if (file->Length == 0) { what_->Text = "no installation directory to keep this in"; return; }
         String^ include = Ask("cxx1's headers (include)", "kept in " + file,
-                              FromUtf8(rstudio_include_dir()));
+                              FromUtf8(ride_include_dir()));
         if (include == nullptr) { what_->Text = "header directories unchanged"; return; }
-        String^ lib = Ask("cc1's headers (lib)", "kept in " + file, FromUtf8(rstudio_lib_dir()));
+        String^ lib = Ask("cc1's headers (lib)", "kept in " + file, FromUtf8(ride_lib_dir()));
         if (lib == nullptr) { what_->Text = "header directories unchanged"; return; }
         array<Byte>^ a = Utf8Of(include);
         pin_ptr<Byte> aPin = &a[0];
         array<Byte>^ b = Utf8Of(lib);
         pin_ptr<Byte> bPin = &b[0];
-        if (rstudio_remember_header_dirs(reinterpret_cast<const char*>(aPin),
+        if (ride_remember_header_dirs(reinterpret_cast<const char*>(aPin),
                                          reinterpret_cast<const char*>(bPin)) == 0) {
             what_->Text = "cannot write " + file;
             return;
         }
-        what_->Text = "include " + FromUtf8(rstudio_include_dir()) + ", lib " +
-                      FromUtf8(rstudio_lib_dir()) + " - written to " + file;
+        what_->Text = "include " + FromUtf8(ride_include_dir()) + ", lib " +
+                      FromUtf8(ride_lib_dir()) + " - written to " + file;
     }
 
     // Visual Studio's tools, when the editor's own search did not find them.
     void OnLocateVcvars(Object^, EventArgs^) {
-        String^ file = FromUtf8(rstudio_install_file());
+        String^ file = FromUtf8(ride_install_file());
         if (file->Length == 0) { what_->Text = "no installation directory to keep this in"; return; }
         OpenFileDialog^ pick = gcnew OpenFileDialog();
         pick->Title = "Locate vcvars64.bat (Visual Studio\\VC\\Auxiliary\\Build)";
         pick->Filter = "vcvars64.bat|vcvars64.bat|Batch files (*.bat)|*.bat";
-        String^ now = FromUtf8(rstudio_vcvars());
+        String^ now = FromUtf8(ride_vcvars());
         if (now->Length > 0) pick->InitialDirectory = System::IO::Path::GetDirectoryName(now);
         if (pick->ShowDialog(this) != System::Windows::Forms::DialogResult::OK) {
             what_->Text = "vcvars unchanged";
@@ -2408,7 +2408,7 @@ private:
         }
         array<Byte>^ bytes = Utf8Of(pick->FileName);
         pin_ptr<Byte> pinned = &bytes[0];
-        if (rstudio_remember_vcvars(reinterpret_cast<const char*>(pinned)) == 0) {
+        if (ride_remember_vcvars(reinterpret_cast<const char*>(pinned)) == 0) {
             what_->Text = "cannot write " + file;
             return;
         }
@@ -2418,12 +2418,12 @@ private:
     // The project's own assembler in place of ml64 and clang - Cancel with
     // one named keeps it; the console front end's `-` clears it.
     void OnLocateAssembler(Object^, EventArgs^) {
-        String^ file = FromUtf8(rstudio_install_file());
+        String^ file = FromUtf8(ride_install_file());
         if (file->Length == 0) { what_->Text = "no installation directory to keep this in"; return; }
         OpenFileDialog^ pick = gcnew OpenFileDialog();
         pick->Title = "The assembler for x86_64-windows (asm.exe)";
         pick->Filter = "Programs (*.exe)|*.exe";
-        String^ now = FromUtf8(rstudio_assembler());
+        String^ now = FromUtf8(ride_assembler());
         if (now->Length > 0) pick->InitialDirectory = System::IO::Path::GetDirectoryName(now);
         if (pick->ShowDialog(this) != System::Windows::Forms::DialogResult::OK) {
             what_->Text = "assembler unchanged";
@@ -2431,7 +2431,7 @@ private:
         }
         array<Byte>^ bytes = Utf8Of(pick->FileName);
         pin_ptr<Byte> pinned = &bytes[0];
-        if (rstudio_remember_assembler(reinterpret_cast<const char*>(pinned)) == 0) {
+        if (ride_remember_assembler(reinterpret_cast<const char*>(pinned)) == 0) {
             what_->Text = "cannot write " + file;
             return;
         }
@@ -2443,12 +2443,12 @@ private:
     // path; Cancel keeps what is named, and the console front end's `-`
     // clears it. One picker serves both, told which setting it is for.
     void PickLinker(bool ti) {
-        String^ file = FromUtf8(rstudio_install_file());
+        String^ file = FromUtf8(ride_install_file());
         if (file->Length == 0) { what_->Text = "no installation directory to keep this in"; return; }
         OpenFileDialog^ pick = gcnew OpenFileDialog();
         pick->Title = ti ? "The linker for tms6747 (lnk6x.exe)" : "The linker for x86_64-windows (link.exe)";
         pick->Filter = "Programs (*.exe)|*.exe";
-        String^ now = FromUtf8(ti ? rstudio_tilinker() : rstudio_linker());
+        String^ now = FromUtf8(ti ? ride_tilinker() : ride_linker());
         if (now->Length > 0) pick->InitialDirectory = System::IO::Path::GetDirectoryName(now);
         if (pick->ShowDialog(this) != System::Windows::Forms::DialogResult::OK) {
             what_->Text = "linker unchanged";
@@ -2456,8 +2456,8 @@ private:
         }
         array<Byte>^ bytes = Utf8Of(pick->FileName);
         pin_ptr<Byte> pinned = &bytes[0];
-        int written = ti ? rstudio_remember_tilinker(reinterpret_cast<const char*>(pinned))
-                         : rstudio_remember_linker(reinterpret_cast<const char*>(pinned));
+        int written = ti ? ride_remember_tilinker(reinterpret_cast<const char*>(pinned))
+                         : ride_remember_linker(reinterpret_cast<const char*>(pinned));
         if (written == 0) {
             what_->Text = "cannot write " + file;
             return;
@@ -2473,11 +2473,11 @@ private:
     // not ship (Cancel there keeps none). The console front end's `-` clears
     // the setting; here, clear it by hand in settings.json.
     void OnLocateTi(Object^, EventArgs^) {
-        String^ file = FromUtf8(rstudio_install_file());
+        String^ file = FromUtf8(ride_install_file());
         if (file->Length == 0) { what_->Text = "no installation directory to keep this in"; return; }
         FolderBrowserDialog^ pick = gcnew FolderBrowserDialog();
         pick->Description = "TI's C6000 compiler directory - the one with bin\\lnk6x.exe";
-        String^ now = FromUtf8(rstudio_ti());
+        String^ now = FromUtf8(ride_ti());
         if (now->Length > 0) pick->SelectedPath = now;
         if (pick->ShowDialog(this) != System::Windows::Forms::DialogResult::OK) {
             what_->Text = "TI compiler unchanged";
@@ -2486,14 +2486,14 @@ private:
         String^ dir = pick->SelectedPath;
         FolderBrowserDialog^ lib = gcnew FolderBrowserDialog();
         lib->Description = "A directory with rts6740_elf_eh.lib, the exception-handling runtime (Cancel for none)";
-        String^ nowLib = FromUtf8(rstudio_tilib());
+        String^ nowLib = FromUtf8(ride_tilib());
         if (nowLib->Length > 0) lib->SelectedPath = nowLib;
         String^ libDir = lib->ShowDialog(this) == System::Windows::Forms::DialogResult::OK ? lib->SelectedPath : "";
         array<Byte>^ bytes = Utf8Of(dir);
         array<Byte>^ libBytes = Utf8Of(libDir);
         pin_ptr<Byte> pinned = &bytes[0];
         pin_ptr<Byte> pinnedLib = &libBytes[0];
-        if (rstudio_remember_ti(reinterpret_cast<const char*>(pinned), reinterpret_cast<const char*>(pinnedLib)) == 0) {
+        if (ride_remember_ti(reinterpret_cast<const char*>(pinned), reinterpret_cast<const char*>(pinnedLib)) == 0) {
             what_->Text = "cannot write " + file;
             return;
         }
@@ -2507,7 +2507,7 @@ private:
     void RefreshRecent() {
         if (recentItems_ == nullptr) return;
         for (int i = 0; i < recentItems_->Count; ++i) {
-            String^ where = FromUtf8(rstudio_recent_project(i));
+            String^ where = FromUtf8(ride_recent_project(i));
             ToolStripMenuItem^ item = recentItems_[i];
             if (where->Length == 0) { item->Visible = false; continue; }
             String^ shown = System::IO::File::Exists(where)
@@ -2525,7 +2525,7 @@ private:
     void RefreshRecentFiles() {
         if (recentFileItems_ == nullptr) return;
         for (int i = 0; i < recentFileItems_->Count; ++i) {
-            String^ where = FromUtf8(rstudio_recent_file(i));
+            String^ where = FromUtf8(ride_recent_file(i));
             ToolStripMenuItem^ item = recentFileItems_[i];
             if (where->Length == 0) { item->Visible = false; continue; }
             item->Text = String::Format("&{0}. {1}", i + 1, System::IO::Path::GetFileName(where));
@@ -2536,14 +2536,14 @@ private:
 
     void OnOpenRecentFile(Object^ sender, EventArgs^) {
         ToolStripMenuItem^ item = safe_cast<ToolStripMenuItem^>(sender);
-        String^ where = FromUtf8(rstudio_recent_file(safe_cast<int>(item->Tag)));
+        String^ where = FromUtf8(ride_recent_file(safe_cast<int>(item->Tag)));
         if (where->Length == 0) { what_->Text = "no file remembered"; return; }
         OpenPath(where);
     }
 
     void OnOpenRecent(Object^ sender, EventArgs^) {
         ToolStripMenuItem^ item = safe_cast<ToolStripMenuItem^>(sender);
-        String^ where = FromUtf8(rstudio_recent_project(safe_cast<int>(item->Tag)));
+        String^ where = FromUtf8(ride_recent_project(safe_cast<int>(item->Tag)));
         if (where->Length == 0) { what_->Text = "no project remembered"; return; }
         LoadProject(where);
     }
@@ -2574,7 +2574,7 @@ private:
         array<Byte>^ first = Utf8Of(path_ == nullptr ? "" : path_);
         pin_ptr<Byte> firstPin = &first[0];
 
-        if (Did(rstudio_begin_project(project_, reinterpret_cast<const char*>(wherePin),
+        if (Did(ride_begin_project(project_, reinterpret_cast<const char*>(wherePin),
                                   reinterpret_cast<const char*>(calledPin),
                                   reinterpret_cast<const char*>(firstPin)))) {
             projectDirectory_ = pick->SelectedPath;
@@ -2585,11 +2585,11 @@ private:
     }
 
     void OnOpenProjectFile(Object^, EventArgs^) {
-        String^ suffix = FromUtf8(rstudio_project_suffix());
+        String^ suffix = FromUtf8(ride_project_suffix());
 
         OpenFileDialog^ pick = gcnew OpenFileDialog();
         pick->Title = "Open project file";
-        pick->Filter = "RIDE projects (*" + suffix + ")|*" + suffix +
+        pick->Filter = ProductName() + " projects (*" + suffix + ")|*" + suffix +
                        "|All files (*.*)|*.*";
         if (projectDirectory_ != nullptr) pick->InitialDirectory = projectDirectory_;
         if (pick->ShowDialog() != System::Windows::Forms::DialogResult::OK) {
@@ -2601,19 +2601,19 @@ private:
     }
 
     void OnSaveProjectAs(Object^, EventArgs^) {
-        if (rstudio_project_loaded(project_) == 0) {
+        if (ride_project_loaded(project_) == 0) {
             what_->Text = "there is no project to save";
             return;
         }
 
-        String^ suffix = FromUtf8(rstudio_project_suffix());
-        String^ offered = FromUtf8(rstudio_project_name(project_)) + suffix;
+        String^ suffix = FromUtf8(ride_project_suffix());
+        String^ offered = FromUtf8(ride_project_name(project_)) + suffix;
 
         SaveFileDialog^ pick = gcnew SaveFileDialog();
         pick->Title = "Save as project file";
         pick->FileName = offered;
-        pick->Filter = "RIDE projects (*" + suffix + ")|*" + suffix;
-        pick->InitialDirectory = FromUtf8(rstudio_project_root(project_));
+        pick->Filter = ProductName() + " projects (*" + suffix + ")|*" + suffix;
+        pick->InitialDirectory = FromUtf8(ride_project_root(project_));
         if (pick->ShowDialog() != System::Windows::Forms::DialogResult::OK) {
             what_->Text = "not saved";
             return;
@@ -2624,7 +2624,7 @@ private:
         array<Byte>^ why = gcnew array<Byte>(512);
         pin_ptr<Byte> whyPin = &why[0];
 
-        if (rstudio_project_save_as(project_, reinterpret_cast<const char*>(wherePin),
+        if (ride_project_save_as(project_, reinterpret_cast<const char*>(wherePin),
                                     reinterpret_cast<char*>(whyPin), why->Length) == 0) {
             what_->Text = FromUtf8(reinterpret_cast<const char*>(whyPin));
             return;
@@ -2637,11 +2637,11 @@ private:
     }
 
     void OnCloseProject(Object^, EventArgs^) {
-        if (rstudio_project_loaded(project_) == 0) {
+        if (ride_project_loaded(project_) == 0) {
             what_->Text = "there is no project open";
             return;
         }
-        String^ was = FromUtf8(rstudio_project_name(project_));
+        String^ was = FromUtf8(ride_project_name(project_));
         RememberOpen();
 
         // The project's files go with it - every file it lists that is
@@ -2653,7 +2653,7 @@ private:
             if (sheets_[i]->path == nullptr) continue;
             array<Byte>^ bytes = Utf8Of(sheets_[i]->path);
             pin_ptr<Byte> pinned = &bytes[0];
-            if (rstudio_project_holds(project_, reinterpret_cast<const char*>(pinned)) != 0) theirs->Add(sheets_[i]);
+            if (ride_project_holds(project_, reinterpret_cast<const char*>(pinned)) != 0) theirs->Add(sheets_[i]);
         }
         for (int i = 0; i < theirs->Count; ++i)
             if (!MayDiscard(theirs[i])) { what_->Text = "not closed - " + System::IO::Path::GetFileName(theirs[i]->path) + " has unsaved changes"; return; }
@@ -2668,7 +2668,7 @@ private:
             if (now != nullptr) { text_ = now->box; path_ = now->path; }
         }
 
-        rstudio_project_close(project_);
+        ride_project_close(project_);
 
         paneMode_ = PaneMode::PaneFiles;
         FillTree();
@@ -2725,7 +2725,7 @@ private:
         {
             array<Byte>^ bytes = Utf8Of(pick->FileName);
             pin_ptr<Byte> pinned = &bytes[0];
-            rstudio_remember_file(reinterpret_cast<const char*>(pinned));
+            ride_remember_file(reinterpret_cast<const char*>(pinned));
         }
         RefreshRecentFiles();
     }
@@ -2862,9 +2862,9 @@ private:
         // and a file saved under a name is one to recall from the menu.
         array<Byte>^ saved = Utf8Of(pick->FileName);
         pin_ptr<Byte> savedPin = &saved[0];
-        if (rstudio_adopt_saved(project_, reinterpret_cast<const char*>(savedPin)) != 0)
-            what_->Text = FromUtf8(rstudio_outcome_message(project_));
-        rstudio_remember_file(reinterpret_cast<const char*>(savedPin));
+        if (ride_adopt_saved(project_, reinterpret_cast<const char*>(savedPin)) != 0)
+            what_->Text = FromUtf8(ride_outcome_message(project_));
+        ride_remember_file(reinterpret_cast<const char*>(savedPin));
         RefreshRecentFiles();
         FillTree();
     }
@@ -2962,7 +2962,7 @@ private:
     }
 
     void OnAbout(Object^, EventArgs^) {
-        MessageBox::Show(this, TakeUtf8(rstudio_about())->Replace("\n", "\r\n"),
+        MessageBox::Show(this, TakeUtf8(ride_about())->Replace("\n", "\r\n"),
                          "About",
                          MessageBoxButtons::OK, MessageBoxIcon::Information);
     }
@@ -2980,10 +2980,10 @@ private:
         {
             array<Byte>^ askBytes = Utf8Of(path_);
             pin_ptr<Byte> ask = &askBytes[0];
-            int of = rstudio_project_runs_as_project(project_, reinterpret_cast<const char*>(ask));
+            int of = ride_project_runs_as_project(project_, reinterpret_cast<const char*>(ask));
             if (of > 0) {
                 what_->Text = System::IO::Path::GetFileName(path_) + " is one of " + of +
-                              " sources of " + FromUtf8(rstudio_project_name(project_)) +
+                              " sources of " + FromUtf8(ride_project_name(project_)) +
                               " - running the project";
                 BuildProject(true);
                 return;
@@ -2991,9 +2991,9 @@ private:
         }
 
         int language = LanguageNow();
-        int kind = rstudio_resolve(toolKind_, language);
-        if (rstudio_can_compile(kind, language) == 0) {
-            what_->Text = FromUtf8(rstudio_refusal(kind, language));
+        int kind = ride_resolve(toolKind_, language);
+        if (ride_can_compile(kind, language) == 0) {
+            what_->Text = FromUtf8(ride_refusal(kind, language));
             return;
         }
 
@@ -3012,7 +3012,7 @@ private:
 
         console_->Text =
             "$ " +
-            FromUtf8(rstudio_shown_command(project_, reinterpret_cast<const char*>(cc1),
+            FromUtf8(ride_shown_command(project_, reinterpret_cast<const char*>(cc1),
                                        reinterpret_cast<const char*>(cl),
                                        reinterpret_cast<const char*>(shc),
                                        reinterpret_cast<const char*>(cxx1), kind,
@@ -3022,21 +3022,21 @@ private:
         panel_->SelectedIndex = 0;
         Application::DoEvents();
 
-        RStudioBuild* built = rstudio_build(project_, reinterpret_cast<const char*>(cc1),
+        RIDEBuild* built = ride_build(project_, reinterpret_cast<const char*>(cc1),
                                     reinterpret_cast<const char*>(cl),
                                        reinterpret_cast<const char*>(shc),
                                        reinterpret_cast<const char*>(cxx1), kind,
                                     reinterpret_cast<const char*>(source), language,
                                     reinterpret_cast<const char*>(arch), config_);
 
-        console_->Text += FromUtf8(rstudio_build_output(built))->Replace("\n", "\r\n");
+        console_->Text += FromUtf8(ride_build_output(built))->Replace("\n", "\r\n");
         ShowConsoleEnd();
 
-        if (rstudio_build_has_error(built) != 0) {
-            int line = rstudio_build_error_line(built);
-            int column = rstudio_build_error_column(built);
-            String^ message = FromUtf8(rstudio_build_error_message(built));
-            rstudio_build_free(built);
+        if (ride_build_has_error(built) != 0) {
+            int line = ride_build_error_line(built);
+            int column = ride_build_error_column(built);
+            String^ message = FromUtf8(ride_build_error_message(built));
+            ride_build_free(built);
 
             RememberError(line, column, message, nullptr);
             GoTo(line, column);
@@ -3045,17 +3045,17 @@ private:
             return;
         }
 
-        if (rstudio_build_ok(built) == 0) {
-            what_->Text = FromUtf8(rstudio_toolchain_name(kind)) + " failed - see the console";
-            rstudio_build_free(built);
+        if (ride_build_ok(built) == 0) {
+            what_->Text = FromUtf8(ride_toolchain_name(kind)) + " failed - see the console";
+            ride_build_free(built);
             return;
         }
 
-        String^ produced = FromUtf8(rstudio_build_assembly(built));
+        String^ produced = FromUtf8(ride_build_assembly(built));
         assembly_->Text = produced->Replace("\n", "\r\n");
         SayDebugTab(produced);
-        int lines = rstudio_build_assembly_lines(built);
-        rstudio_build_free(built);
+        int lines = ride_build_assembly_lines(built);
+        ride_build_free(built);
 
         panel_->SelectedIndex = 2;
         what_->Text = String::Format("{0} lines of assembly", lines);
@@ -3074,10 +3074,10 @@ private:
         {
             array<Byte>^ askBytes = Utf8Of(path_);
             pin_ptr<Byte> ask = &askBytes[0];
-            int of = rstudio_project_runs_as_project(project_, reinterpret_cast<const char*>(ask));
+            int of = ride_project_runs_as_project(project_, reinterpret_cast<const char*>(ask));
             if (of > 0) {
                 what_->Text = System::IO::Path::GetFileName(path_) + " is one of " + of +
-                              " sources of " + FromUtf8(rstudio_project_name(project_)) +
+                              " sources of " + FromUtf8(ride_project_name(project_)) +
                               " - running the project";
                 BuildProject(true);
                 return;
@@ -3085,9 +3085,9 @@ private:
         }
 
         int language = LanguageNow();
-        int kind = rstudio_resolve(toolKind_, language);
-        if (rstudio_can_compile(kind, language) == 0) {
-            what_->Text = FromUtf8(rstudio_refusal(kind, language));
+        int kind = ride_resolve(toolKind_, language);
+        if (ride_can_compile(kind, language) == 0) {
+            what_->Text = FromUtf8(ride_refusal(kind, language));
             return;
         }
 
@@ -3104,14 +3104,14 @@ private:
         array<Byte>^ archBytes = Utf8Of(arch_);
         pin_ptr<Byte> arch = &archBytes[0];
 
-        if (rstudio_runs_here(kind, reinterpret_cast<const char*>(arch)) == 0) {
-            what_->Text = FromUtf8(rstudio_why_not_run(kind, reinterpret_cast<const char*>(arch)));
+        if (ride_runs_here(kind, reinterpret_cast<const char*>(arch)) == 0) {
+            what_->Text = FromUtf8(ride_why_not_run(kind, reinterpret_cast<const char*>(arch)));
             return;
         }
 
         console_->Text =
             "$ " +
-            FromUtf8(rstudio_shown_run_command(project_, reinterpret_cast<const char*>(cc1),
+            FromUtf8(ride_shown_run_command(project_, reinterpret_cast<const char*>(cc1),
                                            reinterpret_cast<const char*>(cl),
                                        reinterpret_cast<const char*>(shc),
                                        reinterpret_cast<const char*>(cxx1), kind,
@@ -3121,21 +3121,21 @@ private:
         panel_->SelectedIndex = 0;
         Application::DoEvents();
 
-        RStudioRan* ran = rstudio_run(project_, reinterpret_cast<const char*>(cc1),
+        RIDERan* ran = ride_run(project_, reinterpret_cast<const char*>(cc1),
                               reinterpret_cast<const char*>(cl),
                                        reinterpret_cast<const char*>(shc),
                                        reinterpret_cast<const char*>(cxx1), kind,
                               reinterpret_cast<const char*>(source), language,
                               reinterpret_cast<const char*>(arch), config_);
 
-        console_->Text += FromUtf8(rstudio_ran_output(ran))->Replace("\n", "\r\n");
+        console_->Text += FromUtf8(ride_ran_output(ran))->Replace("\n", "\r\n");
         ShowConsoleEnd();
 
-        if (rstudio_ran_has_error(ran) != 0) {
-            int line = rstudio_ran_error_line(ran);
-            int column = rstudio_ran_error_column(ran);
-            String^ message = FromUtf8(rstudio_ran_error_message(ran));
-            rstudio_run_free(ran);
+        if (ride_ran_has_error(ran) != 0) {
+            int line = ride_ran_error_line(ran);
+            int column = ride_ran_error_column(ran);
+            String^ message = FromUtf8(ride_ran_error_message(ran));
+            ride_run_free(ran);
 
             RememberError(line, column, message, nullptr);
             GoTo(line, column);
@@ -3144,14 +3144,14 @@ private:
             return;
         }
 
-        if (rstudio_ran_built(ran) == 0) {
-            what_->Text = FromUtf8(rstudio_toolchain_name(kind)) + " built no program - see the console";
-            rstudio_run_free(ran);
+        if (ride_ran_built(ran) == 0) {
+            what_->Text = FromUtf8(ride_toolchain_name(kind)) + " built no program - see the console";
+            ride_run_free(ran);
             return;
         }
 
-        int status = rstudio_ran_status(ran);
-        rstudio_run_free(ran);
+        int status = ride_ran_status(ran);
+        ride_run_free(ran);
 
         console_->Text += String::Format("\r\n[program returned {0}]\r\n", status);
         ShowConsoleEnd();
@@ -3166,9 +3166,9 @@ private:
         if (busy_) { what_->Text = "still working - give it a moment"; return; }
         ForgetError();
 
-        if (rstudio_project_target_ready(project_) == 0) {
-            String^ why = FromUtf8(rstudio_project_target_why(project_));
-            String^ detail = FromUtf8(rstudio_project_target_detail(project_));
+        if (ride_project_target_ready(project_) == 0) {
+            String^ why = FromUtf8(ride_project_target_why(project_));
+            String^ detail = FromUtf8(ride_project_target_detail(project_));
             what_->Text = why;
             console_->Text = detail->Length > 0 ? why + "\r\n\r\n" + detail : why;
             panel_->SelectedIndex = 0;
@@ -3199,66 +3199,66 @@ private:
         // `virtual` as C and said "expected a type" while the status bar,
         // resolving the open file on its own, still showed cxx1. The check and
         // the header ask the same question of each part that buildParts will.
-        int parts = rstudio_project_target_parts(project_);
+        int parts = ride_project_target_parts(project_);
         System::Collections::Generic::List<String^>^ compilers =
             gcnew System::Collections::Generic::List<String^>();
         for (int i = 0; i < parts; ++i) {
-            int partLang = rstudio_project_part_language(project_, i);
-            int partKind = rstudio_project_part_toolchain(
+            int partLang = ride_project_part_language(project_, i);
+            int partKind = ride_project_part_toolchain(
                 project_, i, reinterpret_cast<const char*>(cc1),
                 reinterpret_cast<const char*>(cl), reinterpret_cast<const char*>(shc),
                 reinterpret_cast<const char*>(cxx1), toolKind_);
-            if (rstudio_can_compile(partKind, partLang) == 0) {
-                what_->Text = FromUtf8(rstudio_refusal(partKind, partLang));
+            if (ride_can_compile(partKind, partLang) == 0) {
+                what_->Text = FromUtf8(ride_refusal(partKind, partLang));
                 return;
             }
-            if (andRun && rstudio_runs_here(partKind, reinterpret_cast<const char*>(arch)) == 0) {
+            if (andRun && ride_runs_here(partKind, reinterpret_cast<const char*>(arch)) == 0) {
                 what_->Text =
-                    FromUtf8(rstudio_why_not_run(partKind, reinterpret_cast<const char*>(arch)));
+                    FromUtf8(ride_why_not_run(partKind, reinterpret_cast<const char*>(arch)));
                 return;
             }
-            String^ word = FromUtf8(rstudio_toolchain_name(partKind));
+            String^ word = FromUtf8(ride_toolchain_name(partKind));
             if (!compilers->Contains(word)) compilers->Add(word);
         }
 
-        String^ program = FromUtf8(rstudio_project_target_program(project_));
-        int howMany = rstudio_project_target_sources(project_);
+        String^ program = FromUtf8(ride_project_target_program(project_));
+        int howMany = ride_project_target_sources(project_);
 
         System::Text::StringBuilder^ said = gcnew System::Text::StringBuilder();
         said->Append("$ " + String::Join(", ", compilers->ToArray()) + " " + howMany +
                      (howMany == 1 ? " source -o " : " sources -o ") + program + "\r\n");
         for (int i = 0; i < howMany; ++i)
-            said->Append("    " + FromUtf8(rstudio_project_target_source(project_, i)) + "\r\n");
+            said->Append("    " + FromUtf8(ride_project_target_source(project_, i)) + "\r\n");
         console_->Text = said->ToString();
         panel_->SelectedIndex = 0;
         what_->Text = "building " + System::IO::Path::GetFileName(program) + " ...";
         Application::DoEvents();
 
-        RStudioBuild* made = rstudio_build_target(project_, reinterpret_cast<const char*>(cc1),
+        RIDEBuild* made = ride_build_target(project_, reinterpret_cast<const char*>(cc1),
                                           reinterpret_cast<const char*>(cl),
                                        reinterpret_cast<const char*>(shc),
                                        reinterpret_cast<const char*>(cxx1), toolKind_,
                                           reinterpret_cast<const char*>(arch), config_);
         if (made == nullptr) {
-            what_->Text = FromUtf8(rstudio_project_target_why(project_));
+            what_->Text = FromUtf8(ride_project_target_why(project_));
             return;
         }
 
-        console_->Text += FromUtf8(rstudio_build_output(made))->Replace("\n", "\r\n");
+        console_->Text += FromUtf8(ride_build_output(made))->Replace("\n", "\r\n");
         ShowConsoleEnd();
 
-        if (rstudio_build_has_error(made) != 0) {
-            int line = rstudio_build_error_line(made);
-            int column = rstudio_build_error_column(made);
-            String^ message = FromUtf8(rstudio_build_error_message(made));
-            String^ where = FromUtf8(rstudio_build_error_file(made));
-            rstudio_build_free(made);
+        if (ride_build_has_error(made) != 0) {
+            int line = ride_build_error_line(made);
+            int column = ride_build_error_column(made);
+            String^ message = FromUtf8(ride_build_error_message(made));
+            String^ where = FromUtf8(ride_build_error_file(made));
+            ride_build_free(made);
 
             if (where->Length > 0) {
                 if (!System::IO::Path::IsPathRooted(where)) {
                     array<Byte>^ relative = Utf8Of(where);
                     pin_ptr<Byte> relativePin = &relative[0];
-                    where = FromUtf8(rstudio_project_absolute(
+                    where = FromUtf8(ride_project_absolute(
                         project_, reinterpret_cast<const char*>(relativePin)));
                 }
                 if (System::IO::File::Exists(where)) OpenPath(where);
@@ -3273,8 +3273,8 @@ private:
             return;
         }
 
-        bool ok = rstudio_build_ok(made) != 0;
-        rstudio_build_free(made);
+        bool ok = ride_build_ok(made) != 0;
+        ride_build_free(made);
 
         if (!ok) {
             what_->Text = String::Join(", ", compilers->ToArray()) +
@@ -3292,10 +3292,10 @@ private:
 
         array<Byte>^ programBytes = Utf8Of(program);
         pin_ptr<Byte> programPin = &programBytes[0];
-        RStudioRan* ran = rstudio_run_built(reinterpret_cast<const char*>(programPin));
-        console_->Text += FromUtf8(rstudio_ran_output(ran))->Replace("\n", "\r\n");
-        int status = rstudio_ran_status(ran);
-        rstudio_run_free(ran);
+        RIDERan* ran = ride_run_built(reinterpret_cast<const char*>(programPin));
+        console_->Text += FromUtf8(ride_ran_output(ran))->Replace("\n", "\r\n");
+        int status = ride_ran_status(ran);
+        ride_run_free(ran);
 
         console_->Text += String::Format("\r\n[program returned {0}]\r\n", status);
         ShowConsoleEnd();
@@ -3344,14 +3344,14 @@ private:
                 array<Byte>^ cxx1Bytes = Utf8Of(cxx1_);
                 pin_ptr<Byte> cxx1 = &cxx1Bytes[0];
 
-                built_ = rstudio_build_program(project_, reinterpret_cast<const char*>(cc1),
+                built_ = ride_build_program(project_, reinterpret_cast<const char*>(cc1),
                                            reinterpret_cast<const char*>(cl),
                                            reinterpret_cast<const char*>(shc),
                                        reinterpret_cast<const char*>(cxx1), workKind_,
                                            reinterpret_cast<const char*>(source),
                                            workLanguage_,
                                            reinterpret_cast<const char*>(arch), config_);
-                workResult_ = rstudio_program_ok(built_);
+                workResult_ = ride_program_ok(built_);
                 break;
             }
             case WorkBuildTarget: {
@@ -3365,13 +3365,13 @@ private:
                 array<Byte>^ cxx1Bytes = Utf8Of(cxx1_);
                 pin_ptr<Byte> cxx1 = &cxx1Bytes[0];
 
-                targetBuilt_ = rstudio_build_target(project_, reinterpret_cast<const char*>(cc1),
+                targetBuilt_ = ride_build_target(project_, reinterpret_cast<const char*>(cc1),
                                                 reinterpret_cast<const char*>(cl),
                                                 reinterpret_cast<const char*>(shc),
                                        reinterpret_cast<const char*>(cxx1),
                                                 toolKind_,
                                                 reinterpret_cast<const char*>(arch), config_);
-                workResult_ = (targetBuilt_ != nullptr && rstudio_build_ok(targetBuilt_) != 0)
+                workResult_ = (targetBuilt_ != nullptr && ride_build_ok(targetBuilt_) != 0)
                                   ? 1 : 0;
                 break;
             }
@@ -3379,16 +3379,16 @@ private:
 
                 array<Byte>^ programBytes = Utf8Of(workProgram_);
                 pin_ptr<Byte> program = &programBytes[0];
-                workResult_ = rstudio_debugger_start(debugger_, workKind_,
+                workResult_ = ride_debugger_start(debugger_, workKind_,
                                                  reinterpret_cast<const char*>(arch),
                                                  reinterpret_cast<const char*>(program));
                 break;
             }
-            case WorkGo:       rstudio_debugger_run(debugger_); break;
-            case WorkResume:   rstudio_debugger_resume(debugger_); break;
-            case WorkStepOver: rstudio_debugger_step_over(debugger_); break;
-            case WorkStepInto: rstudio_debugger_step_into(debugger_); break;
-            case WorkStepOut:  rstudio_debugger_step_out(debugger_); break;
+            case WorkGo:       ride_debugger_run(debugger_); break;
+            case WorkResume:   ride_debugger_resume(debugger_); break;
+            case WorkStepOver: ride_debugger_step_over(debugger_); break;
+            case WorkStepInto: ride_debugger_step_into(debugger_); break;
+            case WorkStepOut:  ride_debugger_step_out(debugger_); break;
             default: break;
         }
     }
@@ -3438,14 +3438,14 @@ private:
 
         if (lines->Contains(line)) {
             lines->Remove(line);
-            if (rstudio_debugger_running(debugger_) != 0) SetEveryBreakpoint();
+            if (ride_debugger_running(debugger_) != 0) SetEveryBreakpoint();
             what_->Text = String::Format("breakpoint off line {0}", line);
         } else {
             lines->Add(line);
-            if (rstudio_debugger_running(debugger_) != 0) {
+            if (ride_debugger_running(debugger_) != 0) {
                 array<Byte>^ bytes = Utf8Of(path_);
                 pin_ptr<Byte> pinned = &bytes[0];
-                rstudio_debugger_break(debugger_, reinterpret_cast<const char*>(pinned), line);
+                ride_debugger_break(debugger_, reinterpret_cast<const char*>(pinned), line);
             }
             what_->Text = String::Format("breakpoint on line {0}", line);
         }
@@ -3453,7 +3453,7 @@ private:
     }
 
     void SetEveryBreakpoint() {
-        rstudio_debugger_clear(debugger_);
+        ride_debugger_clear(debugger_);
         for each (System::Collections::Generic::KeyValuePair<String^,
                       System::Collections::Generic::List<int>^> pair in breaks_) {
             String^ named = nullptr;
@@ -3461,7 +3461,7 @@ private:
             array<Byte>^ bytes = Utf8Of(named);
             pin_ptr<Byte> pinned = &bytes[0];
             for each (int line in pair.Value)
-                rstudio_debugger_break(debugger_, reinterpret_cast<const char*>(pinned), line);
+                ride_debugger_break(debugger_, reinterpret_cast<const char*>(pinned), line);
         }
     }
 
@@ -3469,7 +3469,7 @@ private:
     void OnDebugProject(Object^, EventArgs^) { Debug(true); }
 
     void Debug(bool project) {
-        if (rstudio_debugger_running(debugger_) != 0) {
+        if (ride_debugger_running(debugger_) != 0) {
 
             if (!WhileBusy(WorkResume)) return;
             ShowStop();
@@ -3494,102 +3494,102 @@ private:
 
         if (project) {
 
-            if (rstudio_project_target_ready(project_) == 0) {
-                String^ why = FromUtf8(rstudio_project_target_why(project_));
-                String^ detail = FromUtf8(rstudio_project_target_detail(project_));
+            if (ride_project_target_ready(project_) == 0) {
+                String^ why = FromUtf8(ride_project_target_why(project_));
+                String^ detail = FromUtf8(ride_project_target_detail(project_));
                 what_->Text = why;
                 console_->Text = detail->Length > 0 ? why + "\r\n\r\n" + detail : why;
                 panel_->SelectedIndex = 0;
                 return;
             }
             SaveEveryDirty();
-            language = rstudio_project_target_language(project_);
+            language = ride_project_target_language(project_);
 
-            if (rstudio_project_debug_plan(project_, reinterpret_cast<const char*>(cc1),
+            if (ride_project_debug_plan(project_, reinterpret_cast<const char*>(cc1),
                                        reinterpret_cast<const char*>(cl),
                                        reinterpret_cast<const char*>(shc),
                                        reinterpret_cast<const char*>(cxx1), toolKind_,
                                        reinterpret_cast<const char*>(arch)) == 0) {
-                what_->Text = FromUtf8(rstudio_project_why_not_debug(project_));
+                what_->Text = FromUtf8(ride_project_why_not_debug(project_));
                 return;
             }
-            kind = rstudio_project_debug_kind(project_);
+            kind = ride_project_debug_kind(project_);
         } else {
             if (path_ == nullptr) { what_->Text = "open a file first"; return; }
             OnSave(nullptr, nullptr);
 
             language = LanguageNow();
-            kind = rstudio_resolve(toolKind_, language);
-            if (rstudio_can_compile(kind, language) == 0) {
-                what_->Text = FromUtf8(rstudio_refusal(kind, language));
+            kind = ride_resolve(toolKind_, language);
+            if (ride_can_compile(kind, language) == 0) {
+                what_->Text = FromUtf8(ride_refusal(kind, language));
                 return;
             }
 
-            if (rstudio_debugger_stops_itself(kind) == 0 &&
-                rstudio_debugger_for(kind, reinterpret_cast<const char*>(arch)) == 0) {
+            if (ride_debugger_stops_itself(kind) == 0 &&
+                ride_debugger_for(kind, reinterpret_cast<const char*>(arch)) == 0) {
                 what_->Text = FromUtf8(
-                    rstudio_no_debugger_because(kind, reinterpret_cast<const char*>(arch)));
+                    ride_no_debugger_because(kind, reinterpret_cast<const char*>(arch)));
                 return;
             }
         }
 
-        if (rstudio_runs_here(kind, reinterpret_cast<const char*>(arch)) == 0) {
-            what_->Text = FromUtf8(rstudio_why_not_run(kind, reinterpret_cast<const char*>(arch)));
+        if (ride_runs_here(kind, reinterpret_cast<const char*>(arch)) == 0) {
+            what_->Text = FromUtf8(ride_why_not_run(kind, reinterpret_cast<const char*>(arch)));
             return;
         }
-        if (config_ != RSTUDIO_CONFIG_DEBUG) {
+        if (config_ != RIDE_CONFIG_DEBUG) {
 
             what_->Text =
-                FromUtf8(rstudio_release_cannot_stop(kind)) + " - choose Debug build, then F8";
+                FromUtf8(ride_release_cannot_stop(kind)) + " - choose Debug build, then F8";
             return;
         }
 
         console_->Text = project ? "$ building the project for the debugger\r\n"
                                  : "$ building for the debugger\r\n";
         if (project) {
-            int howMany = rstudio_project_target_sources(project_);
+            int howMany = ride_project_target_sources(project_);
             for (int i = 0; i < howMany; ++i)
                 console_->Text += "    " +
-                    FromUtf8(rstudio_project_target_source(project_, i)) + "\r\n";
+                    FromUtf8(ride_project_target_source(project_, i)) + "\r\n";
 
-            int blind = rstudio_project_blind_groups(project_);
+            int blind = ride_project_blind_groups(project_);
             for (int i = 0; i < blind; ++i)
-                console_->Text += "  (" + FromUtf8(rstudio_project_blind_group(project_, i)) +
+                console_->Text += "  (" + FromUtf8(ride_project_blind_group(project_, i)) +
                     " carries no debug information - the debugger cannot stop in it)\r\n";
         }
         panel_->SelectedIndex = 0;
         what_->Text = "building for the debugger ...";
         Application::DoEvents();
 
-        if (built_ != nullptr) { rstudio_program_free(built_); built_ = nullptr; }
-        if (targetBuilt_ != nullptr) { rstudio_build_free(targetBuilt_); targetBuilt_ = nullptr; }
+        if (built_ != nullptr) { ride_program_free(built_); built_ = nullptr; }
+        if (targetBuilt_ != nullptr) { ride_build_free(targetBuilt_); targetBuilt_ = nullptr; }
 
         workKind_ = kind;
         workLanguage_ = language;
         if (!WhileBusy(project ? WorkBuildTarget : WorkBuild)) return;
 
         if (project && targetBuilt_ == nullptr) {
-            what_->Text = FromUtf8(rstudio_project_target_why(project_));
+            what_->Text = FromUtf8(ride_project_target_why(project_));
             return;
         }
 
-        console_->Text += FromUtf8(project ? rstudio_build_output(targetBuilt_)
-                                           : rstudio_program_output(built_))->Replace("\n", "\r\n");
+        console_->Text += FromUtf8(project ? ride_build_output(targetBuilt_)
+                                           : ride_program_output(built_))->Replace("\n", "\r\n");
         ShowConsoleEnd();
 
         if (workResult_ == 0) { DebugBuildFailed(project, kind); return; }
 
-        workProgram_ = project ? FromUtf8(rstudio_project_target_program(project_))
-                               : FromUtf8(rstudio_program_path(built_));
+        workProgram_ = project ? FromUtf8(ride_project_target_program(project_))
+                               : FromUtf8(ride_program_path(built_));
 
-        what_->Text = rstudio_debugger_stops_itself(kind) != 0
+        what_->Text = ride_debugger_stops_itself(kind) != 0
                           ? "starting the program ..."
                           : "starting the debugger ...";
         if (!WhileBusy(WorkStart)) return;
         if (workResult_ == 0) {
 
             what_->Text =
-                FromUtf8(rstudio_why_it_did_not_start(kind, reinterpret_cast<const char*>(arch)));
+                FromUtf8(ride_why_it_did_not_start(kind, reinterpret_cast<const char*>(arch)));
             EndDebugging();
             return;
         }
@@ -3600,22 +3600,22 @@ private:
     }
 
     void DebugBuildFailed(bool project, int kind) {
-        bool told = project ? rstudio_build_has_error(targetBuilt_) != 0
-                            : rstudio_program_has_error(built_) != 0;
+        bool told = project ? ride_build_has_error(targetBuilt_) != 0
+                            : ride_program_has_error(built_) != 0;
         if (told) {
-            int line = project ? rstudio_build_error_line(targetBuilt_)
-                               : rstudio_program_error_line(built_);
-            int column = project ? rstudio_build_error_column(targetBuilt_)
-                                 : rstudio_program_error_column(built_);
-            String^ message = FromUtf8(project ? rstudio_build_error_message(targetBuilt_)
-                                               : rstudio_program_error_message(built_));
-            String^ where = project ? FromUtf8(rstudio_build_error_file(targetBuilt_)) : nullptr;
+            int line = project ? ride_build_error_line(targetBuilt_)
+                               : ride_program_error_line(built_);
+            int column = project ? ride_build_error_column(targetBuilt_)
+                                 : ride_program_error_column(built_);
+            String^ message = FromUtf8(project ? ride_build_error_message(targetBuilt_)
+                                               : ride_program_error_message(built_));
+            String^ where = project ? FromUtf8(ride_build_error_file(targetBuilt_)) : nullptr;
 
             if (where != nullptr && where->Length > 0) {
                 if (!System::IO::Path::IsPathRooted(where)) {
                     array<Byte>^ relative = Utf8Of(where);
                     pin_ptr<Byte> relativePin = &relative[0];
-                    where = FromUtf8(rstudio_project_absolute(
+                    where = FromUtf8(ride_project_absolute(
                         project_, reinterpret_cast<const char*>(relativePin)));
                 }
                 if (System::IO::File::Exists(where)) OpenPath(where);
@@ -3626,14 +3626,14 @@ private:
             panel_->SelectedIndex = 0;
             what_->Text = String::Format("{0}:{1}: error: {2}", line, column, message);
         } else {
-            what_->Text = FromUtf8(rstudio_toolchain_name(kind)) +
+            what_->Text = FromUtf8(ride_toolchain_name(kind)) +
                           " built no program - see the console";
         }
         EndDebugging();
     }
 
     void OnDebugMenuOpening(Object^, EventArgs^) {
-        bool itsOwn = rstudio_debugging_shalimar(debugger_) != 0;
+        bool itsOwn = ride_debugging_shalimar(debugger_) != 0;
         upTheStack_->Enabled = !itsOwn;
         downTheStack_->Enabled = !itsOwn;
         watchItem_->Enabled = !itsOwn;
@@ -3647,7 +3647,7 @@ private:
     void OnFrameDown(Object^, EventArgs^) { LookAlongStack(-1); }
 
     void Step(int how) {
-        if (rstudio_debugger_running(debugger_) == 0) {
+        if (ride_debugger_running(debugger_) == 0) {
             what_->Text = "nothing is running - F8 starts it";
             return;
         }
@@ -3657,7 +3657,7 @@ private:
     }
 
     void OnDebugStop(Object^, EventArgs^) {
-        if (rstudio_debugger_running(debugger_) == 0) {
+        if (ride_debugger_running(debugger_) == 0) {
             what_->Text = "nothing is running";
             return;
         }
@@ -3666,10 +3666,10 @@ private:
     }
 
     void EndDebugging() {
-        rstudio_debugger_stop(debugger_);
+        ride_debugger_stop(debugger_);
 
-        if (built_ != nullptr) { rstudio_program_free(built_); built_ = nullptr; }
-        if (targetBuilt_ != nullptr) { rstudio_build_free(targetBuilt_); targetBuilt_ = nullptr; }
+        if (built_ != nullptr) { ride_program_free(built_); built_ = nullptr; }
+        if (targetBuilt_ != nullptr) { ride_build_free(targetBuilt_); targetBuilt_ = nullptr; }
         workProgram_ = nullptr;
         stopFile_ = nullptr;
         stopLine_ = 0;
@@ -3681,7 +3681,7 @@ private:
 
     void ShowStop() {
 
-        String^ printed = Lines(FromUtf8(rstudio_stop_output(debugger_)));
+        String^ printed = Lines(FromUtf8(ride_stop_output(debugger_)));
         if (!String::IsNullOrEmpty(printed)) {
             console_->AppendText(printed);
             ShowConsoleEnd();
@@ -3689,8 +3689,8 @@ private:
 
         panel_->SelectedIndex = 1;
 
-        if (rstudio_stop_exited(debugger_) != 0) {
-            int status = rstudio_stop_status(debugger_);
+        if (ride_stop_exited(debugger_) != 0) {
+            int status = ride_stop_status(debugger_);
             debug_->Text = String::Format(
                 "the program ran to the end and returned {0}\r\n\r\n"
                 "F8 starts it again. The breakpoints are still where you put them.", status);
@@ -3699,10 +3699,10 @@ private:
             return;
         }
 
-        if (rstudio_stop_stopped(debugger_) == 0) {
-            String^ heard = Lines(FromUtf8(rstudio_stop_said(debugger_)));
+        if (ride_stop_stopped(debugger_) == 0) {
+            String^ heard = Lines(FromUtf8(ride_stop_said(debugger_)));
 
-            if (rstudio_stop_no_source(debugger_) != 0) {
+            if (ride_stop_no_source(debugger_) != 0) {
                 stopFile_ = nullptr;
                 stopLine_ = 0;
                 lookingFile_ = nullptr;
@@ -3726,9 +3726,9 @@ private:
             return;
         }
 
-        stopFile_ = FromUtf8(rstudio_stop_file(debugger_));
-        stopLine_ = rstudio_stop_line(debugger_);
-        String^ function = FromUtf8(rstudio_stop_function(debugger_));
+        stopFile_ = FromUtf8(ride_stop_file(debugger_));
+        stopLine_ = ride_stop_line(debugger_);
+        String^ function = FromUtf8(ride_stop_function(debugger_));
 
         if (path_ != nullptr && stopLine_ > 0 &&
             System::IO::Path::GetFileName(stopFile_) == System::IO::Path::GetFileName(path_)) {
@@ -3783,35 +3783,35 @@ private:
         System::Text::StringBuilder^ said = gcnew System::Text::StringBuilder();
         said->AppendFormat("{0}\r\n\r\n", StopLine());
 
-        String^ looking = FromUtf8(rstudio_looking_text(debugger_));
+        String^ looking = FromUtf8(ride_looking_text(debugger_));
         if (looking->Length > 0) said->AppendFormat("{0}\r\n\r\n", looking);
 
-        int howMany = rstudio_locals_count(debugger_);
+        int howMany = ride_locals_count(debugger_);
         if (howMany == 0) {
 
-            said->AppendFormat("{0}\r\n", FromUtf8(rstudio_locals_none_because(debugger_)));
+            said->AppendFormat("{0}\r\n", FromUtf8(ride_locals_none_because(debugger_)));
         } else {
             for (int i = 0; i < howMany; ++i)
-                said->AppendFormat("{0}\r\n", FromUtf8(rstudio_local_text(debugger_, i)));
+                said->AppendFormat("{0}\r\n", FromUtf8(ride_local_text(debugger_, i)));
         }
 
-        int watching = rstudio_watch_count(debugger_);
+        int watching = ride_watch_count(debugger_);
         if (watching > 0) {
             said->Append("\r\nwatching\r\n");
             for (int i = 0; i < watching; ++i)
-                said->AppendFormat("{0}\r\n", FromUtf8(rstudio_watch_text(debugger_, i)));
+                said->AppendFormat("{0}\r\n", FromUtf8(ride_watch_text(debugger_, i)));
         }
 
-        int deep = rstudio_stack_count(debugger_);
+        int deep = ride_stack_count(debugger_);
         if (deep > 1) {
             said->Append("\r\ncalled from\r\n");
             for (int i = 1; i < deep; ++i)
-                said->AppendFormat("{0}\r\n", FromUtf8(rstudio_stack_text(debugger_, i)));
+                said->AppendFormat("{0}\r\n", FromUtf8(ride_stack_text(debugger_, i)));
         }
 
         said->Append("\r\nF8 carries on   F7 steps over   F6 steps into   F9 sets a breakpoint");
 
-        if (rstudio_debugging_shalimar(debugger_) == 0) {
+        if (ride_debugging_shalimar(debugger_) == 0) {
             said->Append("\r\nDouble-click a variable, or press enter on it, to set it");
             if (watching > 0)
                 said->Append("\r\nThe same on a watch changes it, and an empty answer drops it");
@@ -3829,7 +3829,7 @@ private:
     String^ StopLine() {
         pin_ptr<Byte> file = &Utf8Of(stopFile_)[0];
         pin_ptr<Byte> function = &Utf8Of(stopFunction_)[0];
-        return FromUtf8(rstudio_stop_line_text(reinterpret_cast<const char*>(file), stopLine_,
+        return FromUtf8(ride_stop_line_text(reinterpret_cast<const char*>(file), stopLine_,
                                            reinterpret_cast<const char*>(function)));
     }
 
@@ -3848,17 +3848,17 @@ private:
 
         String^ row_text = debug_->Lines[row];
         pin_ptr<Byte> line = &Utf8Of(row_text)[0];
-        int which = rstudio_stack_on_line(debugger_, reinterpret_cast<const char*>(line));
+        int which = ride_stack_on_line(debugger_, reinterpret_cast<const char*>(line));
 
-        if (which < 0 && rstudio_stack_count(debugger_) > 0 && row_text == StopLine()) which = 0;
+        if (which < 0 && ride_stack_count(debugger_) > 0 && row_text == StopLine()) which = 0;
 
         if (which < 0) {
 
-            int variable = rstudio_locals_on_line(debugger_,
+            int variable = ride_locals_on_line(debugger_,
                                               reinterpret_cast<const char*>(line));
             if (variable >= 0) { EditVariable(variable); return; }
 
-            int watch = rstudio_watch_on_line(debugger_, reinterpret_cast<const char*>(line));
+            int watch = ride_watch_on_line(debugger_, reinterpret_cast<const char*>(line));
             if (watch >= 0) { EditWatch(watch); return; }
 
             what_->Text = "that line is neither a frame nor a variable nor a watch";
@@ -3870,35 +3870,35 @@ private:
 
     void OnWatch(Object^, EventArgs^) {
 
-        String^ no = FromUtf8(rstudio_cannot_watch(debugger_));
+        String^ no = FromUtf8(ride_cannot_watch(debugger_));
         if (no->Length > 0) { what_->Text = no; return; }
 
         String^ what = Ask("watch expression", "");
         if (what == nullptr || what->Length == 0) { what_->Text = "nothing to watch"; return; }
 
         pin_ptr<Byte> wanted = &Utf8Of(what)[0];
-        rstudio_watch_add(debugger_, reinterpret_cast<const char*>(wanted));
+        ride_watch_add(debugger_, reinterpret_cast<const char*>(wanted));
         panel_->SelectedIndex = 1;
         if (stopLine_ > 0) WriteDebugTab();
-        what_->Text = rstudio_debugger_running(debugger_) != 0
+        what_->Text = ride_debugger_running(debugger_) != 0
                           ? "watching " + what
                           : "watching " + what + " - it is read when the program stops";
     }
 
     void EditWatch(int which) {
-        String^ was = FromUtf8(rstudio_watch_expression(debugger_, which));
+        String^ was = FromUtf8(ride_watch_expression(debugger_, which));
         String^ what = Ask("watch, or empty to drop it", was);
         if (what == nullptr) { what_->Text = was + " is still watched"; return; }
 
         pin_ptr<Byte> wanted = &Utf8Of(what)[0];
-        rstudio_watch_set(debugger_, which, reinterpret_cast<const char*>(wanted));
+        ride_watch_set(debugger_, which, reinterpret_cast<const char*>(wanted));
         WriteDebugTab();
         what_->Text = what->Length == 0 ? "stopped watching " + was : "watching " + what;
     }
 
     void EditVariable(int which) {
-        String^ name = FromUtf8(rstudio_local_name(debugger_, which));
-        String^ was = FromUtf8(rstudio_local_value(debugger_, which));
+        String^ name = FromUtf8(ride_local_name(debugger_, which));
+        String^ was = FromUtf8(ride_local_value(debugger_, which));
         if (name->Length == 0) return;
 
         String^ value = Ask(String::Format("set {0}", name), was);
@@ -3909,9 +3909,9 @@ private:
 
         pin_ptr<Byte> named = &Utf8Of(name)[0];
         pin_ptr<Byte> wanted = &Utf8Of(value)[0];
-        if (rstudio_set_variable(debugger_, reinterpret_cast<const char*>(named),
+        if (ride_set_variable(debugger_, reinterpret_cast<const char*>(named),
                              reinterpret_cast<const char*>(wanted)) == 0) {
-            String^ complaint = FromUtf8(rstudio_set_complaint(debugger_));
+            String^ complaint = FromUtf8(ride_set_complaint(debugger_));
             what_->Text = complaint->Length > 0
                               ? complaint
                               : String::Format("the debugger would not set {0}", name);
@@ -3920,24 +3920,24 @@ private:
 
         WriteDebugTab();
         what_->Text = String::Format("{0} is {1} now", name,
-                                     FromUtf8(rstudio_local_value(debugger_, which)));
+                                     FromUtf8(ride_local_value(debugger_, which)));
     }
 
     void LookAlongStack(int by) {
-        int deep = rstudio_stack_count(debugger_);
-        if (rstudio_debugger_running(debugger_) == 0 || deep == 0) {
+        int deep = ride_stack_count(debugger_);
+        if (ride_debugger_running(debugger_) == 0 || deep == 0) {
             what_->Text = "nothing is stopped, so there is no stack to walk";
             return;
         }
 
-        String^ no = FromUtf8(rstudio_cannot_walk_stack(debugger_));
+        String^ no = FromUtf8(ride_cannot_walk_stack(debugger_));
         if (no->Length > 0) { what_->Text = no; return; }
 
-        int looking = rstudio_looking_at(debugger_);
+        int looking = ride_looking_at(debugger_);
         if (by > 0) {
             if (looking + 1 >= deep) {
                 what_->Text = String::Format("nothing called {0}, which is the top",
-                                             FromUtf8(rstudio_stack_function(debugger_, deep - 1)));
+                                             FromUtf8(ride_stack_function(debugger_, deep - 1)));
                 return;
             }
             LookAt(looking + 1);
@@ -3951,15 +3951,15 @@ private:
     }
 
     void LookAt(int which) {
-        if (rstudio_debugger_look_at(debugger_, which) == 0) {
+        if (ride_debugger_look_at(debugger_, which) == 0) {
             what_->Text = "the debugger would not go to that frame";
             return;
         }
 
         WriteDebugTab();
 
-        String^ file = FromUtf8(rstudio_stack_file(debugger_, which));
-        int at = rstudio_stack_line(debugger_, which);
+        String^ file = FromUtf8(ride_stack_file(debugger_, which));
+        int at = ride_stack_line(debugger_, which);
 
         lookingFile_ = which == 0 ? nullptr : file;
         lookingLine_ = which == 0 ? 0 : at;
@@ -3970,7 +3970,7 @@ private:
         Current()->gutter->Invalidate();
         what_->Text = String::Format("{0}:{1} in {2} - {3}",
                                      System::IO::Path::GetFileName(file), at,
-                                     FromUtf8(rstudio_stack_function(debugger_, which)),
+                                     FromUtf8(ride_stack_function(debugger_, which)),
                                      which == 0 ? "back where it stopped"
                                                 : "where the call came from");
     }
@@ -4006,21 +4006,21 @@ private:
     void SayBuild() {
         if (build_ == nullptr) return;
         int language = LanguageNow();
-        int kind = rstudio_resolve(toolKind_, language);
-        String^ said = FromUtf8(rstudio_language_name(language)) + "  " +
-                       FromUtf8(rstudio_config_name(config_)) + "  " +
-                       PrettyCompiler(FromUtf8(rstudio_toolchain_name(kind)));
+        int kind = ride_resolve(toolKind_, language);
+        String^ said = FromUtf8(ride_language_name(language)) + "  " +
+                       FromUtf8(ride_config_name(config_)) + "  " +
+                       PrettyCompiler(FromUtf8(ride_toolchain_name(kind)));
 
-        if (toolKind_ == RSTUDIO_TOOL_AUTO) said += "*";
+        if (toolKind_ == RIDE_TOOL_AUTO) said += "*";
 
-        if (rstudio_uses_arch(kind) != 0) said += "  " + arch_;
+        if (ride_uses_arch(kind) != 0) said += "  " + arch_;
         build_->Text = said;
 
         // The menu-bar hint: just the compiler, in plain words and bold so it
         // stands out. It changes whenever the resolved compiler does. (The
         // status bar still marks an auto-chosen compiler with a star.)
         if (compilerHint_ != nullptr) {
-            compilerHint_->Text = PrettyCompiler(FromUtf8(rstudio_toolchain_name(kind)));
+            compilerHint_->Text = PrettyCompiler(FromUtf8(ride_toolchain_name(kind)));
         }
     }
 
@@ -4036,34 +4036,34 @@ private:
     void ShowChoices() {
         for each (ToolStripMenuItem^ one in targetItems_)
             one->Checked = String::Equals(one->Text, arch_, StringComparison::Ordinal);
-        toolAutoItem_->Checked = toolKind_ == RSTUDIO_TOOL_AUTO;
-        toolCc1Item_->Checked = toolKind_ == RSTUDIO_TOOL_CC1;
-        toolCxx1Item_->Checked = toolKind_ == RSTUDIO_TOOL_CXX1;
-        toolClItem_->Checked = toolKind_ == RSTUDIO_TOOL_MSVC;
-        toolShcItem_->Checked = toolKind_ == RSTUDIO_TOOL_SHC;
+        toolAutoItem_->Checked = toolKind_ == RIDE_TOOL_AUTO;
+        toolCc1Item_->Checked = toolKind_ == RIDE_TOOL_CC1;
+        toolCxx1Item_->Checked = toolKind_ == RIDE_TOOL_CXX1;
+        toolClItem_->Checked = toolKind_ == RIDE_TOOL_MSVC;
+        toolShcItem_->Checked = toolKind_ == RIDE_TOOL_SHC;
         if (langAutoItem_ != nullptr) {
             langAutoItem_->Checked = languageChoice_ < 0;
-            langCItem_->Checked = languageChoice_ == RSTUDIO_LANG_C;
-            langCppItem_->Checked = languageChoice_ == RSTUDIO_LANG_CPP;
-            langShalimarItem_->Checked = languageChoice_ == RSTUDIO_LANG_SHALIMAR;
-            langJsonItem_->Checked = languageChoice_ == RSTUDIO_LANG_JSON;
-            langTextItem_->Checked = languageChoice_ == RSTUDIO_LANG_PLAIN;
+            langCItem_->Checked = languageChoice_ == RIDE_LANG_C;
+            langCppItem_->Checked = languageChoice_ == RIDE_LANG_CPP;
+            langShalimarItem_->Checked = languageChoice_ == RIDE_LANG_SHALIMAR;
+            langJsonItem_->Checked = languageChoice_ == RIDE_LANG_JSON;
+            langTextItem_->Checked = languageChoice_ == RIDE_LANG_PLAIN;
         }
-        debugConfigItem_->Checked = config_ == RSTUDIO_CONFIG_DEBUG;
-        releaseConfigItem_->Checked = config_ == RSTUDIO_CONFIG_RELEASE;
+        debugConfigItem_->Checked = config_ == RIDE_CONFIG_DEBUG;
+        releaseConfigItem_->Checked = config_ == RIDE_CONFIG_RELEASE;
         SayBuild();
     }
 
     void NextConfig() {
-        if (config_ == RSTUDIO_CONFIG_DEBUG) OnReleaseConfig(nullptr, nullptr);
+        if (config_ == RIDE_CONFIG_DEBUG) OnReleaseConfig(nullptr, nullptr);
         else OnDebugConfig(nullptr, nullptr);
     }
 
     void NextTool() {
-        if (toolKind_ == RSTUDIO_TOOL_AUTO) OnToolCc1(nullptr, nullptr);
-        else if (toolKind_ == RSTUDIO_TOOL_CC1) OnToolCxx1(nullptr, nullptr);
-        else if (toolKind_ == RSTUDIO_TOOL_CXX1) OnToolShc(nullptr, nullptr);
-        else if (toolKind_ == RSTUDIO_TOOL_SHC) OnToolCl(nullptr, nullptr);
+        if (toolKind_ == RIDE_TOOL_AUTO) OnToolCc1(nullptr, nullptr);
+        else if (toolKind_ == RIDE_TOOL_CC1) OnToolCxx1(nullptr, nullptr);
+        else if (toolKind_ == RIDE_TOOL_CXX1) OnToolShc(nullptr, nullptr);
+        else if (toolKind_ == RIDE_TOOL_SHC) OnToolCl(nullptr, nullptr);
         else OnToolAuto(nullptr, nullptr);
     }
 
@@ -4080,14 +4080,14 @@ private:
     }
 
     void OnDebugConfig(Object^, EventArgs^) {
-        config_ = RSTUDIO_CONFIG_DEBUG;
-        rstudio_remember_configuration(config_);
+        config_ = RIDE_CONFIG_DEBUG;
+        ride_remember_configuration(config_);
         ShowChoices();
         what_->Text = "debug";
     }
     void OnReleaseConfig(Object^, EventArgs^) {
-        config_ = RSTUDIO_CONFIG_RELEASE;
-        rstudio_remember_configuration(config_);
+        config_ = RIDE_CONFIG_RELEASE;
+        ride_remember_configuration(config_);
         ShowChoices();
         what_->Text = "release";
     }
@@ -4097,15 +4097,15 @@ private:
     // the Tools menu wrote settings.json whatever was open.
     String^ WrittenToProject(int outcome) {
         if (outcome != 0) return " - written to " + System::IO::Path::GetFileName(OutcomePath());
-        return " - but " + FromUtf8(rstudio_outcome_message(project_));
+        return " - but " + FromUtf8(ride_outcome_message(project_));
     }
     void OnTarget(Object^ sender, EventArgs^) {
         arch_ = safe_cast<ToolStripMenuItem^>(sender)->Text;
         String^ said = "target: " + arch_;
-        if (project_ != nullptr && rstudio_project_loaded(project_) != 0) {
+        if (project_ != nullptr && ride_project_loaded(project_) != 0) {
             array<Byte>^ bytes = Utf8Of(arch_);
             pin_ptr<Byte> pinned = &bytes[0];
-            said += WrittenToProject(rstudio_project_set_arch(project_, reinterpret_cast<const char*>(pinned)));
+            said += WrittenToProject(ride_project_set_arch(project_, reinterpret_cast<const char*>(pinned)));
         }
         ShowChoices();
         RefreshDebugTab();
@@ -4113,20 +4113,20 @@ private:
     }
     void ChooseTool(int kind, String^ said) {
         toolKind_ = kind;
-        if (project_ != nullptr && rstudio_project_loaded(project_) != 0) {
-            said += WrittenToProject(rstudio_project_set_toolchain(project_, kind));
+        if (project_ != nullptr && ride_project_loaded(project_) != 0) {
+            said += WrittenToProject(ride_project_set_toolchain(project_, kind));
         } else {
-            rstudio_remember_default_compiler(kind);
+            ride_remember_default_compiler(kind);
         }
         ShowChoices();
         RefreshDebugTab();
         what_->Text = said;
     }
-    void OnToolAuto(Object^, EventArgs^) { ChooseTool(RSTUDIO_TOOL_AUTO, "compiler: chosen by the file"); }
-    void OnToolCc1(Object^, EventArgs^) { ChooseTool(RSTUDIO_TOOL_CC1, "compiler: cc1"); }
-    void OnToolCl(Object^, EventArgs^) { ChooseTool(RSTUDIO_TOOL_MSVC, "compiler: cl"); }
-    void OnToolCxx1(Object^, EventArgs^) { ChooseTool(RSTUDIO_TOOL_CXX1, "compiler: cxx1"); }
-    void OnToolShc(Object^, EventArgs^) { ChooseTool(RSTUDIO_TOOL_SHC, "compiler: shc"); }
+    void OnToolAuto(Object^, EventArgs^) { ChooseTool(RIDE_TOOL_AUTO, "compiler: chosen by the file"); }
+    void OnToolCc1(Object^, EventArgs^) { ChooseTool(RIDE_TOOL_CC1, "compiler: cc1"); }
+    void OnToolCl(Object^, EventArgs^) { ChooseTool(RIDE_TOOL_MSVC, "compiler: cl"); }
+    void OnToolCxx1(Object^, EventArgs^) { ChooseTool(RIDE_TOOL_CXX1, "compiler: cxx1"); }
+    void OnToolShc(Object^, EventArgs^) { ChooseTool(RIDE_TOOL_SHC, "compiler: shc"); }
 
     void ChooseLanguage(int language, String^ said) {
         languageChoice_ = language;
@@ -4145,7 +4145,7 @@ private:
         if (path_ == nullptr) { what_->Text = "open a file first"; return; }
 
         int toShalimar = 0;
-        if (rstudio_converts_from(LanguageNow(), &toShalimar) == 0) {
+        if (ride_converts_from(LanguageNow(), &toShalimar) == 0) {
             what_->Text = "c2s converts between C and Shalimar - set the language above "
                           "if that is wrong";
             return;
@@ -4154,9 +4154,9 @@ private:
         OnSave(nullptr, nullptr);
         if (path_ == nullptr) return;
 
-        char* whereRaw = rstudio_find_converter();
+        char* whereRaw = ride_find_converter();
         String^ converter = FromUtf8(whereRaw);
-        rstudio_free(whereRaw);
+        ride_free(whereRaw);
         if (converter->Length == 0) {
             what_->Text = "no c2s beside this editor - build Converter-C2S here, or set C2S";
             return;
@@ -4166,9 +4166,9 @@ private:
         pin_ptr<Byte> source = &sourceBytes[0];
 
         char* namedRaw =
-            rstudio_converted_name(reinterpret_cast<const char*>(source), toShalimar);
+            ride_converted_name(reinterpret_cast<const char*>(source), toShalimar);
         String^ produced = FromUtf8(namedRaw);
-        rstudio_free(namedRaw);
+        ride_free(namedRaw);
         if (produced->Length == 0 || String::Equals(produced, path_)) {
             what_->Text = "that would write over the file it is reading";
             return;
@@ -4184,23 +4184,23 @@ private:
         panel_->SelectedIndex = 0;
         Application::DoEvents();
 
-        RStudioConversion* made =
-            rstudio_convert(reinterpret_cast<const char*>(where),
+        RIDEConversion* made =
+            ride_convert(reinterpret_cast<const char*>(where),
                             reinterpret_cast<const char*>(source),
                             reinterpret_cast<const char*>(into), toShalimar);
 
-        console_->Text += FromUtf8(rstudio_conversion_output(made))->Replace("\n", "\r\n");
+        console_->Text += FromUtf8(ride_conversion_output(made))->Replace("\n", "\r\n");
         ShowConsoleEnd();
 
-        if (rstudio_conversion_ran(made) == 0) {
+        if (ride_conversion_ran(made) == 0) {
             what_->Text = "could not run " + converter;
-            rstudio_conversion_free(made);
+            ride_conversion_free(made);
             return;
         }
 
-        String^ written = FromUtf8(rstudio_conversion_produced(made));
-        int ok = rstudio_conversion_ok(made);
-        rstudio_conversion_free(made);
+        String^ written = FromUtf8(ride_conversion_produced(made));
+        int ok = ride_conversion_ok(made);
+        ride_conversion_free(made);
 
         if (written->Length == 0) {
             what_->Text = "nothing was written - c2s could not read or write a file";
@@ -4214,16 +4214,16 @@ private:
                   " - written with unconverted parts marked; search for BEYOND";
     }
 
-    void OnLangC(Object^, EventArgs^) { ChooseLanguage(RSTUDIO_LANG_C, "language: C"); }
-    void OnLangCpp(Object^, EventArgs^) { ChooseLanguage(RSTUDIO_LANG_CPP, "language: C++"); }
+    void OnLangC(Object^, EventArgs^) { ChooseLanguage(RIDE_LANG_C, "language: C"); }
+    void OnLangCpp(Object^, EventArgs^) { ChooseLanguage(RIDE_LANG_CPP, "language: C++"); }
     void OnLangShalimar(Object^, EventArgs^) {
-        ChooseLanguage(RSTUDIO_LANG_SHALIMAR, "language: Shalimar");
+        ChooseLanguage(RIDE_LANG_SHALIMAR, "language: Shalimar");
     }
     void OnLangJson(Object^, EventArgs^) {
-        ChooseLanguage(RSTUDIO_LANG_JSON, "language: JSON");
+        ChooseLanguage(RIDE_LANG_JSON, "language: JSON");
     }
     void OnLangText(Object^, EventArgs^) {
-        ChooseLanguage(RSTUDIO_LANG_PLAIN, "language: plain text");
+        ChooseLanguage(RIDE_LANG_PLAIN, "language: plain text");
     }
 };
 

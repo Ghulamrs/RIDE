@@ -46,9 +46,6 @@ class Project {
 public:
     Project();
 
-    static const char* fileName();
-    static const char* formerFileName();
-
     static std::string fileIn(const std::string& directory);
 
     static const char* suffix();

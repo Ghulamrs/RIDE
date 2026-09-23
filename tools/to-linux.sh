@@ -48,8 +48,8 @@ cd "$(dirname "${BASH_SOURCE[0]}")/.."
 
 KEY="${ED1_LINUX_KEY:-$HOME/Documents/Claude/myMorningWalk.pem}"
 BOX="${ED1_LINUX_BOX:-ec2-user@52.202.164.123}"
-# Its own directory, well away from ~/RStudio, that box's clone, and from
-# ~/rstudio, the sealed 3.5 tree's relay: this one is this script's to empty.
+# Its own directory, well away from ~/RIDE, that box's clone, and from
+# ~/ride, the sealed 3.5 tree's relay: this one is this script's to empty.
 DIR="${ED1_LINUX_DIR:-ride}"
 WHAT="${1:-check}"
 TMP="${TMPDIR:-/tmp}"
@@ -65,7 +65,7 @@ tar --no-mac-metadata \
     --exclude 'obj' --exclude '*.o' --exclude '*.d' --exclude '*.exe' \
     --exclude 'tests/test' --exclude 'tests/session' --exclude '* 2.*' \
     --exclude 'lib' --exclude 'x64' --exclude 'DerivedData' --exclude 'bin' \
-    -czf "$TMP/rstudio-src.tgz" \
+    -czf "$TMP/ride-src.tgz" \
     src tests winforms examples help tools docs packaging Makefile workspace.mk README.md 2>/dev/null || exit 2
 
 # ---- what it drives ---------------------------------------------------------
@@ -121,7 +121,7 @@ NAMES="cc1i cxx1i shci vm6747 asm6x masm link lnk6x c2s"
 say "copying to $BOX"
 dirs=""; for name in $NAMES; do dirs="$dirs ~/$(there $name)"; done
 "${SSH[@]}" "mkdir -p ~/$DIR $dirs && cd ~/$DIR && find . -mindepth 1 -maxdepth 1 ! -name obj -exec rm -rf {} +" || exit 2
-scp -q -i "$KEY" "$TMP/rstudio-src.tgz" "$BOX:~/$DIR/" || exit 2
+scp -q -i "$KEY" "$TMP/ride-src.tgz" "$BOX:~/$DIR/" || exit 2
 for name in $NAMES; do
     scp -q -i "$KEY" "$TMP/$name-src.tgz" "$BOX:~/$(there $name)/" || exit 2
 done
@@ -140,7 +140,7 @@ done
     # probe renamed here (899673b renamed two) stayed on the box under its
     # old name, with no recorded object beside it, and read as a disagreement.
     printf 'unpack() { cd "$1" && rm -rf tests review-probes-* && tar xzf "$2" && rm -f "$2" && find . -name "._*" -delete || exit 2; }\n'
-    printf 'unpack ~/%s rstudio-src.tgz\n' "$DIR"
+    printf 'unpack ~/%s ride-src.tgz\n' "$DIR"
     for name in $NAMES; do
         printf 'unpack ~/%s %s-src.tgz\n' "$(there $name)" "$name"
     done
@@ -164,12 +164,12 @@ run() {  # run <log> <make arguments...>
     return $rc
 }
 run build.log || { echo "the workspace build failed - see $PWD/build.log"; exit 2; }
-[ -x ./bin/RStudio.exe ] || { echo "no bin/RStudio.exe was built"; exit 2; }
+[ -x ./bin/RIDE.exe ] || { echo "no bin/RIDE.exe was built"; exit 2; }
 if [ "$WHAT" = build ]; then echo "built the workspace"; exit 0; fi
 run check.log check
 REMOTE
-} > "$TMP/rstudio-run.sh"
-scp -q -i "$KEY" "$TMP/rstudio-run.sh" "$BOX:~/$DIR/rstudio-run.sh" || exit 2
+} > "$TMP/ride-run.sh"
+scp -q -i "$KEY" "$TMP/ride-run.sh" "$BOX:~/$DIR/ride-run.sh" || exit 2
 
-say "running ~/$DIR/rstudio-run.sh ($WHAT)"
-"${SSH[@]}" "sh ~/$DIR/rstudio-run.sh"
+say "running ~/$DIR/ride-run.sh ($WHAT)"
+"${SSH[@]}" "sh ~/$DIR/ride-run.sh"

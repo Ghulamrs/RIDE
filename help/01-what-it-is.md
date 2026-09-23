@@ -16,9 +16,9 @@ produced, and a breakpoint works the same whichever of the three you are in.
 
 | | runs on | what it is |
 | --- | --- | --- |
-| `RStudio.exe` | macOS, Linux | the terminal editor |
-| `RStudio.exe` | Windows | the same editor, in a window |
-| `RStudioConsole.exe` | Windows | and over the Windows console |
+| `RIDE.exe` | macOS, Linux | the terminal editor |
+| `RIDE.exe` | Windows | the same editor, in a window |
+| `RIDEConsole.exe` | Windows | and over the Windows console |
 
 **Every rule lives in `src/` and all three call it.** Laying a line out,
 colouring it, reading the project file, choosing a compiler, driving a debugger —
@@ -30,7 +30,7 @@ are worse than one editor with two windows: the "nearly" is where the bugs
 live. When something is asked for in one, the answer is to lift it into the
 core and rewire the other.
 
-The names `RStudio` and `RStudioGui` belong to the binaries. **RIDE** is what the
+The names `RIDE` and `RIDEGui` belong to the binaries. **RIDE** is what the
 pair is called, and it is what `Help ▸ About` prints.
 
 > Called *CC1 Studio Workbench* until 2026-08-22, when Shalimar became the
@@ -60,7 +60,7 @@ which is what made C the only language with a decision in it. It also gave C++
 a compiler off Windows, which it had never had: `clang++` on a Mac and `g++` on
 the Linux box, where `auto` used to route C++ to a `cl` that was not installed.
 
-And it is why the product is called RStudio. Three languages is where *CC1
+And it is why the product is called RIDE. Three languages is where *CC1
 Studio Workbench* stopped being a description.
 
 **1.2 — Shalimar borrows, and can call C.**

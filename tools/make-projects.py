@@ -7,15 +7,15 @@
 Three machines, three shapes, one idea: open one thing and get all four
 programs, with the editor built after the three it drives.
 
-    macOS    RStudio.xcworkspace          RStudio.exe, cc1i.exe, cxx1i.exe, vm6747.exe, asm6x.exe, masm.exe, link.exe, lnk6x.exe, shci.exe, c2s.exe
-    Windows  RStudio.sln                  RStudioConsole, RStudioGui, cc1i, cxx1i, vm6747, asm6x, masm, link, lnk6x, shci, c2s
+    macOS    RIDE.xcworkspace          RIDE.exe, cc1i.exe, cxx1i.exe, vm6747.exe, asm6x.exe, masm.exe, link.exe, lnk6x.exe, shci.exe, c2s.exe
+    Windows  RIDE.sln                  RIDEConsole, RIDEGui, cc1i, cxx1i, vm6747, asm6x, masm, link, lnk6x, shci, c2s
     Linux    workspace.mk                 make -f workspace.mk
 
 Was make-xcodeproj.py while Xcode was all it wrote.
 
 Three command line tools, built by clang++, from three separate repositories:
 
-    RStudio  this editor         RStudio/Editor.xcodeproj
+    RIDE  this editor         RIDE/Editor.xcodeproj
     cc1      the C compiler      ../Compiler-C/cc1.xcodeproj
     cxx1     the C++ compiler    ../C++/cxx1.xcodeproj
     shc      the Shalimar one    ../Compiler-S/shc.xcodeproj
@@ -39,7 +39,7 @@ two items that put it over the open file. It is in the group for the same
 reason the compilers are - the editor looks for what it drives beside itself,
 so all four have to be built into one place.
 
-and RStudio.xcworkspace, which opens all four at once so that a change to a
+and RIDE.xcworkspace, which opens all four at once so that a change to a
 compiler and the change to the editor that goes with it are one build and one
 issue list.
 
@@ -53,7 +53,7 @@ answer to both: it rebuilds every project in memory and compares.
 
 **Two projects are kept by hand and are checked rather than written**, because
 what is in them besides the source list cannot be derived from a Makefile:
-winforms/RStudioGui.vcxproj compiles one file managed and every other file
+winforms/RIDEGui.vcxproj compiles one file managed and every other file
 native, and Compiler-C/msvc/cc1.vcxproj belongs to another repository. Their
 source lists are compared against the Makefiles all the same - that is the part
 that drifts, and the window's had drifted the whole time nobody was checking
@@ -185,7 +185,7 @@ def headers_under(root, directories):
 EDITOR_VARIABLES = ("CORE_SRC", "TERMINAL_SRC", "SHM_SRC")
 
 
-def rstudio_sources():
+def ride_sources():
     """The editor's sources, minus the Windows terminal, which clang here cannot build."""
     names = from_makefile(HERE, EDITOR_VARIABLES)
     names = [n for n in names if not n.endswith("terminal_win.cpp")]
@@ -200,10 +200,10 @@ def rstudio_sources():
 def projects():
     return [
         {
-            "product": "RStudio.exe",
+            "product": "RIDE.exe",
             "root": HERE,
             "out": os.path.join(HERE, "Editor.xcodeproj"),
-            "sources": rstudio_sources(),
+            "sources": ride_sources(),
             "headers": headers_under(HERE, ("src",)),
             "include": "$(SRCROOT)/src",
             # The editor drives these three, so building it builds them
@@ -262,7 +262,7 @@ def projects():
             # exists to prevent. Since 3.5 the phase also writes the C6000
             # runtime, which is cxx1i's output - so cxx1i.exe is built first,
             # the ordering workspace.mk states as `make ... all tms6747
-            # CXX1=$(OUT)/cxx1i.exe` and RStudio.sln as a project dependency.
+            # CXX1=$(OUT)/cxx1i.exe` and RIDE.sln as a project dependency.
             # The path is from *this* project's directory, not the editor's:
             # "../VM6747/Compiler-Cppi" from here would be VM6747/VM6747/...,
             # and Xcode drops a reference it cannot follow without a word -
@@ -379,7 +379,7 @@ def projects():
 # the Xcode-only extras are turned off and the flag set is the Makefile's:
 # -Wall -Wextra -pedantic, as errors.
 # And the intermediates go outside the checkout. With no SYMROOT an Xcode build
-# lands in <project>/build, which is how RStudio came to hold 92 object files
+# lands in <project>/build, which is how RIDE came to hold 92 object files
 # under a target name that had been renamed away months earlier - invisible to
 # make clean, because it is not make's. $(TMPDIR) is per-user and Xcode expands
 # it from the environment.
@@ -389,8 +389,8 @@ def projects():
 # type. Where they *end up* is the install phase's business, below; SYMROOT
 # still decides where a build of one .xcodeproj on its own goes.
 COMMON = """				ALWAYS_SEARCH_USER_PATHS = NO;
-				OBJROOT = "$(TMPDIR)/rstudio-xcode";
-				SYMROOT = "$(TMPDIR)/rstudio-xcode";
+				OBJROOT = "$(TMPDIR)/ride-xcode";
+				SYMROOT = "$(TMPDIR)/ride-xcode";
 				CLANG_CXX_LANGUAGE_STANDARD = "c++14";
 				CLANG_ENABLE_OBJC_ARC = YES;
 				CLANG_WARN_IMPLICIT_SIGN_CONVERSION = NO;
@@ -424,7 +424,7 @@ COMMON = """				ALWAYS_SEARCH_USER_PATHS = NO;
 # ever expected side by side - the same assumption workspace.mk and the
 # solution already make - and an absolute path here would be one machine's.
 def build_dir(spec):
-    """Where this project's finished program goes: RStudio's own root."""
+    """Where this project's finished program goes: RIDE's own root."""
     back = os.path.relpath(HERE, spec["root"])
     return "$(SRCROOT)" if back == "." else "$(SRCROOT)/" + back
 
@@ -461,7 +461,7 @@ def project_text(spec):
     INSTALL_PHASE = i("phase", "install")
 
     # Order is the order they run in: shc's runtime after the compiler it
-    # belongs beside, then the copy that takes both to RStudio's directory.
+    # belongs beside, then the copy that takes both to RIDE's directory.
     # Only shc has a runtime, and it is the spec that says so rather than a
     # name test here; all four are copied.
     phases = []
@@ -708,6 +708,9 @@ def guid(product):
     the project file about it. Deriving it means the two cannot disagree and a
     regenerated project is the same file, which is what --check rests on.
     """
+    # **A fixed seed, not a name.** It spells the product's name from before the
+    # rename to RIDE, and it stays: change it and every project's GUID changes,
+    # in this repo's solution and in the eight sibling projects made here.
     d = hashlib.sha1(("rstudio-vcxproj:" + product).encode()).hexdigest().upper()
     return "{%s-%s-%s-%s-%s}" % (d[:8], d[8:12], d[12:16], d[16:20], d[20:32])
 
@@ -721,7 +724,7 @@ def guid(product):
 #          '...\x64\Release\lib\shmrt-x86_64-windows-debug.lib'
 #
 # which reads as a broken compiler rather than an incomplete directory. That is
-# what RStudio.sln produced until 2026-08-23, and no build and no suite could
+# what RIDE.sln produced until 2026-08-23, and no build and no suite could
 # see it: -S needs no runtime, so only pressing Run on a Shalimar file said so.
 #
 # Twice from the same sources, as Compiler-S/build.bat does it: the release
@@ -768,7 +771,7 @@ def shc_runtime_step():
     # **And the C6000 runtime, which is cxx1i's output.** Compiler-S's
     # Makefile keeps it under its own `tms6747` rule because `make` alone
     # must not need the C++ clone; here the solution builds cxx1i.exe first
-    # (shci depends on it in RStudio.sln, below) and this step wants it beside
+    # (shci depends on it in RIDE.sln, below) and this step wants it beside
     # the output. Wanted, not hoped for: a missing cxx1i.exe stops the build
     # and says so, since the alternative is an editor whose Shalimar cases
     # for the emulator are "not tried" and nothing says why. The Windows box
@@ -798,7 +801,7 @@ def shc_runtime_step():
         'lib /nologo /out:"$(OutDir)lib\shmrt-x86_64-windows-debug.lib" %s\n'
         'if errorlevel 1 exit /b 1\n'
         'if not exist "$(OutDir)cxx1i.exe" echo shc.vcxproj: no cxx1i.exe in $(OutDir) - '
-        'the C6000 runtime is its output; build RStudio.sln, which builds it first\n'
+        'the C6000 runtime is its output; build RIDE.sln, which builds it first\n'
         'if not exist "$(OutDir)cxx1i.exe" exit /b 1\n'
         'if not exist "$(OutDir)lib\\shmrt-tms6747" mkdir "$(OutDir)lib\\shmrt-tms6747"\n'
         '%s</Command>\n'
@@ -829,12 +832,12 @@ SHC_RUNTIME_FLAGS = "-std=c++14 -Wall -Wextra -Werror -pedantic -O2"
 SHC_RUNTIME_TARGET = "arm64-darwin"
 
 
-# **The four programs are copied into RStudio's own directory when they are
+# **The four programs are copied into RIDE's own directory when they are
 # built.** That is the Mac half of one binary directory on every machine -
-# `make -f workspace.mk` builds all four into $(CURDIR) there and RStudio.sln
+# `make -f workspace.mk` builds all four into $(CURDIR) there and RIDE.sln
 # builds five into x64\\Release, while the workspace alone used to leave them
 # under DerivedData. The editor finds what it drives with path::besideProgram
-# before PATH, so this is also what makes a workspace-built RStudio.exe run the
+# before PATH, so this is also what makes a workspace-built RIDE.exe run the
 # compilers it was built with rather than whichever ones are on the machine.
 #
 # **Copied, and not built there, and that is not the preference it looks
@@ -870,10 +873,10 @@ SHC_RUNTIME_TARGET = "arm64-darwin"
 # carries are not reproduced; they are for debugging the product in Xcode, and
 # that is done in the build directory, not here.
 def install_phase(spec):
-    """Copies this project's finished program into RStudio's own directory."""
+    """Copies this project's finished program into RIDE's own directory."""
     extra = spec.get("install_extra", "")
     return {
-        "name": "put the finished program in RStudio's directory",
+        "name": "put the finished program in RIDE's directory",
         "shell": ("set -e\n"
                   'dest="%s"\n' % build_dir(spec).replace("$(SRCROOT)", "$SRCROOT") +
                   'mkdir -p "$dest"\n'
@@ -956,7 +959,7 @@ def pbx_quoted(text):
                          .replace("\n", "\\n"))
 
 
-def vcxproj_text(product, sources, defines, extra="", includes=(), disabled=()):
+def vcxproj_text(product, sources, defines, extra="", includes=(), disabled=(), target=None, props=None):
     """A command line tool for MSVC, held to the same flags build.bat uses.
 
     /std:c++14 /W4 /WX /EHsc /permissive- - the same four this project has
@@ -1003,7 +1006,7 @@ def vcxproj_text(product, sources, defines, extra="", includes=(), disabled=()):
         '    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>\n'
         '  </PropertyGroup>\n'
         '  <Import Project="$(VCTargetsPath)\\Microsoft.Cpp.Default.props" />\n%s'
-        '  <Import Project="$(VCTargetsPath)\\Microsoft.Cpp.props" />\n'
+        '  <Import Project="$(VCTargetsPath)\\Microsoft.Cpp.props" />\n%s'
         '  <PropertyGroup>\n'
         '    <TargetName>%s</TargetName>\n'
         '  </PropertyGroup>\n'
@@ -1036,7 +1039,9 @@ def vcxproj_text(product, sources, defines, extra="", includes=(), disabled=()):
         '  <ItemGroup>\n%s  </ItemGroup>\n'
         '  <Import Project="$(VCTargetsPath)\\Microsoft.Cpp.targets" />\n'
         '</Project>\n'
-        % (configurations, guid(product), product, per_config, product,
+        % (configurations, guid(product), product, per_config,
+           ('  <Import Project="$(MSBuildThisFileDirectory)%s" />\n' % props) if props else "",
+           target or product,
            definitions,
            ('      <AdditionalIncludeDirectories>%s;%%(AdditionalIncludeDirectories)'
             '</AdditionalIncludeDirectories>\n' % ";".join(includes)) if includes else "",
@@ -1077,12 +1082,12 @@ def guid_in(where, what):
 
 
 CC1_GUID = cc1_guid()
-GUI_GUID = guid_in(os.path.join(HERE, "winforms", "RStudioGui.vcxproj"),
+GUI_GUID = guid_in(os.path.join(HERE, "winforms", "RIDEGui.vcxproj"),
                    "the window's own project")
 
 
 def solution_text(entries):
-    """RStudio.sln - the three, with winconsole depending on both compilers.
+    """RIDE.sln - the three, with winconsole depending on both compilers.
 
     A .sln says a dependency with ProjectSection(ProjectDependencies), which
     lists the GUIDs a project must be built after. That is the same idea as the
@@ -1140,8 +1145,8 @@ def workspace_mk_text():
 #   make -f workspace.mk check     and run every suite
 #   make -f workspace.mk clean
 #
-# This is the Linux half of what RStudio.xcworkspace is on a Mac and
-# RStudio.sln is on Windows: one thing to build, with ed1 after the two
+# This is the Linux half of what RIDE.xcworkspace is on a Mac and
+# RIDE.sln is on Windows: one thing to build, with ed1 after the two
 # compilers it drives. It does not reimplement any of their builds - it calls
 # the Makefile each repository already has, which is the only way this can stay
 # true when one of them changes.
@@ -1174,7 +1179,7 @@ LNK6X_DIR ?= ../LNK6x
 # alone is exactly what it always was. This is the only place that overrides
 # the four at once, because this is the only build that knows all four exist.
 #
-# The default is RStudio's own root, which is where RStudio.exe is built and
+# The default is RIDE's own root, which is where RIDE.exe is built and
 # therefore the directory the editor searches first: it finds the compilers it
 # drives with path::besideProgram, before PATH, so that a compiler shipped with
 # this copy is the one this copy runs.
@@ -1246,7 +1251,7 @@ lnk6x:
 editor: cc1 cxx1 vm6747 asm6x masm link lnk6x shc c2s
 	$(MAKE) BINDIR=$(OUT) OBJDIR=$(OUT)/obj/editor
 
-# Asked of RStudio rather than answered here. The editor is the thing that
+# Asked of RIDE rather than answered here. The editor is the thing that
 # knows what it drives - the list is in its own Makefile, beside the code that
 # goes looking for them - and this only calls it once all four have been
 # built into one place.
@@ -1335,7 +1340,7 @@ clean:
 
 
 def workspace_text(specs):
-    """RStudio.xcworkspace - the three projects, opened together.
+    """RIDE.xcworkspace - the three projects, opened together.
 
     The editor first, because that is what somebody is usually here for, and
     the two compilers under it in the order the editor reaches for them.
@@ -1354,7 +1359,7 @@ def workspace_text(specs):
 # is in them besides the source list is load-bearing and is not derivable from
 # any Makefile.
 #
-# winforms/RStudioGui.vcxproj is C++/CLI. One file is compiled managed and
+# winforms/RIDEGui.vcxproj is C++/CLI. One file is compiled managed and
 # every other file must be compiled native - a /clr translation unit that
 # instantiates the same templates the native ones do corrupts the heap before
 # main is reached, which is the first hazard in that directory's README. Those
@@ -1458,8 +1463,8 @@ def main():
 
     wanted = [(os.path.join(s["out"], "project.pbxproj"), project_text(s), s["product"])
               for s in specs]
-    wanted.append((os.path.join(HERE, "RStudio.xcworkspace", "contents.xcworkspacedata"),
-                   workspace_text(specs), "RStudio.xcworkspace"))
+    wanted.append((os.path.join(HERE, "RIDE.xcworkspace", "contents.xcworkspacedata"),
+                   workspace_text(specs), "RIDE.xcworkspace"))
 
     # ---- Windows -----------------------------------------------------------
     #
@@ -1472,10 +1477,11 @@ def main():
     if "src/terminal_win.cpp" not in windows_sources:
         windows_sources.append("src/terminal_win.cpp")
 
-    wanted.append((os.path.join(HERE, "RStudioConsole.vcxproj"),
-                   vcxproj_text("RStudioConsole", sorted(set(windows_sources)),
-                                ["_CRT_SECURE_NO_WARNINGS"]),
-                   "RStudioConsole.vcxproj"))
+    wanted.append((os.path.join(HERE, "RIDEConsole.vcxproj"),
+                   vcxproj_text("RIDEConsole", sorted(set(windows_sources)),
+                                ["_CRT_SECURE_NO_WARNINGS"],
+                                target="$(PRODUCT)Console", props="product.props"),
+                   "RIDEConsole.vcxproj"))
     wanted.append((os.path.join(SIBLINGS, SHC_REPO, "shc.vcxproj"),
                    vcxproj_text("shci", spec_of["shci.exe"]["sources"], ["_CRT_SECURE_NO_WARNINGS"],
                                 shc_runtime_step()),
@@ -1562,20 +1568,20 @@ def main():
         ("c2s", "../Converter-C2S/c2s.vcxproj", guid("c2s"), []),
         # the editor after both, which is the dependency this whole thing is
         # for - said in a .sln the way the workspace says it in a .xcodeproj.
-        ("RStudioConsole", "RStudioConsole.vcxproj", guid("RStudioConsole"), [CC1_GUID, guid("cxx1i"), guid("vm6747"), guid("asm6x"), guid("masm"), guid("link"), guid("lnk6x"), guid("shci"), guid("c2s")]),
+        ("RIDEConsole", "RIDEConsole.vcxproj", guid("RIDEConsole"), [CC1_GUID, guid("cxx1i"), guid("vm6747"), guid("asm6x"), guid("masm"), guid("link"), guid("lnk6x"), guid("shci"), guid("c2s")]),
         # The window, on the same footing as the console half. It is in the
         # solution for two reasons: so that one build makes all four, and
         # because being in a solution is what moves its output into the
         # solution's directory beside the rest - the C++ default does that on
         # its own, so the project file itself needs no OutDir. That matters
-        # here: winforms/RStudioGui.vcxproj carries a warning that an earlier
+        # here: winforms/RIDEGui.vcxproj carries a warning that an earlier
         # version of it set OutDir, IntDir, BasicRuntimeChecks and a platform
         # version, and the binary died at startup with heap corruption before
         # main. Nothing in that file is touched to get this.
-        ("RStudioGui", "winforms/RStudioGui.vcxproj", GUI_GUID, [CC1_GUID, guid("cxx1i"), guid("vm6747"), guid("asm6x"), guid("masm"), guid("link"), guid("lnk6x"), guid("shci"), guid("c2s")]),
+        ("RIDEGui", "winforms/RIDEGui.vcxproj", GUI_GUID, [CC1_GUID, guid("cxx1i"), guid("vm6747"), guid("asm6x"), guid("masm"), guid("link"), guid("lnk6x"), guid("shci"), guid("c2s")]),
     ]
-    wanted.append((os.path.join(HERE, "RStudio.sln"), solution_text(entries),
-                   "RStudio.sln"))
+    wanted.append((os.path.join(HERE, "RIDE.sln"), solution_text(entries),
+                   "RIDE.sln"))
 
     # ---- Linux -------------------------------------------------------------
     wanted.append((os.path.join(HERE, "workspace.mk"), workspace_mk_text(),
@@ -1583,8 +1589,8 @@ def main():
 
     # The two kept by hand, checked and never written - see hand_kept_sources.
     for what, path, inside, wanted_sources in (
-            ("winforms/RStudioGui.vcxproj",
-             os.path.join(HERE, "winforms", "RStudioGui.vcxproj"),
+            ("winforms/RIDEGui.vcxproj",
+             os.path.join(HERE, "winforms", "RIDEGui.vcxproj"),
              "winforms", window_sources()),
             (CC1_REPO + "/msvc/cc1.vcxproj",
              os.path.join(SIBLINGS, CC1_REPO, "msvc", "cc1.vcxproj"),
@@ -1621,8 +1627,8 @@ def main():
         print("%-4s %d sources, %d headers  ->  %s"
               % (spec["product"], len(spec["sources"]), len(spec["headers"]),
                  os.path.relpath(spec["out"], SIBLINGS)))
-    print("RStudio.xcworkspace  opens all five on a Mac")
-    print("RStudio.sln          all six for Visual Studio 2022")
+    print("RIDE.xcworkspace  opens all five on a Mac")
+    print("RIDE.sln          all six for Visual Studio 2022")
     print("workspace.mk         and for make on the Linux box")
     return 0
 

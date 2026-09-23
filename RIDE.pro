@@ -1,5 +1,5 @@
 {
-  "name": "RStudio",
+  "name": "RIDE",
   "toolchain": "auto",
   "arch": "x86_64-windows",
   "indent": 4,
@@ -84,7 +84,7 @@
     "Build": [
       "Makefile",
       "README.md",
-      "RStudio.sln",
+      "RIDE.sln",
       "build.bat",
       "workspace.mk",
       "tools/check-help.sh",
@@ -95,7 +95,7 @@
     "Windows Forms": [
       "winforms/MainForm.h",
       "winforms/Program.cpp",
-      "winforms/RStudioGui.vcxproj",
+      "winforms/RIDEGui.vcxproj",
       "winforms/bridge.cpp",
       "winforms/bridge.h",
       "winforms/show.ps1"

@@ -81,10 +81,10 @@ fi
 
 # The four, named the way workspace.mk names them and overridable the same
 # way. They are not called this everywhere: on the Linux box the trees are
-# ~/ansicc, ~/shalimar, ~/converter and ~/RStudio, so
+# ~/ansicc, ~/shalimar, ~/converter and ~/RIDE, so
 #
 #   CC1_DIR=$HOME/ansicc SHC_DIR=$HOME/shalimar C2S_DIR=$HOME/converter \
-#       ~/RStudio/clean.sh
+#       ~/RIDE/clean.sh
 #
 # reaches the right ones. A cleaner that silently cleaned nothing because it
 # looked for a name that machine does not use would be worse than no cleaner.
@@ -105,7 +105,7 @@ for repo in "$CC1_DIR" "$SHC_DIR" "$C2S_DIR" "$ED_DIR"; do
 
     # The binaries. Named rather than globbed, because a glob over *.exe in a
     # directory that also holds sources is how a clean script becomes a bug.
-    for exe in cc1.exe shc.exe c2s.exe RStudio.exe RStudioConsole.exe; do
+    for exe in cc1.exe shc.exe c2s.exe RIDE.exe RIDEConsole.exe; do
         drop "$repo" "$repo/$exe"
     done
     drop "$repo" "$repo/bin"
@@ -186,7 +186,7 @@ for repo in "$CC1_DIR" "$SHC_DIR" "$C2S_DIR" "$ED_DIR"; do
     echo
 done
 
-# The converter copies Compiler-S's front end in to build its RStudio engine.
+# The converter copies Compiler-S's front end in to build its RIDE engine.
 [ -d "$C2S_DIR" ] && drop "$C2S_DIR" "$C2S_DIR/rstudio/c2sr/src/core"
 
 echo

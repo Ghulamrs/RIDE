@@ -1,24 +1,24 @@
 # Packaging
 
-RStudio and the three compilers it drives, as one installable thing on each
+RIDE and the three compilers it drives, as one installable thing on each
 platform. They are packaged together because they are used together: the editor
 drives cc1, cxx1 and shc and is not much good without them.
 
 | | | built and installed |
 | --- | --- | --- |
-| Linux | [`rstudio-editor.spec`](rstudio-editor.spec) | RPM, into `/opt/rstudio` |
-| macOS | [`rstudio-editor.rb`](rstudio-editor.rb) | Homebrew formula |
+| Linux | [`ride-editor.spec`](ride-editor.spec) | RPM, into `/opt/ride` |
+| macOS | [`ride-editor.rb`](ride-editor.rb) | Homebrew formula |
 
-**Named `rstudio-editor`, not `rstudio`.** "RStudio" is also a widely packaged
+**Named `ride-editor`, not `ride`.** "RIDE" is also a widely packaged
 IDE for R, and a package by that name installing something else would be a trap
-for whoever typed it. The programs keep their own names — `RStudio.exe`,
+for whoever typed it. The programs keep their own names — `RIDE.exe`,
 `cc1.exe`, `shc.exe`.
 
 ## Building them
 
 ```
-rpmbuild -ba packaging/rstudio-editor.spec --define "_sourcedir $PWD/.."
-brew install --build-from-source --HEAD <tap>/rstudio-editor
+rpmbuild -ba packaging/ride-editor.spec --define "_sourcedir $PWD/.."
+brew install --build-from-source --HEAD <tap>/ride-editor
 ```
 
 The RPM builds from three checkouts sitting side by side, which is what this

@@ -1,5 +1,7 @@
 @echo off
 setlocal
+rem  The product's name, once, as product.props and the .iss spell it.
+set "PRODUCT=RIDE"
 set SRC=%~1
 set CPP=%~2
 set STAGE=%~3
@@ -8,7 +10,7 @@ set CC=%~4
 if "%CC%"=="" set "CC=%CPP%\..\Compiler-Ci"
 if exist "%STAGE%" rmdir /s /q "%STAGE%"
 mkdir "%STAGE%\bin" "%STAGE%\bin\lib" "%STAGE%\examples"
-for %%f in (RStudio.exe RStudioConsole.exe cc1i.exe cxx1i.exe shci.exe vm6747.exe asm6x.exe masm.exe link.exe lnk6x.exe c2s.exe) do (
+for %%f in (%PRODUCT%.exe %PRODUCT%Console.exe cc1i.exe cxx1i.exe shci.exe vm6747.exe asm6x.exe masm.exe link.exe lnk6x.exe c2s.exe) do (
   if exist "%SRC%\bin\%%f" copy /y "%SRC%\bin\%%f" "%STAGE%\bin\" >nul
 )
 if exist "%SRC%\bin\lib\*.lib" copy /y "%SRC%\bin\lib\*.lib" "%STAGE%\bin\lib\" >nul

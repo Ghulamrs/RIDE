@@ -126,7 +126,7 @@ and cinit on the other); each says so and stops rather than guess.
 --------------------------------------------------------------------------
 ## Where things are
 
-    bin\      the editor (RStudio.exe), the console editor, the compilers
+    bin\      the editor (RIDE.exe), the console editor, the compilers
               cc1i cxx1i shci, the assemblers masm (x86-64) and asm6x (C6000),
               the linkers link (x86-64) and lnk6x (C6000), the vm6747
               emulator, the c2s converter

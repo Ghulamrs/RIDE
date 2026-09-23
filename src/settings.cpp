@@ -5,25 +5,17 @@
 
 #include "json.h"
 #include "path.h"
+#include "product.h"
 
 namespace editor {
 namespace settings {
 
+// The per-user state, ~/.ride/state.json: what was opened last and the choices
+// made in the window. The configuration is settings.json, beside the programs.
 std::string fileName() {
     std::string home = path::homeDir();
     if (home.empty()) return std::string();
-    return path::join(path::join(home, ".rstudio"), "config.json");
-}
-
-// The one name the settings file had before it became ~/.rstudio/config.json,
-// kept so a machine that still holds it is read once and migrated forward.
-const char* const kFormerName = ".rstudioconfig.json";
-
-std::string formerFileName() {
-    std::string home = path::homeDir();
-    if (home.empty()) return std::string();
-
-    return path::join(home, kFormerName);
+    return path::join(path::join(home, product::kStateDirectory), product::kStateFile);
 }
 
 namespace {
@@ -34,12 +26,6 @@ bool writeInstall(const Json& root);
 std::string toRead() {
     std::string now = fileName();
     if (!now.empty() && path::exists(now)) return now;
-
-    std::string home = path::homeDir();
-    if (home.empty()) return std::string();
-
-    std::string old = path::join(home, kFormerName);
-    if (path::exists(old)) return old;
     return std::string();
 }
 
@@ -96,12 +82,6 @@ bool writeAll(const Json& root) {
     std::string text = root.write();
     std::fwrite(text.data(), 1, text.size(), out);
     std::fclose(out);
-
-    std::string home = path::homeDir();
-    if (!home.empty()) {
-        std::string old = path::join(home, kFormerName);
-        if (old != where && path::exists(old)) path::remove(old);
-    }
     return true;
 }
 
