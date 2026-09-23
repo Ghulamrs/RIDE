@@ -14,16 +14,22 @@ namespace {
 // "<<ride-done>>": what each debugger is asked to say once a command has
 // finished. cdb and lldb are asked in pieces, so that the command echoed back
 // is not itself the marker.
-const std::string kMarkerStart = std::string("<<") + product::kLower;
-const std::string kMarker = kMarkerStart + "-done>>";
+//
+// **Functions, not std::string globals.** This file is compiled into the
+// window, a mixed-mode program, where a native global with a destructor
+// corrupted the heap before main - the window died at start, as it did on
+// 2026-09-18 over three such globals in settings.cpp. Nothing here may be a
+// global that needs constructing.
+std::string markerStart() { return std::string("<<") + product::kLower; }
+std::string marker() { return markerStart() + "-done>>"; }
 
 std::string markerCommand(DebuggerKind kind) {
-    if (kind == DebuggerGdb) return "echo " + kMarker + "\\n";
+    if (kind == DebuggerGdb) return "echo " + marker() + "\\n";
     if (kind == DebuggerCdb) {
 
-        return ".printf \"" + kMarkerStart + "%cdone>>\\n\", 0x2d";
+        return ".printf \"" + markerStart() + "%cdone>>\\n\", 0x2d";
     }
-    return "script print(\"" + kMarkerStart + "\" + \"-done>>\")";
+    return "script print(\"" + markerStart() + "\" + \"-done>>\")";
 }
 
 void sayMarker(Process& child, DebuggerKind kind) {
@@ -243,7 +249,7 @@ std::string dbg_programOutput(DebuggerKind kind, const std::string& said) {
         if (prompt != DebuggerNone) line = withoutPrompt(line);
 
         if (trimmed(line).empty()) continue;
-        if (line.find(kMarker.substr(0, kMarkerStart.size())) != std::string::npos) continue;
+        if (line.find(markerStart()) != std::string::npos) continue;
         if (sourceEcho(line)) continue;
 
         if (kind == DebuggerLldb && lldbOwn(line)) continue;
@@ -578,7 +584,7 @@ std::vector<Variable> dbg_readVariables(DebuggerKind kind, const std::string& sa
 
     for (size_t i = 0; i < all.size(); ++i) {
         std::string line = trimmed(withoutPrompt(all[i]));
-        if (line.empty() || line == kMarker) continue;
+        if (line.empty() || line == marker()) continue;
 
         std::string type;
         if (kind == DebuggerLldb) {
@@ -652,7 +658,7 @@ std::vector<StackFrame> dbg_readFrames(DebuggerKind kind, const std::string& sai
 
     for (size_t i = 0; i < all.size(); ++i) {
         std::string line = trimmed(withoutPrompt(all[i]));
-        if (line.empty() || line == kMarker) continue;
+        if (line.empty() || line == marker()) continue;
 
         StackFrame frame;
         if (kind == DebuggerCdb) {
@@ -744,7 +750,7 @@ std::string dbg_readValue(DebuggerKind kind, const std::string& said) {
 
     for (size_t i = 0; i < all.size(); ++i) {
         const std::string line = trimmed(withoutPrompt(all[i]));
-        if (line.empty() || line == kMarker) continue;
+        if (line.empty() || line == marker()) continue;
 
         if (kind == DebuggerCdb) {
 
@@ -813,7 +819,7 @@ bool Debugger::start(DebuggerKind kind, const std::string& executable,
 
     bool found = false;
     sayMarker(child_, kind_);
-    child_.readUntil(kMarker, &found);
+    child_.readUntil(marker(), &found);
     if (!found) {
         child_.stop();
         kind_ = DebuggerNone;
@@ -837,7 +843,7 @@ std::string Debugger::ask(const std::string& command) {
     sayMarker(child_, kind_);
 
     bool found = false;
-    std::string said = child_.readUntil(kMarker, &found);
+    std::string said = child_.readUntil(marker(), &found);
     if (!found) child_.stop();
 
     if (onConsole_) said = dbg_withoutEcho(dbg_withoutEscapes(said), command, markerCommand(kind_));
