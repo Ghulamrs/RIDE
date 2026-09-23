@@ -47,6 +47,12 @@ echo [1/6] Building the compilers and the RIDE editor (build.bat solution) ...
 pushd "%ROOT%"
 call build.bat solution
 if errorlevel 1 (echo   BUILD FAILED & popd & exit /b 1)
+rem  **The window must start before it is shipped.** It is mixed-mode, and a
+rem  native global with a destructor corrupts its heap before main: it built,
+rem  the suites passed, and the installed window died on 2026-09-18 and again
+rem  on 2026-09-23. --version runs the same start-up and nothing else.
+"%ROOT%\bin\%PRODUCT%.exe" --version
+if errorlevel 1 (echo   %PRODUCT%.exe DOES NOT START - see %%TEMP%%\%PRODUCT%-fault.log & popd & exit /b 1)
 popd
 
 echo [2/6] Generating the HTML docs ...
