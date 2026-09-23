@@ -388,6 +388,10 @@ def projects():
 # that is how these products come to sit under DerivedData at a path nobody can
 # type. Where they *end up* is the install phase's business, below; SYMROOT
 # still decides where a build of one .xcodeproj on its own goes.
+# MACOSX_DEPLOYMENT_TARGET is the lowest the installed Xcode accepts: 27.0
+# refuses the 10.15 these once carried ("the range of supported deployment
+# target versions is 12.0 to 27.0.x"), and so refused to build every project
+# made here. The Makefiles name no minimum and build for the machine they run on.
 COMMON = """				ALWAYS_SEARCH_USER_PATHS = NO;
 				OBJROOT = "$(TMPDIR)/ride-xcode";
 				SYMROOT = "$(TMPDIR)/ride-xcode";
@@ -397,7 +401,7 @@ COMMON = """				ALWAYS_SEARCH_USER_PATHS = NO;
 				CODE_SIGN_STYLE = Automatic;
 				GCC_TREAT_WARNINGS_AS_ERRORS = YES;
 				GCC_WARN_64_TO_32_BIT_CONVERSION = NO;
-				MACOSX_DEPLOYMENT_TARGET = 10.15;
+				MACOSX_DEPLOYMENT_TARGET = 12.0;
 				PRODUCT_NAME = %s;
 				SDKROOT = macosx;
 				USER_HEADER_SEARCH_PATHS = "%s";

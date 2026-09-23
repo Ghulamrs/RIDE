@@ -68,6 +68,11 @@ cc1i.exe
 cxx1i.exe
 shci.exe
 vm6747.exe
+# And the 4.0 tools the Xcode projects copy here the same way.
+asm6x.exe
+masm.exe
+link.exe
+lnk6x.exe
 lib/
 *.dSYM/
 

@@ -39,6 +39,12 @@
       "src/terminal_common.cpp",
       "src/terminal_win.cpp"
     ],
+    "Shalimar debugging": [
+      "src/shalimar/channel.cpp",
+      "src/shalimar/session.cpp",
+      "src/shalimar/channel.h",
+      "src/shalimar/session.h"
+    ],
     "Headers": [
       "src/about.h",
       "src/buffer.h",
@@ -53,6 +59,7 @@
       "src/menu.h",
       "src/path.h",
       "src/process.h",
+      "src/product.h",
       "src/project.h",
       "src/settings.h",
       "src/symbols.h",
@@ -90,7 +97,8 @@
       "tools/check-help.sh",
       "tools/make-projects.py",
       "tools/to-linux.sh",
-      "tools/to-windows.sh"
+      "tools/to-windows.sh",
+      "product.props"
     ],
     "Windows Forms": [
       "winforms/MainForm.h",
