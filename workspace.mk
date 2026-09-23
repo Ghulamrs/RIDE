@@ -5,8 +5,8 @@
 #   make -f workspace.mk check     and run every suite
 #   make -f workspace.mk clean
 #
-# This is the Linux half of what RStudio.xcworkspace is on a Mac and
-# RStudio.sln is on Windows: one thing to build, with ed1 after the two
+# This is the Linux half of what RIDE.xcworkspace is on a Mac and
+# RIDE.sln is on Windows: one thing to build, with ed1 after the two
 # compilers it drives. It does not reimplement any of their builds - it calls
 # the Makefile each repository already has, which is the only way this can stay
 # true when one of them changes.
@@ -39,7 +39,7 @@ LNK6X_DIR ?= ../LNK6x
 # alone is exactly what it always was. This is the only place that overrides
 # the four at once, because this is the only build that knows all four exist.
 #
-# The default is RStudio's own root, which is where RStudio.exe is built and
+# The default is RIDE's own root, which is where RIDE.exe is built and
 # therefore the directory the editor searches first: it finds the compilers it
 # drives with path::besideProgram, before PATH, so that a compiler shipped with
 # this copy is the one this copy runs.
@@ -111,7 +111,7 @@ lnk6x:
 editor: cc1 cxx1 vm6747 asm6x masm link lnk6x shc c2s
 	$(MAKE) BINDIR=$(OUT) OBJDIR=$(OUT)/obj/editor
 
-# Asked of RStudio rather than answered here. The editor is the thing that
+# Asked of RIDE rather than answered here. The editor is the thing that
 # knows what it drives - the list is in its own Makefile, beside the code that
 # goes looking for them - and this only calls it once all four have been
 # built into one place.

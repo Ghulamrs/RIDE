@@ -47,7 +47,7 @@ there. Two principles govern every message:
 - **`'ml64.exe' is not recognized`** — the assemble step ran without a Visual
   Studio environment (Part V chapter 22); normally the compiler sources vcvars
   itself.
-- **`RStudio is in <bin> without what it drives`** — the editor's `confirm`: the
+- **`RIDE is in <bin> without what it drives`** — the editor's `confirm`: the
   editor is present but a compiler or the runtime is missing beside it.
 
 --------------------------------------------------------------------------------

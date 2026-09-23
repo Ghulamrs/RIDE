@@ -1,6 +1,7 @@
 #include "toolchain.h"
 
 #include "path.h"
+#include "product.h"
 #include "settings.h"
 
 #include <cstdio>
@@ -469,7 +470,7 @@ std::string whyNotRun(ToolchainKind kind, const std::string& arch) {
 
 namespace {
 
-std::string mine(const char* what) {
+std::string mine(const std::string& what) {
     char id[32];
 #ifdef _WIN32
     std::snprintf(id, sizeof id, "%lu", static_cast<unsigned long>(GetCurrentProcessId()));
@@ -479,8 +480,12 @@ std::string mine(const char* what) {
     return tempDir() + kSep + what + "-" + id;
 }
 
+// "ride-run", "ride-objs": the temporary names a build leaves, made from the
+// product's name. mine() adds this process's id to each.
+std::string productNamed(const char* what) { return std::string(product::kLower) + "-" + what; }
+
 std::string programPath() {
-    std::string path = mine("rstudio-run");
+    std::string path = mine(productNamed("run"));
 #ifdef _WIN32
     path += ".exe";
 #endif
@@ -508,10 +513,10 @@ Recipe targetRecipe(const Toolchain& tool, ToolchainKind kind,
 
     if (kind == ToolMsvc) {
 
-        std::string objects = mine("rstudio-objs");
+        std::string objects = mine(productNamed("objs"));
         path::makeDirectories(objects);
         std::string forLanguage = (lang == LangCpp) ? " /TP /EHsc /std:c++14" : " /TC";
-        std::string pdb = path::join(objects, "rstudio-target.pdb");
+        std::string pdb = path::join(objects, productNamed("target") + ".pdb");
 
         recipe.command = quote(programOf(tool, kind)) + " /nologo /diagnostics:column" +
                          forLanguage + configFlags(kind, config, arch) + includeFlags(tool, kind) +
@@ -626,7 +631,7 @@ Recipe objectRecipe(const Toolchain& tool, ToolchainKind kind,
 
         std::string forLanguage = (lang == LangCpp) ? " /TP /EHsc /std:c++14" : " /TC";
         std::string crt = (config == ConfigDebug) ? " /MTd" : " /MT";
-        std::string pdb = path::join(objectDir, "rstudio-target.pdb");
+        std::string pdb = path::join(objectDir, productNamed("target") + ".pdb");
 
         recipe.command = quote(programOf(tool, kind)) + " /nologo /diagnostics:column /c" +
                          forLanguage + crt + configFlags(kind, config, arch) + includeFlags(tool, kind) +
@@ -706,7 +711,7 @@ Recipe programRecipe(const Toolchain& tool, ToolchainKind kind,
     if (isEmulated(arch) && usesArch(kind)) {
         // The program to run is the assembly: vm6747 runs it as it is - a
         // Shalimar one beside the runtime, which the launch adds.
-        recipe.assemblyPath = mine("rstudio-run") + ".s";
+        recipe.assemblyPath = mine(productNamed("run")) + ".s";
         recipe.command = quote(programOf(tool, kind)) + " -S" + archFlag(kind, arch) + " " +
                          quote(source) + " -o " + quote(recipe.assemblyPath) +
                          configFlags(kind, config, arch) + includeFlags(tool, kind);
@@ -715,10 +720,10 @@ Recipe programRecipe(const Toolchain& tool, ToolchainKind kind,
 
     if (kind == ToolMsvc) {
 
-        std::string obj = mine("rstudio-run") + ".obj";
+        std::string obj = mine(productNamed("run")) + ".obj";
         std::string forLanguage = (lang == LangCpp) ? " /TP /EHsc /std:c++14" : " /TC";
 
-        std::string pdb = mine("rstudio-run") + ".pdb";
+        std::string pdb = mine(productNamed("run")) + ".pdb";
         recipe.command = quote(program) + " /nologo /diagnostics:column" + forLanguage +
                          configFlags(kind, config, arch) + includeFlags(tool, kind) +
                          (config == ConfigDebug ? " /Fd" + quote(pdb) : std::string()) +
@@ -728,7 +733,7 @@ Recipe programRecipe(const Toolchain& tool, ToolchainKind kind,
         recipe.leftovers.push_back(obj);
         if (config == ConfigDebug) {
             recipe.leftovers.push_back(pdb);
-            recipe.leftovers.push_back(mine("rstudio-run") + ".ilk");
+            recipe.leftovers.push_back(mine(productNamed("run")) + ".ilk");
         }
         return recipe;
     }
@@ -750,16 +755,16 @@ std::string shownProgramCommand(const Toolchain& tool, ToolchainKind kind,
                                 const std::string& arch, Configuration config) {
     std::string program = programOf(tool, kind);
     if (isEmulated(arch) && usesArch(kind))
-        return program + " -S" + archFlag(kind, arch) + " " + source + " -o rstudio-run.s" +
+        return program + " -S" + archFlag(kind, arch) + " " + source + " -o " + productNamed("run") + ".s" +
                configFlags(kind, config, arch) + includeFlags(tool, kind) +
-               " && vm6747 rstudio-run.s" +
+               " && vm6747 " + productNamed("run") + ".s" +
                (kind == ToolShc ? " lib/shmrt-tms6747" : "");
     if (kind == ToolMsvc)
         return program + " /diagnostics:column" +
                ((lang == LangCpp) ? " /TP /EHsc /std:c++14" : " /TC") +
                configFlags(kind, config, arch) + includeFlags(tool, kind) +
-               " /Ferstudio-run " + source + libraryArguments(tool);
-    return program + " " + source + " -o rstudio-run" + configFlags(kind, config, arch) +
+               " /Fe" + productNamed("run") + " " + source + libraryArguments(tool);
+    return program + " " + source + " -o " + productNamed("run") + configFlags(kind, config, arch) +
            assemblerFlag(kind, arch) + includeFlags(tool, kind) +
            (kind == ToolCxx ? libraryArguments(tool) : std::string());
 }
@@ -768,7 +773,7 @@ Recipe assemblyRecipe(const Toolchain& tool, ToolchainKind kind,
                       const std::string& source, Language lang,
                       const std::string& arch, Configuration config) {
     Recipe recipe;
-    std::string stem = mine("rstudio-build");
+    std::string stem = mine(productNamed("build"));
     std::string program = programOf(tool, kind);
 
     if (kind == ToolMsvc) {

@@ -5,20 +5,25 @@
 #include <cstring>
 
 #include "path.h"
+#include "product.h"
 
 namespace editor {
 
 namespace {
 
-const char* const kMarker = "<<rstudio-done>>";
+// "<<ride-done>>": what each debugger is asked to say once a command has
+// finished. cdb and lldb are asked in pieces, so that the command echoed back
+// is not itself the marker.
+const std::string kMarkerStart = std::string("<<") + product::kLower;
+const std::string kMarker = kMarkerStart + "-done>>";
 
 std::string markerCommand(DebuggerKind kind) {
-    if (kind == DebuggerGdb) return "echo <<rstudio-done>>\\n";
+    if (kind == DebuggerGdb) return "echo " + kMarker + "\\n";
     if (kind == DebuggerCdb) {
 
-        return ".printf \"<<rstudio%cdone>>\\n\", 0x2d";
+        return ".printf \"" + kMarkerStart + "%cdone>>\\n\", 0x2d";
     }
-    return "script print(\"<<rstudio\" + \"-done>>\")";
+    return "script print(\"" + kMarkerStart + "\" + \"-done>>\")";
 }
 
 void sayMarker(Process& child, DebuggerKind kind) {
@@ -238,7 +243,7 @@ std::string dbg_programOutput(DebuggerKind kind, const std::string& said) {
         if (prompt != DebuggerNone) line = withoutPrompt(line);
 
         if (trimmed(line).empty()) continue;
-        if (line.find("<<rstudio") != std::string::npos) continue;
+        if (line.find(kMarker.substr(0, kMarkerStart.size())) != std::string::npos) continue;
         if (sourceEcho(line)) continue;
 
         if (kind == DebuggerLldb && lldbOwn(line)) continue;

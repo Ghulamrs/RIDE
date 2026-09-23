@@ -13,7 +13,7 @@ const Page kPages[] = {
     {"3",  "The screen",       "panes, tabs, the status bar, what is where",    "03-the-screen.md"},
     {"4",  "Editing",          "indenting, UTF-8, undo, selection, clipboard",  "04-editing.md"},
     {"5",  "Finding",          "find, find again, replace, what counts",        "05-finding.md"},
-    {"6",  "The project",      "RStudio.json, groups, a compiler per group",        "06-the-project.md"},
+    {"6",  "The project",      "the .pro file, groups, a compiler per group",        "06-the-project.md"},
     {"7",  "Building",         "file or project, targets, debug and release",   "07-building.md"},
     {"8",  "Debugging",        "breakpoints, stepping, variables, the stack",   "08-debugging.md"},
     {"9",  "The panel",        "Console, Debug, Assembly, enter on a line",     "09-the-panel.md"},

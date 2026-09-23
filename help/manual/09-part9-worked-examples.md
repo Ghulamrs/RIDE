@@ -222,7 +222,7 @@ The emulator runs the program; the TI build path makes a real chip binary:
 
 produces `fib.out` (a C674x ELF: `e_machine` 140, 32-bit, little-endian, EXEC)
 and `fib.hex` (Intel hex). It finds a TI CGT on the machine, builds the EH
-runtime once into `%LOCALAPPDATA%\RStudio\tilib`, then drives
+runtime once into `%LOCALAPPDATA%\RIDE\tilib`, then drives
 `cl6x`/`asm6x`/`lnk6x`/`hex6x`. The same works for `.cpp` and `.shl`. To run and
 test the program instead, the emulator needs no TI install:
 

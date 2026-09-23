@@ -3,13 +3,13 @@
 ## Running it
 
 ```
-RStudio.exe                          open the project you were last in
-RStudio.exe file.c                   open a file
-RStudio.exe --project some/dir       open a directory as the project
+RIDE.exe                          open the project you were last in
+RIDE.exe file.c                   open a file
+RIDE.exe --project some/dir       open a directory as the project
 ```
 
-On Windows `RStudio.exe` is the window - which is what somebody there runs -
-and `RStudioConsole.exe` is the same editor over the console. Both take the
+On Windows `RIDE.exe` is the window - which is what somebody there runs -
+and `RIDEConsole.exe` is the same editor over the console. Both take the
 same arguments as the Unix one.
 
 **With nothing named it opens the project it was last in**, and failing that
@@ -53,13 +53,13 @@ single file's is a scratch thing the editor made in order to run it.
 
 - **`prime.pro`**, in a directory, says what *that project* is: its name, its
   groups, what it builds, how it indents.
-- **`~/.rstudio/config.json`** says what *this machine* had: the last project
+- **`~/.ride/state.json`** says what *this machine* had: the last project
   you were in, whether you are building debug or release, the font the window
-  draws code in, and whatever else earns a place. In your own directory rather than beside the program, because the
-  program's directory is build output — it is deleted and rebuilt — and there
-  is more than one copy of RIDE on a machine. It was `~/.rstudioconfig.json`
-  and `~/.ed1config.json` before; either is still read when it is the only one
-  there, and retired the first time anything is written.
+  draws code in, and whatever else earns a place. It is state, not
+  configuration - the configuration is `settings.json` beside the programs. In
+  your own directory rather than beside the program, because the program's
+  directory is build output - it is deleted and rebuilt - and there is more
+  than one copy of RIDE on a machine.
 
 The second could not be folded into the first. Every project file on disk would
 then claim to have been the most recent one.

@@ -10,8 +10,6 @@ namespace settings {
 
 std::string fileName();
 
-std::string formerFileName();
-
 std::string lastProject();
 
 bool rememberProject(const std::string& directory);

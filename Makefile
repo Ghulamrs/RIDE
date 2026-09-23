@@ -1,5 +1,5 @@
-# RStudio - an editor that drives the cc1 compiler and shc. RStudio is the
-# terminal half and the window is RStudio.exe on Windows; this builds the
+# RIDE - an editor that drives the cc1 compiler and shc. RIDE is the
+# terminal half and the window is RIDE.exe on Windows; this builds the
 # terminal one. .exe on every machine, not only Windows: the three programs in
 # this family carry one name each wherever they are.
 #
@@ -44,7 +44,7 @@ endif
 # Two front ends over one core, and this is where that split is written down.
 # CORE_SRC is what both of them compile: every rule the editor has, and none of
 # the drawing. The window compiles exactly this list plus its own two files, so
-# tools/make-projects.py checks winforms/RStudioGui.vcxproj against it - that
+# tools/make-projects.py checks winforms/RIDEGui.vcxproj against it - that
 # project is kept by hand, and a file added here and forgotten there is a link
 # error on the one machine that builds the window and nowhere else.
 CORE_SRC := src/buffer.cpp src/compile.cpp src/convert.cpp \
@@ -74,23 +74,28 @@ SHM_SRC := src/shalimar/channel.cpp src/shalimar/session.cpp
 # The objects go under obj/ rather than beside the sources they came from,
 # so that a listing of src/ is the code and nothing else.
 # Objects are built OUTSIDE the checkout, in a build directory beside the four
-# projects: ../build/RStudio/obj. Nothing intermediate is ever written next
+# projects: ../build/RIDE/obj. Nothing intermediate is ever written next
 # to the sources, so `tar` on this repository carries source and nothing else,
 # and a clean is a directory removal that cannot reach a tracked file.
 #
 # Overridable, and `?=` on purpose: workspace.mk names one place for all four,
 # and a command line beats both.
-OBJDIR ?= ../build/RStudio/obj
+OBJDIR ?= ../build/RIDE/obj
 OBJ := $(patsubst src/%.cpp,$(OBJDIR)/%.o,$(SRC) $(SHM_SRC))
 
 # Where the finished program goes. `.` is this directory, which is what every
 # suite and script here already expects, so a plain `make` is unchanged. The
 # workspace build names one directory and has all three programs built into
-# it - the editor and the two compilers it drives - so that what RStudio finds
+# it - the editor and the two compilers it drives - so that what RIDE finds
 # beside itself is what was just built, rather than what somebody remembered
 # to copy.
 BINDIR ?= .
-EDITOR := $(BINDIR)/RStudio.exe
+
+# **The product's name, once** - the program built here is $(PRODUCT).exe, and
+# src/product.h, product.props and the .iss spell it the same. A rename is those.
+PRODUCT := RIDE
+PRODUCT_LOWER := ride
+EDITOR := $(BINDIR)/$(PRODUCT).exe
 
 # **The compilers the checking drives, defaulted to the ones standing in BINDIR.**
 #
@@ -214,7 +219,7 @@ tests/session: tests/session.cpp src/path.cpp src/path.h
 
 check: test session
 
-# ---- what RStudio drives, and the confirmation that it is there -------------
+# ---- what RIDE drives, and the confirmation that it is there -------------
 #
 # The editor links against none of these. It *runs* them, and it finds them
 # beside itself - path::besideProgram, asked before PATH, so that a compiler
@@ -258,12 +263,12 @@ confirm: $(EDITOR)
 	done; \
 	if [ $$missing -ne 0 ]; then \
 	    echo ""; \
-	    echo "RStudio.exe is in $(BINDIR) without what it drives. Build the four"; \
+	    echo "$(PRODUCT).exe is in $(BINDIR) without what it drives. Build the four"; \
 	    echo "together with 'make -f workspace.mk', or name them with \$$CC1, \$$CXX1 and \$$SHC."; \
 	    exit 1; \
 	fi; \
 	echo ""; \
-	echo "RStudio.exe and everything it drives are in $(BINDIR)"
+	echo "$(PRODUCT).exe and everything it drives are in $(BINDIR)"
 
 # The Xcode project is generated from the source list above rather than kept by
 # hand, so it cannot fall behind it. Run this after adding or removing a file.
@@ -275,8 +280,8 @@ xcodeproj:
 # lives - one directory holding what you would actually run, away from the
 # project space it was compiled in.
 #
-# PRODUCT names it, so a different one can be asked for without editing this.
-PRODUCT ?= $(HOME)/cc1-studio
+# PRODUCT_DIR names it, so a different one can be asked for without editing this.
+PRODUCT_DIR ?= $(HOME)/$(PRODUCT_LOWER)
 # Where cxx1's headers are copied from for the product. The binary comes from
 # BINDIR like the others; the headers stay in the checkout - C++ beside this
 # one, Compiler-Cpp on GitHub and the Windows box, ~/cxx1 on the Linux box.
@@ -295,18 +300,18 @@ CC1_DIR ?= ../VM6747/Compiler-Ci
 product: confirm
 # Emptied first, for the reason workspace.mk's `bin` rule gives: a binary that
 # was renamed leaves its old self here otherwise, and a directory holding both
-# RStudio.exe and the name before it is one where nobody can say which was run.
+# RIDE.exe and the name before it is one where nobody can say which was run.
 # It cost a stray quad.shl sitting in bin/ from 2026-08-18 to notice this rule
 # never had what that one does.
 #
-# The two directories this rule fills, and not $(PRODUCT) itself. PRODUCT is
-# whatever the caller says, so `make product PRODUCT=$$HOME` would turn a
+# The two directories this rule fills, and not $(PRODUCT_DIR) itself. PRODUCT_DIR is
+# whatever the caller says, so `make product PRODUCT_DIR=$$HOME` would turn a
 # wholesale rm -rf into deleting a home directory. Nothing here needs that risk
 # to do its job.
-	rm -rf "$(PRODUCT)/bin" "$(PRODUCT)/examples"
-	mkdir -p "$(PRODUCT)/bin/lib" "$(PRODUCT)/examples"
-	cp $(EDITOR) "$(PRODUCT)/bin/"
-	cp $(BINDIR)/cc1i.exe $(BINDIR)/cxx1i.exe $(BINDIR)/vm6747.exe $(BINDIR)/shci.exe $(BINDIR)/c2s.exe "$(PRODUCT)/bin/"
+	rm -rf "$(PRODUCT_DIR)/bin" "$(PRODUCT_DIR)/examples"
+	mkdir -p "$(PRODUCT_DIR)/bin/lib" "$(PRODUCT_DIR)/examples"
+	cp $(EDITOR) "$(PRODUCT_DIR)/bin/"
+	cp $(BINDIR)/cc1i.exe $(BINDIR)/cxx1i.exe $(BINDIR)/vm6747.exe $(BINDIR)/shci.exe $(BINDIR)/c2s.exe "$(PRODUCT_DIR)/bin/"
 # The headers go with the compilers, one directory above bin/ - because
 # bin/lib/ is shc's runtime. include/ is cxx1i's: its C++ headers and the C
 # ones they wrap, in one directory; lib/ is cc1i's. Each looks there for its
@@ -314,17 +319,17 @@ product: confirm
 # from - a product that outlives that checkout would otherwise compile
 # nothing that says #include. settings.json beside them tells the editor the
 # same two directories, and is where a vcvars64.bat is named when it has to be.
-	rm -rf "$(PRODUCT)/include" "$(PRODUCT)/lib"
-	cp -R $(CXX1_DIR)/include "$(PRODUCT)/include"
-	cp $(CXX1_DIR)/lib/*.h "$(PRODUCT)/include/"
-	cp -R $(CC1_DIR)/lib "$(PRODUCT)/lib"
-	printf '{\n  "include": "include",\n  "lib": "lib",\n  "vcvars": "",\n  "compiler": "auto",\n  "indent": 4,\n  "tabs": false,\n  "font": "",\n  "includes": [],\n  "libraries": []\n}\n' > "$(PRODUCT)/settings.json"
+	rm -rf "$(PRODUCT_DIR)/include" "$(PRODUCT_DIR)/lib"
+	cp -R $(CXX1_DIR)/include "$(PRODUCT_DIR)/include"
+	cp $(CXX1_DIR)/lib/*.h "$(PRODUCT_DIR)/include/"
+	cp -R $(CC1_DIR)/lib "$(PRODUCT_DIR)/lib"
+	printf '{\n  "include": "include",\n  "lib": "lib",\n  "vcvars": "",\n  "compiler": "auto",\n  "indent": 4,\n  "tabs": false,\n  "font": "",\n  "includes": [],\n  "libraries": []\n}\n' > "$(PRODUCT_DIR)/settings.json"
 # Into bin/lib/ rather than anywhere tidier, because that is where shc looks:
 # beside its own binary. Both archives, debug included - see DEPENDENCIES.
 	cp $(BINDIR)/lib/shmrt-$(SHM_TARGET).a \
-	   $(BINDIR)/lib/shmrt-$(SHM_TARGET)-debug.a "$(PRODUCT)/bin/lib/"
-	cp -R $(BINDIR)/lib/shmrt-tms6747 "$(PRODUCT)/bin/lib/"
-	cp README.md "$(PRODUCT)/"
+	   $(BINDIR)/lib/shmrt-$(SHM_TARGET)-debug.a "$(PRODUCT_DIR)/bin/lib/"
+	cp -R $(BINDIR)/lib/shmrt-tms6747 "$(PRODUCT_DIR)/bin/lib/"
+	cp README.md "$(PRODUCT_DIR)/"
 # All three languages, and the headers. Copying only *.c and *.cpp shipped
 # table.cpp and vector3.cpp without the headers they include, so neither would
 # compile on arrival, and left out gcd.shl, primes.shl and rotmat.shl
@@ -332,8 +337,8 @@ product: confirm
 # whose third language is Shalimar. example.pro goes too, so that there is a
 # project to open rather than only loose files.
 	cp examples/*.c examples/*.h examples/*.cpp examples/*.shl examples/*.pro \
-	   "$(PRODUCT)/examples/"
-	@echo "RStudio is in $(PRODUCT)"
+	   "$(PRODUCT_DIR)/examples/"
+	@echo "$(PRODUCT) is in $(PRODUCT_DIR)"
 
 # build/ is Xcode's, not make's, and it lands inside the checkout unless the
 # project is told otherwise - which is the one place in this workspace that

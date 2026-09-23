@@ -5,12 +5,13 @@
 
 #include "editor.h"
 #include "path.h"
+#include "product.h"
 #include "settings.h"
 #include "symbols.h"
 #include "workspace.h"
 
 static std::string calledIt(const char* argv0) {
-    std::string name = (argv0 == 0 || *argv0 == 0) ? "RIDE" : argv0;
+    std::string name = (argv0 == 0 || *argv0 == 0) ? editor::product::kName : argv0;
     size_t slash = name.find_last_of("/\\");
     if (slash != std::string::npos) name = name.substr(slash + 1);
     if (name.size() > 4 && name.compare(name.size() - 4, 4, ".exe") == 0)
@@ -92,9 +93,9 @@ int main(int argc, char** argv) {
                 "           [--width n] [--tabs] [--case-indent] [--plain]\n"
                 "       %s <project.pro or dir> [--arch a] [--assembler path] [--linker path]\n"
                 "           [--ti dir [--tilib dir] [--tilinker path]] --build | --run\n"
-                "  RStudio - the console half, which is RStudio.exe on Linux and\n"
-                "  macOS and RStudioConsole.exe on Windows. RStudioGui is the same\n"
-                "  editor in a window, over the same core.\n"
+                "  %s - the console half, which is %s.exe on Linux and\n"
+                "  macOS and %sConsole.exe on Windows. %s.exe on Windows is the\n"
+                "  same editor in a window, over the same core.\n"
                 "\n"
                 "  --toolchain    auto (the default) lets the file choose: C goes\n"
                 "                 to cc1, C++ to cxx1 and Shalimar to shc. C and C++\n"
@@ -141,7 +142,8 @@ int main(int argc, char** argv) {
                 "  F4 build the project's program   Ctrl-A lay out\n"
                 "  F9 breakpoint   F8 debug   F7/F6 step over/into\n"
                 "  F1 keys    Ctrl-Q quit\n",
-                me.c_str(), me.c_str());
+                me.c_str(), me.c_str(), editor::product::kName, editor::product::kName,
+                editor::product::kName, editor::product::kName);
             return 0;
         } else if (argv[i][0] == '-' && argv[i][1] != '\0') {
             std::fprintf(stderr, "%s: unknown option %s\n", me.c_str(), argv[i]);

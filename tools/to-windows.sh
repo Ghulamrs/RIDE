@@ -5,8 +5,8 @@
 # That box was rebuilt on 2026-08-25 and everything below is about the machine
 # as it is now: reached as `ssh windows`, its ssh shell is cmd.exe, and the
 # projects are siblings under C:\Users\GRA\source - RIDE (4.0's own
-# directory, so the sealed 3.5 tree in RStudio is left alone), VM6747,
-# ASM6x, MASM, LINK, LNK6x, Converter-C2S - which is the shape RStudio.sln assumes when
+# directory, so the sealed 3.5 tree in RIDE is left alone), VM6747,
+# ASM6x, MASM, LINK, LNK6x, Converter-C2S - which is the shape RIDE.sln assumes when
 # it names ..\VM6747\Compiler-Ci\msvc\cc1.vcxproj and the rest.
 #
 # Three rules that each cost an hour before they were written down:
@@ -20,7 +20,7 @@
 #   * The tree there has no git. What this copies is what is built; a stale
 #     file on that side is a stale build with a green suite in front of it.
 #
-# cxx1 travels with the editor since 3.0. RStudio.sln builds it from
+# cxx1 travels with the editor since 3.0. RIDE.sln builds it from
 # ..\Compiler-Cpp\cxx1.vcxproj, which is written by tools/make-projects.py at
 # the root of the C++ checkout here; the sources, headers, msvc\compat and
 # that project go over together, laid over the tree there - never wiping it,
@@ -54,7 +54,7 @@ TMP="${TMPDIR:-/tmp}"
 say() { printf '%s\n' "$*"; }
 
 # ---- the editor -----------------------------------------------------------
-# Built things are left out by name as well as by suffix: a Mach-O RStudio.exe
+# Built things are left out by name as well as by suffix: a Mach-O RIDE.exe
 # or tests/test that travels over is "newer" than its source there and reads
 # as a broken machine. help/ goes because tests/test.cpp checks Help > Contents
 # against it, and that check would otherwise run on one machine in three.
@@ -62,10 +62,10 @@ tar --no-mac-metadata \
     --exclude 'obj' --exclude '*.o' --exclude '*.d' --exclude '*.exe' \
     --exclude 'tests/test' --exclude 'tests/session' --exclude '* 2.*' \
     --exclude 'lib' --exclude 'x64' --exclude 'DerivedData' \
-    -czf "$TMP/rstudio-src.tgz" \
+    -czf "$TMP/ride-src.tgz" \
     src tests winforms examples help tools docs packaging \
-    Makefile workspace.mk build.bat clean.cmd README.md RStudio.json \
-    RStudio.sln RStudioConsole.vcxproj 2>/dev/null || exit 2
+    Makefile workspace.mk build.bat clean.cmd README.md RIDE.pro \
+    RIDE.sln RIDEConsole.vcxproj 2>/dev/null || exit 2
 
 # ---- cxx1 ------------------------------------------------------------------
 # The parts its Visual Studio project compiles and includes, and nothing of
@@ -102,7 +102,7 @@ say "copying to $BOX:$DIR and $VM_ROOT"
 for d in "$DIR" "$CC1I_DIR" "$CXX1_DIR" "$SHCI_DIR" "$EMU_DIR" "$ASM_DIR" "$MASM_DIR" "$LINK_DIR" "$LNK6X_DIR"; do
   ssh -n "$BOX" "if not exist \"$d\" mkdir \"$d\"" || exit 2
 done
-scp -q "$TMP/rstudio-src.tgz" "$BOX:$DIR\\rstudio-src.tgz" || exit 2
+scp -q "$TMP/ride-src.tgz" "$BOX:$DIR\\ride-src.tgz" || exit 2
 scp -q "$TMP/cc1i-src.tgz" "$BOX:$CC1I_DIR\\cc1i-src.tgz" || exit 2
 scp -q "$TMP/cxx1-src.tgz" "$BOX:$CXX1_DIR\\cxx1-src.tgz" || exit 2
 scp -q "$TMP/vm6747-src.tgz" "$BOX:$EMU_DIR\\vm6747-src.tgz" || exit 2
@@ -124,10 +124,10 @@ BIN="$DIR\\bin"
   # tests\ is emptied before each archive lands, as to-linux.sh empties it: a
   # case retired or renamed here would otherwise stay there under its old
   # name and be found by whatever globs the directory - which is how the
-  # Linux box reported two probes the Mac no longer has (RStudio 19c73e6).
+  # Linux box reported two probes the Mac no longer has (RIDE 19c73e6).
   # Only tests\: the rest is laid over, since these directories also hold
   # hand-run experiments that are not ours.
-  for pair in "$DIR rstudio" "$CC1I_DIR cc1i" "$CXX1_DIR cxx1" \
+  for pair in "$DIR ride" "$CC1I_DIR cc1i" "$CXX1_DIR cxx1" \
               "$EMU_DIR vm6747" "$ASM_DIR asm6x" "$MASM_DIR masm" "$LINK_DIR link" \
               "$LNK6X_DIR lnk6x" "$SHCI_DIR shci"; do
     set -- $pair
@@ -155,8 +155,8 @@ BIN="$DIR\\bin"
       printf 'call build.bat check\r\n' ;;
   esac
   printf 'exit /b %%errorlevel%%\r\n'
-} > "$TMP/rstudio-run.cmd"
-scp -q "$TMP/rstudio-run.cmd" "$BOX:$DIR\\rstudio-run.cmd" || exit 2
+} > "$TMP/ride-run.cmd"
+scp -q "$TMP/ride-run.cmd" "$BOX:$DIR\\ride-run.cmd" || exit 2
 
-say "running $DIR\\rstudio-run.cmd ($WHAT)"
-ssh -n "$BOX" "$DIR\\rstudio-run.cmd"
+say "running $DIR\\ride-run.cmd ($WHAT)"
+ssh -n "$BOX" "$DIR\\ride-run.cmd"

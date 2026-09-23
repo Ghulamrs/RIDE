@@ -2102,7 +2102,7 @@ void Editor::editProjectLibraries() {
 
 // The open project's own header directories and libraries, relative to its
 // root, written to its .pro - searched and linked before the installation's.
-// The window has the same over rstudio_project_set_includes/libraries.
+// The window has the same over ride_project_set_includes/libraries.
 void Editor::editOwnIncludes() {
     if (!project_.loaded()) { say("there is no project open - these are a project's own; Tools > Shared include paths... is the installation's"); return; }
     bool cancelled = false;
@@ -3713,7 +3713,7 @@ void Editor::run() {
     // Leaving the editor ends a debugging session the way Stop debugging
     // does. The Debugger's destructor already stopped lldb or gdb; what it
     // could not do was remove the temporary program F8 built - so a quit in
-    // the middle of a session left rstudio-run-<pid>, and on a Mac its
+    // the middle of a session left ride-run-<pid>, and on a Mac its
     // .dSYM, in the temporary directory, one pair per session.
     if (debugging()) debugStop();
 

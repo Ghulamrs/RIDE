@@ -7,7 +7,7 @@ rem (cc1i/cxx1i/shci) emits the C6000 assembly; TI's cl6x/asm6x assemble it,
 rem lnk6x links against TI's runtime, hex6x makes the Intel .hex. As against the
 rem vm6747 emulator, which runs the .s directly and needs no TI install.
 rem
-rem TI CGT is found via, in order: %RSTUDIO_TI_CGT% (a CGT root or its bin),
+rem TI CGT is found via, in order: %RIDE_TI_CGT% (a CGT root or its bin),
 rem cl6x on PATH, or C:\ti\ccs*\tools\compiler\ti-cgt-c6000_*. Get it free from
 rem TI ("C6000 Code Generation Tools") if none is present.
 setlocal enabledelayedexpansion
@@ -19,20 +19,20 @@ set SELF=%~dp0
 rem --- our compilers: beside this script's bin (installed: bin\ti\ -> bin\) ---
 set OURBIN=%SELF%..
 if not exist "%OURBIN%\cc1i.exe" set OURBIN=%SELF%..\bin
-if not exist "%OURBIN%\cc1i.exe" set OURBIN=C:\Users\GRA\source\RStudio\bin
+if not exist "%OURBIN%\cc1i.exe" set OURBIN=C:\Users\GRA\source\RIDE\bin
 
 rem --- find TI CGT ---
 set CGT=
-if not "%RSTUDIO_TI_CGT%"=="" (
-  if exist "%RSTUDIO_TI_CGT%\bin\cl6x.exe" set CGT=%RSTUDIO_TI_CGT%
-  if exist "%RSTUDIO_TI_CGT%\cl6x.exe" set CGT=%RSTUDIO_TI_CGT%\..
+if not "%RIDE_TI_CGT%"=="" (
+  if exist "%RIDE_TI_CGT%\bin\cl6x.exe" set CGT=%RIDE_TI_CGT%
+  if exist "%RIDE_TI_CGT%\cl6x.exe" set CGT=%RIDE_TI_CGT%\..
 )
 if "%CGT%"=="" for %%D in (C:\ti\ccsv7 C:\ti\ccsv8 C:\ti\ccs1200 C:\ti\ccs) do (
   for /d %%C in ("%%D\tools\compiler\ti-cgt-c6000_*") do if exist "%%C\bin\cl6x.exe" set CGT=%%C
 )
 if "%CGT%"=="" (
   echo TI CGT not found. Install the free "C6000 Code Generation Tools" from
-  echo Texas Instruments, or set RSTUDIO_TI_CGT to its folder. The vm6747
+  echo Texas Instruments, or set RIDE_TI_CGT to its folder. The vm6747
   echo emulator still runs tms6747 programs without it.
   exit /b 3
 )
@@ -40,7 +40,7 @@ set CGTBIN=%CGT%\bin
 echo using TI CGT: %CGT%
 
 rem --- the EH runtime, built once from THIS machine's CGT into a user cache ---
-set CACHE=%LOCALAPPDATA%\RStudio\tilib
+set CACHE=%LOCALAPPDATA%\RIDE\tilib
 if not exist "%CACHE%\rts6740_elf_eh.lib" (
   echo building the C6000 exception-handling runtime once ^(may take a minute^)...
   if not exist "%CACHE%" mkdir "%CACHE%"

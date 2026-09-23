@@ -2,9 +2,9 @@
 *.d
 *.obj
 obj/
-RStudio
-RStudio.exe
-RStudioGui.exe
+RIDE
+RIDE.exe
+RIDEGui.exe
 test
 test.exe
 tests/test
@@ -22,7 +22,7 @@ DerivedData/
 winforms/x64/
 
 # macOS "keep both" copies. Something in this tree makes them during ordinary
-# builds - `RStudio 2.exe`, `lib/shmrt-arm64-darwin 2.a` - and the cause has
+# builds - `RIDE 2.exe`, `lib/shmrt-arm64-darwin 2.a` - and the cause has
 # never been established, so this only stops them being committed. Four were
 # sitting untracked in this root on 2026-08-27 after a workspace build, which
 # is the `git add -A` accident that has already happened here once. They also
@@ -50,14 +50,14 @@ gui.png
 build/
 
 # What a workspace build leaves here: the two compilers and the converter
-# RStudio drives, built into this directory rather than collected into it, and
+# RIDE drives, built into this directory rather than collected into it, and
 # shc's runtime archives - which live beside shc because that is where shc
 # looks for them. None of the four is this repository's to carry.
 #
 # c2s.exe was missing from this list until 2026-08-27 and sat untracked in the
 # root, which is the accident a `git add -A` turns into a committed binary.
 # The .dSYM bundles arrived with it: an Xcode Release build writes one beside
-# each program, and `RStudio.exe` above does not match `RStudio.exe.dSYM`.
+# each program, and `RIDE.exe` above does not match `RIDE.exe.dSYM`.
 cc1.exe
 cxx1.exe
 shc.exe

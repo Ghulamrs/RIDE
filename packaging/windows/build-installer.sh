@@ -5,10 +5,10 @@
 #  Steps: compile every compiler + the RIDE editor (make -f workspace.mk),
 #  (re)generate the HTML docs, stage the install tree, and package it as a
 #  .tar.gz.  Inno Setup is Windows-only, so on these platforms the deliverable
-#  is a relocatable tarball (unpack and run bin/RStudio); use build-installer.bat
+#  is a relocatable tarball (unpack and run bin/RIDE); use build-installer.bat
 #  on Windows for a real setup.exe.
 #
-#  Usage:   ./build-installer.sh [4.0|3.5]
+#  Usage:   ./build-installer.sh [4.0]
 #  Env overrides (optional):
 #     CPP    the C++ compiler clone carrying include/ (C++) and lib/ (C) headers
 #            (default: first of <repo>/../Compiler-Cppi, <repo>/../C++)
@@ -19,6 +19,8 @@
 set -euo pipefail
 
 VER="${1:-4.0}"
+# The 3.x releases are sealed and built from their own tree, not this one.
+[ "$VER" = 4.0 ] || { echo "build-installer.sh: this tree builds 4.0 only"; exit 2; }
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(cd "$HERE/../.." && pwd)"
 PY="${PY:-python3}"

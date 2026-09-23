@@ -32,8 +32,8 @@ The pieces that ship, and what each one is:
 
 | Program            | What it is                                             |
 |--------------------|--------------------------------------------------------|
-| `RStudio.exe`      | the windowed editor (on Windows). On Unix the same name is the console editor. |
-| `RStudioConsole.exe` | the console (terminal) editor on Windows.            |
+| `RIDE.exe`      | the windowed editor (on Windows). On Unix the same name is the console editor. |
+| `RIDEConsole.exe` | the console (terminal) editor on Windows.            |
 | `cc1i.exe`         | the C compiler. ISO C 90. Four targets.                |
 | `cxx1i.exe`        | the C++ compiler. ISO C++ 11. Four targets.            |
 | `shci.exe`         | the Shalimar compiler. Three host targets + tms6747.   |

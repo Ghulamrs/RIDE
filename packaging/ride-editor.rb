@@ -1,15 +1,15 @@
-# RStudio, cc1, cxx1 and shc as one Homebrew formula.
+# RIDE, cc1, cxx1 and shc as one Homebrew formula.
 #
-#   brew install --build-from-source packaging/rstudio-editor.rb
-#   brew test rstudio-editor
+#   brew install --build-from-source packaging/ride-editor.rb
+#   brew test ride-editor
 #
 # The four programs are one formula because they are one thing to use: the
 # editor drives the three compilers and is not much good without them.
 #
-# Named rstudio-editor and not rstudio. "RStudio" is also a widely known IDE for
-# R - there is a cask by that name - and a formula called rstudio that installed
+# Named ride-editor and not ride. "RIDE" is also a widely known IDE for
+# R - there is a cask by that name - and a formula called ride that installed
 # something else would be a trap for whoever typed it. The programs keep their
-# own names: RStudio.exe, cc1.exe, cxx1.exe and shc.exe.
+# own names: RIDE.exe, cc1.exe, cxx1.exe and shc.exe.
 #
 # Two things this has to get right, and both are about how these programs find
 # their own files once they are somewhere other than the tree they were built
@@ -25,9 +25,9 @@
 #   time to where this formula puts the headers rather than to the build tree.
 #   cxx1.exe has two - INCDIR for its C headers and CXXINCDIR for the C++ ones
 #   - and is told both the same way.
-class RstudioEditor < Formula
+class RideEditor < Formula
   desc "Editor for C, C++ and Shalimar, with the three compilers it drives"
-  homepage "https://github.com/Ghulamrs/RStudio"
+  homepage "https://github.com/Ghulamrs/RIDE"
   version "3.0"
   license :cannot_represent
 
@@ -36,7 +36,7 @@ class RstudioEditor < Formula
   # whatever it downloads into a temporary directory, so "the three checkouts
   # sitting side by side" that every other build here relies on simply is not
   # there, and reaching for ../Compiler-C would find nothing.
-  head "https://github.com/Ghulamrs/RStudio.git", branch: "main"
+  head "https://github.com/Ghulamrs/RIDE.git", branch: "main"
 
   # Ordered the way Homebrew's own audit wants it: dependencies before
   # resources, and xcode before macos. Not arbitrary - a formula that reads the
@@ -88,7 +88,7 @@ class RstudioEditor < Formula
 
     # The editor last, because it is the one that drives the other two.
     system "make"
-    bin.install "RStudio.exe"
+    bin.install "RIDE.exe"
     doc.install Dir["help/*"]
   end
 
@@ -97,7 +97,7 @@ class RstudioEditor < Formula
       The manual is in #{doc}, and Help > Contents inside the editor lists the
       same pages.
 
-      RStudio.exe is the editor; cc1.exe, cxx1.exe and shc.exe are the
+      RIDE.exe is the editor; cc1.exe, cxx1.exe and shc.exe are the
       compilers it drives. It finds them on PATH, so nothing needs configuring.
     EOS
   end
@@ -138,6 +138,6 @@ class RstudioEditor < Formula
     system bin/"shc.exe", "probe.shm", "--debug", "-o", "probedebug"
     assert_equal "42", shell_output("./probedebug").strip
 
-    assert_match "RStudio", shell_output("#{bin}/RStudio.exe --help")
+    assert_match "RIDE", shell_output("#{bin}/RIDE.exe --help")
   end
 end

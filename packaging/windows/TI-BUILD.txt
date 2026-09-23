@@ -21,13 +21,13 @@ instead, use ti-build, which uses a CGT install already on this machine
     bin\ti\ti-build.cmd  path\to\program.c        (or .cpp, or .shl)
 
 It finds the CGT via, in order:
-  1. the RSTUDIO_TI_CGT environment variable (the CGT folder),
+  1. the RIDE_TI_CGT environment variable (the CGT folder),
   2. cl6x on PATH,
   3. C:\ti\ccs*\tools\compiler\ti-cgt-c6000_*.
 
 If none is present, install the free "C6000 Code Generation Tools" from TI.
 The first run builds the exception-handling runtime once, into
-%LOCALAPPDATA%\RStudio\tilib (via the CGT's own mklib; needs a POSIX sh such
+%LOCALAPPDATA%\RIDE\tilib (via the CGT's own mklib; needs a POSIX sh such
 as the one Git for Windows provides, on PATH).
 
 Output: program.out (ELF for the C674x) and program.hex (Intel hex), beside the

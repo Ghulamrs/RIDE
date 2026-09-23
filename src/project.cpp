@@ -31,8 +31,6 @@ Project::Project()
     indent_.tabs = settings::indentTabs();
 }
 
-const char* Project::fileName() { return "RStudio.json"; }
-const char* Project::formerFileName() { return "ed1.json"; }
 
 static bool namedPro(const std::string& name) {
     const std::string suffix = Project::suffix();
@@ -67,14 +65,6 @@ std::vector<std::string> Project::projectFilesIn(const std::string& directory) {
 std::string Project::fileIn(const std::string& directory) {
     std::vector<std::string> named = projectFilesIn(directory);
     if (!named.empty()) return named[0];
-
-    std::string base = path::absolute(directory);
-    std::string now = base + "/" + fileName();
-    if (path::exists(now)) return now;
-
-    std::string before = base + "/" + formerFileName();
-    if (path::exists(before)) return before;
-
     return std::string();
 }
 

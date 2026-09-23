@@ -1,6 +1,6 @@
 # Part VIII — The Shalimar ecosystem and the c2s converter
 
-Shalimar is more than the `shci` compiler inside RStudio. It is a small family of
+Shalimar is more than the `shci` compiler inside RIDE. It is a small family of
 projects that share one language, and the C↔Shalimar converter (`c2s`) that
 RIDE ships is the bridge between the C world and the Shalimar one. This part
 maps the family, then documents `c2s` in full — because `c2s.exe` is in your

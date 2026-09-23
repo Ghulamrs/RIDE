@@ -3,14 +3,14 @@ rem Builds WinConsole with MSVC, which is how it is built on the machine it is
 rem meant for. There is no make on that box, and none is needed: a couple of
 rem dozen translation units and one link.
 rem
-rem RStudioConsole.exe is this project's console editor on Windows.
-rem On Windows RStudio.exe is the window - which is what somebody there runs -
-rem and on a Mac or Linux, where there is no window, RStudio.exe is this one. - the same source as
+rem RIDEConsole.exe is this project's console editor on Windows.
+rem On Windows RIDE.exe is the window - which is what somebody there runs -
+rem and on a Mac or Linux, where there is no window, RIDE.exe is this one. - the same source as
 rem ed1 on Linux and macOS, over the Windows half of the terminal, and named for
 rem the machine it runs on so that the three variants can be told apart where
 rem they are installed. See "The three variants" in the README.
 rem
-rem   build            builds RStudioConsole.exe
+rem   build            builds RIDEConsole.exe
 rem   build test       builds it, then builds and runs the unit tests
 rem   build session    builds it, then drives the editor itself with keystrokes
 rem   build check      both
@@ -26,6 +26,9 @@ rem _CRT_SECURE_NO_WARNINGS is defined for the same reason cc1's own project
 rem defines it: getenv and strerror are standard C++17, and MSVC's objection to
 rem them is house policy rather than a defect to go and fix.
 setlocal
+rem The product's name, once, as product.props, the Makefile and the .iss spell it.
+set "PRODUCT=RIDE"
+set "PRODUCT_LOWER=ride"
 
 rem Before anything is built, because this one only looks at files. It needs no
 rem compiler and no Visual Studio environment, and a check that rebuilds the
@@ -40,22 +43,22 @@ if not exist obj mkdir obj
 rem **Into bin\, which is where the compilers are.** This built the
 rem console editor into the repository root until 2026-08-27, and an editor
 rem there has nothing beside it: the solution puts cc1i.exe, shci.exe, c2s.exe
-rem and shc's lib\ in bin\ (via /p:OutDir), and RStudio finds what it drives with
+rem and shc's lib\ in bin\ (via /p:OutDir), and RIDE finds what it drives with
 rem path::besideProgram before it looks at PATH. So a `build.bat` editor could
 rem not compile anything without $CC1 being named, and said so in its own About
 rem box - three times over, "not beside this program". The two ways of building
 rem the editor here now write to the same directory, which is what make does on
 rem Unix with BINDIR.
 rem
-rem The stale root copy goes with it. Two RStudioConsole.exe in one tree is a
+rem The stale root copy goes with it. Two RIDEConsole.exe in one tree is a
 rem tree where nobody can say which one they ran, and this one would be the
 rem older every time from now on.
 if "%BINDIR%"=="" set BINDIR=bin
 if not exist "%BINDIR%" mkdir "%BINDIR%"
-if exist RStudioConsole.exe del RStudioConsole.exe
+if exist %PRODUCT%Console.exe del %PRODUCT%Console.exe
 
 cl /nologo /std:c++14 /W4 /WX /EHsc /permissive- /O2 /D_CRT_SECURE_NO_WARNINGS ^
-   /Fe:%BINDIR%\RStudioConsole.exe /Fo:obj\ ^
+   /Fe:%BINDIR%\%PRODUCT%Console.exe /Fo:obj\ ^
    src\main.cpp src\editor.cpp src\buffer.cpp src\compile.cpp src\convert.cpp ^
    src\indent.cpp src\menu.cpp src\tree.cpp src\syntax.cpp src\toolchain.cpp ^
    src\json.cpp src\project.cpp src\find.cpp src\utf8.cpp src\workspace.cpp src\symbols.cpp src\demangle_win.cpp ^
@@ -78,9 +81,9 @@ rem The window, which is C++/CLI and which the console build above never
 rem compiles. Run from here for the same reason the solution is: msbuild
 rem reaches PATH only after vcvars64.bat, which the top of this file has
 rem already found, so nothing else has to know where Visual Studio is.
-msbuild winforms\RStudioGui.vcxproj /p:Configuration=Release /p:Platform=x64 /p:OutDir=%CD%\bin\ /v:minimal
+msbuild winforms\RIDEGui.vcxproj /p:Configuration=Release /p:Platform=x64 /p:OutDir=%CD%\bin\ /v:minimal
 if errorlevel 1 goto :fail
-echo built RStudio.exe (the window)
+echo built %PRODUCT%.exe (the window)
 exit /b 0
 
 :solution
@@ -101,12 +104,12 @@ rem Run from here rather than by calling msbuild directly, because msbuild is
 rem on PATH only after vcvars64.bat - which the top of this file has already
 rem found. One place knows where Visual Studio is.
 rem
-rem RStudio.sln reaches ..\VM6747\Compiler-Ci, ..\VM6747\Compiler-Cppi,
+rem RIDE.sln reaches ..\VM6747\Compiler-Ci, ..\VM6747\Compiler-Cppi,
 rem ..\VM6747\Emulator, ..\VM6747\Compiler-Si and ..\Converter-C2S - since
 rem 3.5 the compilers are the VM6747 line, cc1i, cxx1i and shci, with vm6747
 rem the emulator that runs the fourth target - so all six are laid out beside each other
 rem on this machine, as tools/to-windows.sh lays them.
-msbuild RStudio.sln /p:Configuration=Release /p:Platform=x64 /p:OutDir=%CD%\bin\ /v:minimal /m
+msbuild %PRODUCT%.sln /p:Configuration=Release /p:Platform=x64 /p:OutDir=%CD%\bin\ /v:minimal /m
 if errorlevel 1 goto :fail
 echo built the solution
 goto :confirm
@@ -141,12 +144,12 @@ for %%f in (cc1i.exe cxx1i.exe vm6747.exe asm6x.exe masm.exe link.exe lnk6x.exe 
 )
 if "%MISSING%"=="1" (
    echo.
-   echo RStudio is in %BINDIR% without what it drives. Build the solution with
+   echo RIDE is in %BINDIR% without what it drives. Build the solution with
    echo "build.bat solution", or name them with %%CC1%%, %%CXX1%% and %%SHC%%.
    goto :fail
 )
 echo.
-echo RStudio and everything it drives are in %BINDIR%
+echo RIDE and everything it drives are in %BINDIR%
 exit /b 0
 
 :product
@@ -155,20 +158,20 @@ rem actually run, away from the project space it was compiled in. Both Windows
 rem variants land here side by side - the console one and the window - and
 rem is copied when msbuild has made it and passed over when it has not.
 if "%BINDIR%"=="" set BINDIR=bin
-set PRODUCT=%USERPROFILE%\cc1-studio
+set PRODUCT_DIR=%USERPROFILE%\%PRODUCT_LOWER%
 rem Emptied first, the same as the Makefile's rule and for the same reason: a
 rem binary that was renamed leaves its old self here, and a directory holding
 rem two names is one where nobody can say which was run.
 rem
-rem The two directories this fills, and not %PRODUCT% itself - see the Makefile,
-rem where PRODUCT is the caller's to set and a wholesale delete is a foot-gun.
+rem The two directories this fills, and not %PRODUCT_DIR% itself - see the Makefile,
+rem where PRODUCT_DIR is the caller's to set and a wholesale delete is a foot-gun.
 rem Here it is fixed, but the two rules are kept the same shape on purpose.
-if exist "%PRODUCT%\bin" rmdir /s /q "%PRODUCT%\bin"
-if exist "%PRODUCT%\examples" rmdir /s /q "%PRODUCT%\examples"
-if not exist "%PRODUCT%\bin" mkdir "%PRODUCT%\bin"
-if not exist "%PRODUCT%\examples" mkdir "%PRODUCT%\examples"
-copy /y "%BINDIR%\RStudioConsole.exe" "%PRODUCT%\bin\" >nul
-if exist "%BINDIR%\RStudio.exe" copy /y "%BINDIR%\RStudio.exe" "%PRODUCT%\bin\" >nul
+if exist "%PRODUCT_DIR%\bin" rmdir /s /q "%PRODUCT_DIR%\bin"
+if exist "%PRODUCT_DIR%\examples" rmdir /s /q "%PRODUCT_DIR%\examples"
+if not exist "%PRODUCT_DIR%\bin" mkdir "%PRODUCT_DIR%\bin"
+if not exist "%PRODUCT_DIR%\examples" mkdir "%PRODUCT_DIR%\examples"
+copy /y "%BINDIR%\%PRODUCT%Console.exe" "%PRODUCT_DIR%\bin\" >nul
+if exist "%BINDIR%\%PRODUCT%.exe" copy /y "%BINDIR%\%PRODUCT%.exe" "%PRODUCT_DIR%\bin\" >nul
 
 rem And what the editor drives, from wherever the solution built it. This used
 rem to ship the editor alone, so the cc1.exe sitting in that bin\ was whatever
@@ -179,9 +182,9 @@ rem
 rem shc's runtime goes too, and into bin\lib\ rather than anywhere tidier,
 rem because that is where shc looks: beside its own binary.
 if "%BINDIR%"=="" set BINDIR=bin
-if exist "%BINDIR%\cc1i.exe" copy /y "%BINDIR%\cc1i.exe" "%PRODUCT%\bin\" >nul
-if exist "%BINDIR%\cxx1i.exe" copy /y "%BINDIR%\cxx1i.exe" "%PRODUCT%\bin\" >nul
-if exist "%BINDIR%\vm6747.exe" copy /y "%BINDIR%\vm6747.exe" "%PRODUCT%\bin\" >nul
+if exist "%BINDIR%\cc1i.exe" copy /y "%BINDIR%\cc1i.exe" "%PRODUCT_DIR%\bin\" >nul
+if exist "%BINDIR%\cxx1i.exe" copy /y "%BINDIR%\cxx1i.exe" "%PRODUCT_DIR%\bin\" >nul
+if exist "%BINDIR%\vm6747.exe" copy /y "%BINDIR%\vm6747.exe" "%PRODUCT_DIR%\bin\" >nul
 rem The headers go with the compilers, one directory above bin\ - because
 rem bin\lib\ is shc's. include\ is cxx1i's, its C++ headers and the C ones
 rem they wrap in one directory; lib\ is cc1i's. Each looks there for its own
@@ -189,11 +192,11 @@ rem before the paths compiled into it, which name the checkout, and the
 rem settings.json beside them tells the editor the same.
 if "%CXX1_DIR%"=="" set CXX1_DIR=..\VM6747\Compiler-Cppi
 if "%CC1_DIR%"=="" set CC1_DIR=..\VM6747\Compiler-Ci
-if exist "%PRODUCT%\include" rmdir /s /q "%PRODUCT%\include"
-if exist "%PRODUCT%\lib" rmdir /s /q "%PRODUCT%\lib"
-if exist "%CXX1_DIR%\include" xcopy /e /i /q "%CXX1_DIR%\include" "%PRODUCT%\include" >nul
-if exist "%CXX1_DIR%\lib\*.h" copy /y "%CXX1_DIR%\lib\*.h" "%PRODUCT%\include\" >nul
-if exist "%CC1_DIR%\lib" xcopy /e /i /q "%CC1_DIR%\lib" "%PRODUCT%\lib" >nul
+if exist "%PRODUCT_DIR%\include" rmdir /s /q "%PRODUCT_DIR%\include"
+if exist "%PRODUCT_DIR%\lib" rmdir /s /q "%PRODUCT_DIR%\lib"
+if exist "%CXX1_DIR%\include" xcopy /e /i /q "%CXX1_DIR%\include" "%PRODUCT_DIR%\include" >nul
+if exist "%CXX1_DIR%\lib\*.h" copy /y "%CXX1_DIR%\lib\*.h" "%PRODUCT_DIR%\include\" >nul
+if exist "%CC1_DIR%\lib" xcopy /e /i /q "%CC1_DIR%\lib" "%PRODUCT_DIR%\lib" >nul
 (
    echo {
    echo   "include": "include",
@@ -206,29 +209,29 @@ if exist "%CC1_DIR%\lib" xcopy /e /i /q "%CC1_DIR%\lib" "%PRODUCT%\lib" >nul
    echo   "includes": [],
    echo   "libraries": []
    echo }
-) > "%PRODUCT%\settings.json"
-if exist "%BINDIR%\shci.exe" copy /y "%BINDIR%\shci.exe" "%PRODUCT%\bin\" >nul
-if exist "%BINDIR%\RStudio.exe" copy /y "%BINDIR%\RStudio.exe" "%PRODUCT%\bin\" >nul
+) > "%PRODUCT_DIR%\settings.json"
+if exist "%BINDIR%\shci.exe" copy /y "%BINDIR%\shci.exe" "%PRODUCT_DIR%\bin\" >nul
+if exist "%BINDIR%\%PRODUCT%.exe" copy /y "%BINDIR%\%PRODUCT%.exe" "%PRODUCT_DIR%\bin\" >nul
 if exist "%BINDIR%\lib\*.lib" (
-   if not exist "%PRODUCT%\bin\lib" mkdir "%PRODUCT%\bin\lib"
-   copy /y "%BINDIR%\lib\*.lib" "%PRODUCT%\bin\lib\" >nul
+   if not exist "%PRODUCT_DIR%\bin\lib" mkdir "%PRODUCT_DIR%\bin\lib"
+   copy /y "%BINDIR%\lib\*.lib" "%PRODUCT_DIR%\bin\lib\" >nul
 )
 rem And the C6000 runtime directory, which the emulator takes beside a
 rem Shalimar program; the editor looks for it in lib/ beside itself.
-if exist "%BINDIR%\lib\shmrt-tms6747" xcopy /e /i /q "%BINDIR%\lib\shmrt-tms6747" "%PRODUCT%\bin\lib\shmrt-tms6747" >nul
-copy /y README.md "%PRODUCT%\" >nul
+if exist "%BINDIR%\lib\shmrt-tms6747" xcopy /e /i /q "%BINDIR%\lib\shmrt-tms6747" "%PRODUCT_DIR%\bin\lib\shmrt-tms6747" >nul
+copy /y README.md "%PRODUCT_DIR%\" >nul
 rem All three languages, and the headers. This copied only *.c and *.cpp until
 rem 2026-08-24, which shipped table.cpp and vector3.cpp without the headers they
 rem include - neither compiles on arrival - and left out gcd.shl, primes.shl and
 rem rotmat.shl altogether, which is every Shalimar program here, in the product
 rem whose third language is Shalimar. example.pro goes too, so that there is a
 rem project to open rather than only loose files.
-copy /y examples\*.c "%PRODUCT%\examples\" >nul
-copy /y examples\*.h "%PRODUCT%\examples\" >nul
-copy /y examples\*.cpp "%PRODUCT%\examples\" >nul
-copy /y examples\*.shl "%PRODUCT%\examples\" >nul
-copy /y examples\*.pro "%PRODUCT%\examples\" >nul
-echo RStudio is in %PRODUCT%
+copy /y examples\*.c "%PRODUCT_DIR%\examples\" >nul
+copy /y examples\*.h "%PRODUCT_DIR%\examples\" >nul
+copy /y examples\*.cpp "%PRODUCT_DIR%\examples\" >nul
+copy /y examples\*.shl "%PRODUCT_DIR%\examples\" >nul
+copy /y examples\*.pro "%PRODUCT_DIR%\examples\" >nul
+echo RIDE is in %PRODUCT_DIR%
 goto :done
 
 
@@ -256,20 +259,20 @@ if not exist obj\harness mkdir obj\harness
 cl /nologo /std:c++14 /W4 /WX /EHsc /permissive- /D_CRT_SECURE_NO_WARNINGS ^
    /I src /Fe:session.exe /Fo:obj\harness\ tests\session.cpp src\path.cpp
 if errorlevel 1 goto :fail
-session.exe %BINDIR%\RStudioConsole.exe %CC1%
+session.exe %BINDIR%\%PRODUCT%Console.exe %CC1%
 if errorlevel 1 goto :fail
 
 rem The window has to reach main. Its start-up is mixed-mode, and a native
 rem global with a destructor anywhere in what it links kills it before main
 rem with STATUS_HEAP_CORRUPTION - which no suite saw from 2026-09-18 to the
 rem 19th, because none of them ran the window. --version exits before a form.
-if exist %BINDIR%\RStudio.exe (
-  %BINDIR%\RStudio.exe --version
+if exist %BINDIR%\%PRODUCT%.exe (
+  %BINDIR%\%PRODUCT%.exe --version
   if errorlevel 1 goto :fail
 )
 
 :done
-echo built %BINDIR%\RStudioConsole.exe
+echo built %BINDIR%\%PRODUCT%Console.exe
 exit /b 0
 
 :findvcvars

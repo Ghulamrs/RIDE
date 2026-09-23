@@ -6,9 +6,9 @@ rem
 rem   clean.cmd        clean
 rem   clean.cmd -n     say what would go, remove nothing
 rem
-rem Run it from the RStudio directory. The four projects are expected as
-rem siblings - RStudio\, Compiler-C\, Compiler-S\, Converter-C2S\ - which is
-rem what RStudio.sln's ..\ paths require anyway.
+rem Run it from the RIDE directory. The four projects are expected as
+rem siblings - RIDE\, Compiler-C\, Compiler-S\, Converter-C2S\ - which is
+rem what RIDE.sln's ..\ paths require anyway.
 rem
 rem **Every path here is named, never globbed.** clean.sh can ask git whether a
 rem path is source; there is no git on this machine, so the safety has to come
@@ -18,7 +18,7 @@ rem apart, meaning opposite things - so nothing here removes a directory called
 rem lib, and the MSVC build does not produce one at that level in any case.
 rem
 rem What MSVC leaves that the Makefiles do not: a per-project intermediate
-rem directory named after the project (RStudioConsole\, cc1\, shc\, c2s\), the
+rem directory named after the project (RIDEConsole\, cc1\, shc\, c2s\), the
 rem x64\ output tree, and .obj/.pdb/.ilk beside whatever was built by hand.
 setlocal EnableDelayedExpansion
 
@@ -37,20 +37,20 @@ echo.
 rem ---- the shared object root the Makefiles default to ------------------------
 call :dropdir "%ROOT%\build"
 
-rem ---- RStudio ---------------------------------------------------------------
-echo RStudio:
-call :dropdir "%ROOT%\RStudio\x64"
-call :dropdir "%ROOT%\RStudio\obj"
-call :dropdir "%ROOT%\RStudio\RStudioConsole"
-call :dropdir "%ROOT%\RStudio\winforms\x64"
-call :dropdir "%ROOT%\RStudio\winforms\RStudioGui"
-call :dropfile "%ROOT%\RStudio\RStudioConsole.exe"
-call :dropfile "%ROOT%\RStudio\RStudio.exe"
-call :dropfile "%ROOT%\RStudio\test.exe"
-call :dropfile "%ROOT%\RStudio\session.exe"
-call :dropglob "%ROOT%\RStudio" *.obj
-call :dropglob "%ROOT%\RStudio" *.ilk
-call :dropglob "%ROOT%\RStudio" *.pdb
+rem ---- RIDE ---------------------------------------------------------------
+echo RIDE:
+call :dropdir "%ROOT%\RIDE\x64"
+call :dropdir "%ROOT%\RIDE\obj"
+call :dropdir "%ROOT%\RIDE\RIDEConsole"
+call :dropdir "%ROOT%\RIDE\winforms\x64"
+call :dropdir "%ROOT%\RIDE\winforms\RIDEGui"
+call :dropfile "%ROOT%\RIDE\RIDEConsole.exe"
+call :dropfile "%ROOT%\RIDE\RIDE.exe"
+call :dropfile "%ROOT%\RIDE\test.exe"
+call :dropfile "%ROOT%\RIDE\session.exe"
+call :dropglob "%ROOT%\RIDE" *.obj
+call :dropglob "%ROOT%\RIDE" *.ilk
+call :dropglob "%ROOT%\RIDE" *.pdb
 echo.
 
 rem ---- Compiler-C ------------------------------------------------------------

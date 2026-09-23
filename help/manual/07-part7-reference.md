@@ -24,7 +24,7 @@
 In the project pane, Enter opens. In the bottom panel, left/right change tab and
 shift+up/down resize it; on Console, Enter jumps to the line the compiler named.
 
-**The Windows window (`RStudio.exe`) differs deliberately on nine keys**, keeping
+**The Windows window (`RIDE.exe`) differs deliberately on nine keys**, keeping
 what a Windows application means by them: `Ctrl+PageDown`/`Ctrl+PageUp` move
 between files (`F2`/`F3` are Rename and Find-next there), so **`F3` is Find next
 and `Shift-F3` Find previous**; **`Ctrl-W` closes the file** (next pane in the
@@ -52,7 +52,7 @@ architectures), Help. The last three — Language, Tools, Target — are one cha
 --------------------------------------------------------------------------------
 ## 27. The editor's own command line
 
-    RStudio.exe [file] [--project dir]
+    RIDE.exe [file] [--project dir]
         [--toolchain auto|cc1|cxx1|msvc|shc|c++]
         [--config debug|release]
         [--cc1 path] [--cxx1 path] [--cl path] [--shc path]
@@ -108,10 +108,10 @@ Two diagnostics worth recognising:
 - **Shalimar won't share a build with C** — by design; build two programs (Part
   III chapter 13).
 - **`ti-build` says "TI CGT not found"** — install TI's free C6000 Code
-  Generation Tools, or set `RSTUDIO_TI_CGT`; the `vm6747` emulator runs tms6747
+  Generation Tools, or set `RIDE_TI_CGT`; the `vm6747` emulator runs tms6747
   without it.
 - **`ti-build` first run is slow / "building the runtime"** — it is building the
-  EH runtime once into `%LOCALAPPDATA%\RStudio\tilib`; needs a POSIX `sh` (Git
+  EH runtime once into `%LOCALAPPDATA%\RIDE\tilib`; needs a POSIX `sh` (Git
   for Windows) on `PATH`. Subsequent runs are fast.
 - **Total failure of a suite on Windows only** — read it as a line-ending
   question (MSVC writes CRLF, golden files are LF) before a compiler fault.

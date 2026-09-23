@@ -1,46 +1,31 @@
 # Windows installers (Inno Setup)
 
-`setup.exe` installers for RIDE, built on the Windows box with Inno Setup 6
-(`winget install JRSoftware.InnoSetup`). Three versions:
+`setup.exe` installer for RIDE 4.0, built on the Windows box with Inno Setup 6
+(`winget install JRSoftware.InnoSetup`). The 3.x releases are sealed and are
+packaged from their own tree, not this one.
 
-- **RIDE 4.0** — everything 3.5 has, plus the project's own x86-64 assembler
-  `masm` beside the editor, which the installed `settings.json` names in place
-  of `ml64` (`"assembler": "bin/masm.exe"`), and the project's own x86-64
-  linker `link.exe` beside it (LINK) and the C6000 linker `lnk6x.exe`
-  (LNK6x), both named too (`"linker": "bin/link.exe"`, `"tilinker":
-  "bin/lnk6x.exe"`). `"askNative": true`: when one of ours fails a build
-  and the source is not at fault, the editor asks whether to use the
-  vendor's tools for that build (found by vswhere / the `ti` directory,
-  never PATH); false never asks. Neither linker yet takes its vendor's
-  runtime, so the question comes up on every real link for now. Built from the RIDE
-  tree (`C:\Users\GRA\source\RIDE`, with `..\MASM`, `..\LINK` and `..\LNK6x`
-  beside it).
-- **RIDE 3.5** — three languages, **four** targets (incl. `tms6747` with the
-  `vm6747` emulator), the C↔Shalimar converter, and a **license-safe TI build
-  path** (`bin\ti\ti-build.cmd`) that produces a real C674x `.out`/`.hex` using
-  a TI CGT install found on the machine (no TI binaries are shipped).
-- **RIDE 3.0** — three languages, **three** targets, no emulator (the frozen
-  originals cc1/cxx1/shc).
+RIDE 4.0 ships the project's own x86-64 assembler `masm` beside the editor,
+which the installed `settings.json` names in place of `ml64`
+(`"assembler": "bin/masm.exe"`), and the project's own x86-64 linker
+`link.exe` beside it (LINK) and the C6000 linker `lnk6x.exe` (LNK6x), both
+named too (`"linker": "bin/link.exe"`, `"tilinker": "bin/lnk6x.exe"`).
+`"askNative": true`: when one of ours fails a build and the source is not at
+fault, the editor asks whether to use the vendor's tools for that build (found
+by vswhere / the `ti` directory, never PATH); false never asks. It also carries
+a license-safe TI build path (`bin\ti\ti-build.cmd`) that produces a real C674x
+`.out`/`.hex` with a TI CGT install found on the machine (no TI binaries are
+shipped).
 
 ## How to build (on the box)
 
-1. Build the workspace so the binaries exist:
-   - 4.0: `tools/to-windows.sh` (into `C:\Users\GRA\source\RIDE\bin`; it
-     carries `..\MASM`, `..\LINK` and `..\LNK6x` too).
-   - 3.5: the sealed tree's own relay (into `C:\Users\GRA\source\RStudio\bin`).
-   - 3.0: a worktree at `8be81ca`, `ED1_WINDOWS_ROOT=...\source30 tools/to-windows.sh`
-     (into `...\source30\RStudio\x64\Release`), with the four originals relayed.
-     `8be81ca` predates the 15-part manual, so copy `help/manual/` from `main`
-     into `...\source30\RStudio\help\manual\` before staging — otherwise the 3.0
-     package silently drops the manual and its Start-menu "Manual" shortcut (and
-     the Express Help's "full manual" note) point at files that are not there.
-2. Stage the install tree:
-   - `stage.cmd   <RIDE>    <Compiler-Cppi> <stage40>`  (4.0, sources from `bin\`; ships masm.exe and names it)
-   - `stage.cmd   <RStudio> <Compiler-Cppi> <stage35>`  (3.5, sources from `bin\`)
-   - `stage30.cmd <RStudio> <Compiler-Cpp>  <stage30>`  (3.0, sources from `x64\Release`)
-   then copy `EXPRESS-HELP-<ver>.md` to the stage root as `EXPRESS-HELP.md`, and
-   (3.5 and 4.0) `ti-build.cmd`+`ti-link.cmd`+`TI-BUILD.txt` into `stage<ver>\bin\ti\`.
-3. `mkinstaller.cmd RStudio-4.0.iss` (or `RStudio-3.5.iss`, `RStudio-3.0.iss`) → `RIDE-<ver>-setup.exe`.
+1. Build the workspace so the binaries exist: `tools/to-windows.sh` (into
+   `C:\Users\GRA\source\RIDE\bin`; it carries `..\MASM`, `..\LINK` and
+   `..\LNK6x` too).
+2. Stage the install tree: `stage.cmd <RIDE> <Compiler-Cppi> <stage40>`
+   (sources from `bin\`; ships masm.exe and names it), then copy
+   `EXPRESS-HELP-4.0.md` to the stage root as `EXPRESS-HELP.md`, and
+   `ti-build.cmd`+`ti-link.cmd`+`TI-BUILD.txt` into `stage40\bin\ti\`.
+3. `mkinstaller.cmd RIDE-4.0.iss` → `RIDE-4.0-setup.exe`.
 
 ## One-shot build scripts
 
@@ -57,13 +42,13 @@ with `include/` and `lib/`) and `OUT` (output dir) as overrides. The `.iss` take
 regenerated with `docs2html.py` when Python is present; otherwise the committed
 `help/manual.html`, `help/guide.html` and `EXPRESS-HELP-<ver>.html` are used.
 
-The `.iss` files name box-local stage paths (`C:\Users\GRA\rstudio-pkg\...`);
+The `.iss` files name box-local stage paths (`C:\Users\GRA\ride-pkg\...`);
 adjust the `Stage` define for another machine.
 
 ## Layout the installer lays down
 
-    <install>\bin\     RStudio.exe, RStudioConsole.exe, the compilers, (3.5) vm6747, asm6x, c2s, (4.0) masm, link, lnk6x
-    <install>\bin\lib\ Shalimar runtime (.lib) and (3.5) shmrt-tms6747\*.s
-    <install>\bin\ti\  (3.5) ti-build.cmd - real-silicon TI build path
+    <install>\bin\     RIDE.exe, RIDEConsole.exe, the compilers, vm6747, asm6x, c2s, masm, link, lnk6x
+    <install>\bin\lib\ Shalimar runtime (.lib) and shmrt-tms6747\*.s
+    <install>\bin\ti\  ti-build.cmd - real-silicon TI build path
     <install>\include\ C++ headers      <install>\lib\ C headers
     <install>\examples\  <install>\help\  <install>\docs\  EXPRESS-HELP.md

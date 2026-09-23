@@ -27,6 +27,7 @@
 #include "shalimar/session.h"
 #include "find.h"
 #include "indent.h"
+#include "product.h"
 #include "project.h"
 #include "symbols.h"
 #include "syntax.h"
@@ -35,17 +36,17 @@
 
 namespace {
 
-static_assert(RSTUDIO_KIND_KEYWORD == static_cast<int>(editor::KindKeyword), "kind numbering has drifted");
-static_assert(RSTUDIO_KIND_LABEL == static_cast<int>(editor::KindLabel), "kind numbering has drifted");
-static_assert(RSTUDIO_LANG_CPP == static_cast<int>(editor::LangCpp), "language numbering has drifted");
-static_assert(RSTUDIO_LANG_SHALIMAR == static_cast<int>(editor::LangShalimar), "language numbering has drifted");
-static_assert(RSTUDIO_LANG_ASM == static_cast<int>(editor::LangAsm), "language numbering has drifted");
-static_assert(RSTUDIO_LANG_JSON == static_cast<int>(editor::LangJson), "language numbering has drifted");
-static_assert(RSTUDIO_TOOL_MSVC == static_cast<int>(editor::ToolMsvc), "toolchain numbering has drifted");
-static_assert(RSTUDIO_TOOL_SHC == static_cast<int>(editor::ToolShc), "toolchain numbering has drifted");
-static_assert(RSTUDIO_TOOL_CXX == static_cast<int>(editor::ToolCxx), "toolchain numbering has drifted");
-static_assert(RSTUDIO_TOOL_CXX1 == static_cast<int>(editor::ToolCxx1), "toolchain numbering has drifted");
-static_assert(RSTUDIO_CONFIG_RELEASE == static_cast<int>(editor::ConfigRelease), "config numbering has drifted");
+static_assert(RIDE_KIND_KEYWORD == static_cast<int>(editor::KindKeyword), "kind numbering has drifted");
+static_assert(RIDE_KIND_LABEL == static_cast<int>(editor::KindLabel), "kind numbering has drifted");
+static_assert(RIDE_LANG_CPP == static_cast<int>(editor::LangCpp), "language numbering has drifted");
+static_assert(RIDE_LANG_SHALIMAR == static_cast<int>(editor::LangShalimar), "language numbering has drifted");
+static_assert(RIDE_LANG_ASM == static_cast<int>(editor::LangAsm), "language numbering has drifted");
+static_assert(RIDE_LANG_JSON == static_cast<int>(editor::LangJson), "language numbering has drifted");
+static_assert(RIDE_TOOL_MSVC == static_cast<int>(editor::ToolMsvc), "toolchain numbering has drifted");
+static_assert(RIDE_TOOL_SHC == static_cast<int>(editor::ToolShc), "toolchain numbering has drifted");
+static_assert(RIDE_TOOL_CXX == static_cast<int>(editor::ToolCxx), "toolchain numbering has drifted");
+static_assert(RIDE_TOOL_CXX1 == static_cast<int>(editor::ToolCxx1), "toolchain numbering has drifted");
+static_assert(RIDE_CONFIG_RELEASE == static_cast<int>(editor::ConfigRelease), "config numbering has drifted");
 
 char* give(const std::string& text) {
     char* out = static_cast<char*>(std::malloc(text.size() + 1));
@@ -83,7 +84,7 @@ editor::IndentStyle styleOf(int width, int tabs, int caseIndent, int dialect) {
     if (width >= 1 && width <= 16) style.width = static_cast<size_t>(width);
     style.tabs = tabs != 0;
     style.caseIndent = caseIndent ? 1 : 0;
-    style.dialect = dialect == RSTUDIO_DIALECT_SHALIMAR ? editor::DialectShalimar
+    style.dialect = dialect == RIDE_DIALECT_SHALIMAR ? editor::DialectShalimar
                                                     : editor::DialectC;
     return style;
 }
@@ -92,7 +93,7 @@ editor::IndentStyle styleOf(int width, int tabs, int caseIndent, int dialect) {
 // goes through it.** A function-local static with a destructor registers an
 // atexit handler when it is first reached, and in this mixed native/managed
 // image that registration corrupts the heap - Json::get did it before the
-// window first opened, and rstudio_group_for_file did it again with a plain
+// window first opened, and ride_group_for_file did it again with a plain
 // `static std::string answer` on 2026-09-11, so that New File took a name and
 // died in _onexit. tests/test.cpp scans the window's sources for the shape.
 std::string& scratch() {
@@ -102,7 +103,7 @@ std::string& scratch() {
 
 #ifdef _WIN32
 
-char faultLog[MAX_PATH] = "RStudioGui-fault.log";
+char faultLog[MAX_PATH] = "";   // set before main, by EarlyWatch below
 
 void write(FILE* f, const char* text) { std::fputs(text, f); }
 
@@ -124,7 +125,7 @@ LONG CALLBACK onFault(EXCEPTION_POINTERS* info) {
         return EXCEPTION_CONTINUE_SEARCH;
     }
 
-    FILE* f = std::fopen(faultLog, "a");
+    FILE* f = std::fopen(faultLog[0] ? faultLog : "fault.log", "a");
     if (!f) {
         inside = false;
         return EXCEPTION_CONTINUE_SEARCH;
@@ -214,7 +215,7 @@ std::vector<std::string> splitList(const char* line) {
 
 }
 
-struct RStudioProject {
+struct RIDEProject {
     editor::Project project;
     std::string answer;
     editor::Outcome last;
@@ -236,7 +237,7 @@ namespace {
 // The toolchain every build is given: the compilers as named, the
 // installation's header directories, and the project's own paths when a
 // project is open. The window has one project and passes it, loaded or not.
-editor::Toolchain toolFrom(RStudioProject* project, const char* cc1, const char* cl,
+editor::Toolchain toolFrom(RIDEProject* project, const char* cc1, const char* cl,
                            const char* shc, const char* cxx1) {
     editor::Toolchain tool;
     if (cc1 && *cc1) tool.cc1 = cc1;
@@ -258,20 +259,20 @@ editor::Toolchain toolFrom(RStudioProject* project, const char* cc1, const char*
 
 }
 
-struct RStudioBuild {
+struct RIDEBuild {
     editor::Build built;
     std::string assembly;
 };
 
-struct RStudioRan {
+struct RIDERan {
     editor::Ran ran;
 };
 
-struct RStudioProgram {
+struct RIDEProgram {
     editor::Built built;
 };
 
-struct RStudioDebugger {
+struct RIDEDebugger {
     editor::Debugger debugger;
 
     shalimar::Session shm;
@@ -288,12 +289,12 @@ struct RStudioDebugger {
     std::string output;
     std::string refusal;
 
-    RStudioDebugger() : looking(0) {}
+    RIDEDebugger() : looking(0) {}
 };
 
 extern "C" {
 
-void rstudio_watch_for_faults(const char* logPath) {
+void ride_watch_for_faults(const char* logPath) {
 #ifdef _WIN32
     static bool watching = false;
     if (logPath && *logPath) {
@@ -315,9 +316,9 @@ struct EarlyWatch {
     EarlyWatch() {
         char temp[MAX_PATH];
         DWORD n = GetEnvironmentVariableA("TEMP", temp, MAX_PATH);
-        std::string where = (n > 0 && n < MAX_PATH) ? std::string(temp) + "\\RStudioGui-fault.log"
-                                                    : std::string("RStudioGui-fault.log");
-        rstudio_watch_for_faults(where.c_str());
+        const std::string leaf = std::string(editor::product::kName) + "-fault.log";
+        std::string where = (n > 0 && n < MAX_PATH) ? std::string(temp) + "\\" + leaf : leaf;
+        ride_watch_for_faults(where.c_str());
     }
 } earlyWatch;
 }
@@ -344,21 +345,21 @@ static void undoRecording(void* windowHandle, long how) {
 }
 #endif
 
-const char* rstudio_settings_set_aside(void) {
+const char* ride_settings_set_aside(void) {
     scratch() = editor::settings::setAside();
     return scratch().c_str();
 }
 
-const char* rstudio_code_font(void) {
+const char* ride_code_font(void) {
     scratch() = editor::settings::codeFont();
     return scratch().c_str();
 }
 
-int rstudio_remember_code_font(const char* described) {
+int ride_remember_code_font(const char* described) {
     return editor::settings::rememberCodeFont(described ? described : "") ? 1 : 0;
 }
 
-void rstudio_undo_suspend(void* windowHandle) {
+void ride_undo_suspend(void* windowHandle) {
 #ifdef _WIN32
     undoRecording(windowHandle, tomSuspend);
 #else
@@ -366,7 +367,7 @@ void rstudio_undo_suspend(void* windowHandle) {
 #endif
 }
 
-void rstudio_undo_resume(void* windowHandle) {
+void ride_undo_resume(void* windowHandle) {
 #ifdef _WIN32
     undoRecording(windowHandle, tomResume);
 #else
@@ -374,12 +375,12 @@ void rstudio_undo_resume(void* windowHandle) {
 #endif
 }
 
-char* rstudio_reindent(const char* text, int width, int tabs, int caseIndent, int dialect) {
+char* ride_reindent(const char* text, int width, int tabs, int caseIndent, int dialect) {
     return give(join(editor::reindent(split(text),
                                       styleOf(width, tabs, caseIndent, dialect))));
 }
 
-char* rstudio_indent_after_newline(const char* text, int row, int col,
+char* ride_indent_after_newline(const char* text, int row, int col,
                                int width, int tabs, int caseIndent, int dialect) {
     if (row < 0) row = 0;
     if (col < 0) col = 0;
@@ -388,7 +389,7 @@ char* rstudio_indent_after_newline(const char* text, int row, int col,
                                            styleOf(width, tabs, caseIndent, dialect)));
 }
 
-char* rstudio_indent_for(const char* text, int row, int width, int tabs, int caseIndent,
+char* ride_indent_for(const char* text, int row, int width, int tabs, int caseIndent,
                      int dialect) {
     if (row < 0) row = 0;
     std::vector<std::string> lines = split(text);
@@ -396,20 +397,20 @@ char* rstudio_indent_for(const char* text, int row, int width, int tabs, int cas
                                   styleOf(width, tabs, caseIndent, dialect)));
 }
 
-void rstudio_free(char* what) { std::free(what); }
+void ride_free(char* what) { std::free(what); }
 
-char* rstudio_about(void) { return give(join(editor::about::lines())); }
+char* ride_about(void) { return give(join(editor::about::lines())); }
 
-char* rstudio_describe_build(const char* assembly) {
+char* ride_describe_build(const char* assembly) {
     return give(join(editor::describe(editor::symbolsIn(split(assembly)))));
 }
 
-char* rstudio_debug_note(int kind, const char* arch) {
+char* ride_debug_note(int kind, const char* arch) {
     return give(join(editor::debugNote(static_cast<editor::ToolchainKind>(kind),
                                        arch ? arch : "")));
 }
 
-int rstudio_find_next(const char* text, const char* needle, int row, int col,
+int ride_find_next(const char* text, const char* needle, int row, int col,
                   int* foundRow, int* foundCol) {
     if (row < 0) row = 0;
     if (col < 0) col = 0;
@@ -422,7 +423,7 @@ int rstudio_find_next(const char* text, const char* needle, int row, int col,
     return 1;
 }
 
-int rstudio_find_previous(const char* text, const char* needle, int row, int col,
+int ride_find_previous(const char* text, const char* needle, int row, int col,
                       int* foundRow, int* foundCol) {
     if (row < 0) row = 0;
     if (col < 0) col = 0;
@@ -435,7 +436,7 @@ int rstudio_find_previous(const char* text, const char* needle, int row, int col
     return 1;
 }
 
-char* rstudio_replace_all(const char* text, const char* needle, const char* with,
+char* ride_replace_all(const char* text, const char* needle, const char* with,
                       int* howMany) {
     std::vector<std::string> lines = split(text);
     size_t count = editor::replaceAll(lines, needle ? needle : "", with ? with : "");
@@ -443,15 +444,15 @@ char* rstudio_replace_all(const char* text, const char* needle, const char* with
     return give(join(lines));
 }
 
-int rstudio_language_for(const char* path) {
+int ride_language_for(const char* path) {
     return static_cast<int>(editor::languageFor(path ? path : ""));
 }
 
-int rstudio_dialect_for(int language) {
-    return language == RSTUDIO_LANG_SHALIMAR ? RSTUDIO_DIALECT_SHALIMAR : RSTUDIO_DIALECT_C;
+int ride_dialect_for(int language) {
+    return language == RIDE_LANG_SHALIMAR ? RIDE_DIALECT_SHALIMAR : RIDE_DIALECT_C;
 }
 
-int rstudio_highlight(const char* line, int language, int* state,
+int ride_highlight(const char* line, int language, int* state,
                   unsigned char* kinds, int kindsSize) {
     editor::SyntaxState carried;
     if (state) {
@@ -470,10 +471,10 @@ int rstudio_highlight(const char* line, int language, int* state,
     return n;
 }
 
-RStudioProject* rstudio_project_new(void) { return new RStudioProject(); }
-void rstudio_project_free(RStudioProject* project) { delete project; }
+RIDEProject* ride_project_new(void) { return new RIDEProject(); }
+void ride_project_free(RIDEProject* project) { delete project; }
 
-int rstudio_project_load(RStudioProject* project, const char* directory,
+int ride_project_load(RIDEProject* project, const char* directory,
                      char* error, int errorSize) {
     std::string why;
     bool loaded = project->project.load(directory ? directory : ".", why);
@@ -484,83 +485,83 @@ int rstudio_project_load(RStudioProject* project, const char* directory,
     return loaded ? 1 : 0;
 }
 
-const char* rstudio_project_name(RStudioProject* project) {
+const char* ride_project_name(RIDEProject* project) {
     project->answer = project->project.name();
     return project->answer.c_str();
 }
 
-int rstudio_project_groups(RStudioProject* project) {
+int ride_project_groups(RIDEProject* project) {
     return static_cast<int>(project->project.groups().size());
 }
 
-const char* rstudio_project_group_name(RStudioProject* project, int group) {
-    if (group < 0 || group >= rstudio_project_groups(project)) return "";
+const char* ride_project_group_name(RIDEProject* project, int group) {
+    if (group < 0 || group >= ride_project_groups(project)) return "";
     project->answer = project->project.groups()[static_cast<size_t>(group)].name;
     return project->answer.c_str();
 }
 
-int rstudio_project_files(RStudioProject* project, int group) {
-    if (group < 0 || group >= rstudio_project_groups(project)) return 0;
+int ride_project_files(RIDEProject* project, int group) {
+    if (group < 0 || group >= ride_project_groups(project)) return 0;
     return static_cast<int>(
         project->project.groups()[static_cast<size_t>(group)].files.size());
 }
 
-const char* rstudio_project_file(RStudioProject* project, int group, int file) {
-    if (file < 0 || file >= rstudio_project_files(project, group)) return "";
+const char* ride_project_file(RIDEProject* project, int group, int file) {
+    if (file < 0 || file >= ride_project_files(project, group)) return "";
     project->answer =
         project->project.groups()[static_cast<size_t>(group)].files[static_cast<size_t>(file)];
     return project->answer.c_str();
 }
 
-const char* rstudio_project_absolute(RStudioProject* project, const char* relative) {
+const char* ride_project_absolute(RIDEProject* project, const char* relative) {
     project->answer = project->project.absolute(relative ? relative : "");
     return project->answer.c_str();
 }
 
-int rstudio_project_indent_width(RStudioProject* project) {
+int ride_project_indent_width(RIDEProject* project) {
     return static_cast<int>(project->project.indent().width);
 }
-int rstudio_project_indent_tabs(RStudioProject* project) {
+int ride_project_indent_tabs(RIDEProject* project) {
     return project->project.indent().tabs ? 1 : 0;
 }
-int rstudio_project_case_indent(RStudioProject* project) {
+int ride_project_case_indent(RIDEProject* project) {
     return static_cast<int>(project->project.indent().caseIndent);
 }
-int rstudio_project_toolchain(RStudioProject* project) {
+int ride_project_toolchain(RIDEProject* project) {
     return static_cast<int>(project->project.toolchain());
 }
-int rstudio_configuration(void) {
-    return editor::settings::configuration() == "release" ? RSTUDIO_CONFIG_RELEASE : 0;
+int ride_configuration(void) {
+    return editor::settings::configuration() == "release" ? RIDE_CONFIG_RELEASE : 0;
 }
 
-void rstudio_remember_configuration(int config) {
-    editor::settings::rememberConfiguration(config == RSTUDIO_CONFIG_RELEASE ? "release" : "debug");
+void ride_remember_configuration(int config) {
+    editor::settings::rememberConfiguration(config == RIDE_CONFIG_RELEASE ? "release" : "debug");
 }
-const char* rstudio_project_arch(RStudioProject* project) {
+const char* ride_project_arch(RIDEProject* project) {
     project->answer = project->project.arch();
     return project->answer.c_str();
 }
 
-int rstudio_project_runs_as_project(RStudioProject* project, const char* source) {
+int ride_project_runs_as_project(RIDEProject* project, const char* source) {
     if (!project || !source) return 0;
     return static_cast<int>(project->project.runsAsProject(source));
 }
 
-int rstudio_project_set_arch(RStudioProject* project, const char* arch) {
+int ride_project_set_arch(RIDEProject* project, const char* arch) {
     if (!project || !project->project.loaded() || !arch) return 0;
     project->project.setArch(arch);
     project->last = editor::saveProject(project->project);
     return project->last.ok ? 1 : 0;
 }
 
-int rstudio_project_set_toolchain(RStudioProject* project, int kind) {
+int ride_project_set_toolchain(RIDEProject* project, int kind) {
     if (!project || !project->project.loaded()) return 0;
     project->project.setToolchain(static_cast<editor::ToolchainKind>(kind));
     project->last = editor::saveProject(project->project);
     return project->last.ok ? 1 : 0;
 }
 
-int rstudio_project_allows(const char* relative, char* why, int whySize) {
+int ride_project_allows(const char* relative, char* why, int whySize) {
     std::string reason;
     bool fine = editor::Project::allows(relative ? relative : "", reason);
     if (why && whySize > 0) {
@@ -570,24 +571,25 @@ int rstudio_project_allows(const char* relative, char* why, int whySize) {
     return fine ? 1 : 0;
 }
 
-int rstudio_project_loaded(RStudioProject* project) { return project->project.loaded() ? 1 : 0; }
+int ride_project_loaded(RIDEProject* project) { return project->project.loaded() ? 1 : 0; }
 
-const char* rstudio_project_root(RStudioProject* project) {
+const char* ride_project_root(RIDEProject* project) {
     project->answer = project->project.root();
     return project->answer.c_str();
 }
 
-void rstudio_project_set_root(RStudioProject* project, const char* path) {
+void ride_project_set_root(RIDEProject* project, const char* path) {
     project->project.setRoot(path ? path : ".");
 }
 
-void rstudio_project_close(RStudioProject* project) { project->project.close(); }
+void ride_project_close(RIDEProject* project) { project->project.close(); }
 
-const char* rstudio_project_suffix(void) { return editor::Project::suffix(); }
+const char* ride_project_suffix(void) { return editor::Project::suffix(); }
 
-const char* rstudio_version(void) { return editor::about::version(); }
+const char* ride_product_name(void) { return editor::product::kName; }
+const char* ride_version(void) { return editor::about::version(); }
 
-int rstudio_project_save_as(RStudioProject* project, const char* file,
+int ride_project_save_as(RIDEProject* project, const char* file,
                             char* why, int whySize) {
     std::string error;
     bool ok = project->project.saveAs(file ? file : "", error);
@@ -599,82 +601,81 @@ int rstudio_project_save_as(RStudioProject* project, const char* file,
     return ok ? 1 : 0;
 }
 
-const char* rstudio_group_for_file(const char* name) {
+const char* ride_group_for_file(const char* name) {
     scratch() = editor::groupForFile(name ? name : "");
     return scratch().c_str();
 }
 
-const char* rstudio_project_relative(RStudioProject* project, const char* path) {
+const char* ride_project_relative(RIDEProject* project, const char* path) {
     project->answer = project->project.relative(path ? path : "");
     return project->answer.c_str();
 }
 
-const char* rstudio_project_file_name(void) { return editor::Project::fileName(); }
 
-const char* rstudio_outcome_message(RStudioProject* project) {
+const char* ride_outcome_message(RIDEProject* project) {
     return project->last.message.c_str();
 }
 
-const char* rstudio_outcome_path(RStudioProject* project) { return project->last.path.c_str(); }
+const char* ride_outcome_path(RIDEProject* project) { return project->last.path.c_str(); }
 
-int rstudio_create_file(RStudioProject* project, const char* relative, const char* group, int kind) {
+int ride_create_file(RIDEProject* project, const char* relative, const char* group, int kind) {
     project->last = editor::createFile(project->project, relative ? relative : "",
                                        group ? group : "", static_cast<editor::ToolchainKind>(kind));
     return project->last.ok ? 1 : 0;
 }
 
-int rstudio_rename_file(RStudioProject* project, const char* fromAbsolute, const char* toRelative) {
+int ride_rename_file(RIDEProject* project, const char* fromAbsolute, const char* toRelative) {
     project->last = editor::renameFile(project->project, fromAbsolute ? fromAbsolute : "",
                                        toRelative ? toRelative : "");
     return project->last.ok ? 1 : 0;
 }
 
-int rstudio_delete_file(RStudioProject* project, const char* absolute) {
+int ride_delete_file(RIDEProject* project, const char* absolute) {
     project->last = editor::deleteFile(project->project, absolute ? absolute : "");
     return project->last.ok ? 1 : 0;
 }
 
-int rstudio_move_to_group(RStudioProject* project, const char* absolute, const char* group) {
+int ride_move_to_group(RIDEProject* project, const char* absolute, const char* group) {
     project->last = editor::moveToGroup(project->project, absolute ? absolute : "",
                                         group ? group : "");
     return project->last.ok ? 1 : 0;
 }
 
-int rstudio_add_existing(RStudioProject* project, const char* absolute, const char* group) {
+int ride_add_existing(RIDEProject* project, const char* absolute, const char* group) {
     project->last = editor::addExisting(project->project, absolute ? absolute : "",
                                         group ? group : "");
     return project->last.ok ? 1 : 0;
 }
 
-int rstudio_adopt_saved(RStudioProject* project, const char* absolute) {
+int ride_adopt_saved(RIDEProject* project, const char* absolute) {
     if (!project) return 0;
     editor::Outcome joined = editor::adoptSaved(project->project, absolute ? absolute : "");
     if (joined.ok) project->last = joined;
     return joined.ok ? 1 : 0;
 }
 
-int rstudio_project_holds(RStudioProject* project, const char* absolute) {
+int ride_project_holds(RIDEProject* project, const char* absolute) {
     if (!project || !absolute || !*absolute || !project->project.loaded()) return 0;
     std::string relative = project->project.relative(absolute);
     return project->project.groupOf(relative) < project->project.groups().size() ? 1 : 0;
 }
 
-const char* rstudio_project_file_to_open(RStudioProject* project) {
+const char* ride_project_file_to_open(RIDEProject* project) {
     scratch() = project ? project->project.fileToOpen() : std::string();
     return scratch().c_str();
 }
 
-int rstudio_remember_open(RStudioProject* project, const char* absolute) {
+int ride_remember_open(RIDEProject* project, const char* absolute) {
     if (!project) return 0;
     return editor::rememberOpen(project->project, absolute ? absolute : "").ok ? 1 : 0;
 }
 
-int rstudio_remove_from_project(RStudioProject* project, const char* absolute) {
+int ride_remove_from_project(RIDEProject* project, const char* absolute) {
     project->last = editor::removeExisting(project->project, absolute ? absolute : "");
     return project->last.ok ? 1 : 0;
 }
 
-int rstudio_begin_project(RStudioProject* project, const char* directory, const char* name,
+int ride_begin_project(RIDEProject* project, const char* directory, const char* name,
                       const char* firstFile) {
     project->last = editor::beginProject(project->project, directory ? directory : ".",
                                          name ? name : "Project",
@@ -683,36 +684,36 @@ int rstudio_begin_project(RStudioProject* project, const char* directory, const 
 }
 
 
-const char* rstudio_project_includes(RStudioProject* project) {
+const char* ride_project_includes(RIDEProject* project) {
     scratch() = project ? joinedList(project->project.includes()) : std::string();
     return scratch().c_str();
 }
 
-const char* rstudio_project_libraries(RStudioProject* project) {
+const char* ride_project_libraries(RIDEProject* project) {
     scratch() = project ? joinedList(project->project.libraries()) : std::string();
     return scratch().c_str();
 }
 
-int rstudio_project_set_includes(RStudioProject* project, const char* line) {
+int ride_project_set_includes(RIDEProject* project, const char* line) {
     if (!project) return 0;
     project->project.setIncludes(splitList(line));
     project->last = editor::saveProject(project->project);
     return project->last.ok ? 1 : 0;
 }
 
-int rstudio_project_set_libraries(RStudioProject* project, const char* line) {
+int ride_project_set_libraries(RIDEProject* project, const char* line) {
     if (!project) return 0;
     project->project.setLibraries(splitList(line));
     project->last = editor::saveProject(project->project);
     return project->last.ok ? 1 : 0;
 }
 
-const char* rstudio_includes(void) {
+const char* ride_includes(void) {
     scratch() = joinedList(editor::settings::includes());
     return scratch().c_str();
 }
 
-const char* rstudio_libraries(void) {
+const char* ride_libraries(void) {
     scratch() = joinedList(editor::settings::libraries());
     return scratch().c_str();
 }
@@ -723,142 +724,142 @@ bool askNativeThroughWindow(void*, const std::string& question) {
     return askNativeInWindow && askNativeInWindow(question.c_str()) != 0;
 }
 }
-void rstudio_ask_native(int (*ask)(const char* question)) {
+void ride_ask_native(int (*ask)(const char* question)) {
     askNativeInWindow = ask;
     editor::setAskNative(ask ? askNativeThroughWindow : 0, 0);
 }
 
-int rstudio_set_includes(const char* line) { return editor::settings::rememberIncludes(splitList(line)) ? 1 : 0; }
-int rstudio_set_libraries(const char* line) { return editor::settings::rememberLibraries(splitList(line)) ? 1 : 0; }
+int ride_set_includes(const char* line) { return editor::settings::rememberIncludes(splitList(line)) ? 1 : 0; }
+int ride_set_libraries(const char* line) { return editor::settings::rememberLibraries(splitList(line)) ? 1 : 0; }
 
-const char* rstudio_install_file(void) {
+const char* ride_install_file(void) {
     scratch() = editor::settings::installFile();
     return scratch().c_str();
 }
 
-const char* rstudio_include_dir(void) {
+const char* ride_include_dir(void) {
     scratch() = editor::settings::includeDir();
     return scratch().c_str();
 }
 
-const char* rstudio_lib_dir(void) {
+const char* ride_lib_dir(void) {
     scratch() = editor::settings::libDir();
     return scratch().c_str();
 }
 
-int rstudio_remember_header_dirs(const char* include, const char* lib) {
+int ride_remember_header_dirs(const char* include, const char* lib) {
     return editor::settings::rememberHeaderDirs(include ? include : "", lib ? lib : "") ? 1 : 0;
 }
 
-int rstudio_default_compiler(void) {
+int ride_default_compiler(void) {
     return static_cast<int>(editor::toolchainFrom(editor::settings::defaultCompiler()));
 }
 
-int rstudio_default_indent_width(void) { return static_cast<int>(editor::settings::indentWidth()); }
-int rstudio_default_indent_tabs(void) { return editor::settings::indentTabs() ? 1 : 0; }
+int ride_default_indent_width(void) { return static_cast<int>(editor::settings::indentWidth()); }
+int ride_default_indent_tabs(void) { return editor::settings::indentTabs() ? 1 : 0; }
 
-int rstudio_remember_default_compiler(int kind) {
+int ride_remember_default_compiler(int kind) {
     return editor::settings::rememberDefaultCompiler(
                editor::toolchainWord(static_cast<editor::ToolchainKind>(kind))) ? 1 : 0;
 }
 
-const char* rstudio_vcvars(void) {
+const char* ride_vcvars(void) {
     scratch() = editor::settings::vcvars();
     return scratch().c_str();
 }
 
-int rstudio_remember_vcvars(const char* file) {
+int ride_remember_vcvars(const char* file) {
     return editor::settings::rememberVcvars(file ? file : "") ? 1 : 0;
 }
 
-const char* rstudio_assembler(void) {
+const char* ride_assembler(void) {
     scratch() = editor::settings::assembler();
     return scratch().c_str();
 }
 
-int rstudio_remember_assembler(const char* file) {
+int ride_remember_assembler(const char* file) {
     return editor::settings::rememberAssembler(file ? file : "") ? 1 : 0;
 }
 
-const char* rstudio_linker(void) {
+const char* ride_linker(void) {
     scratch() = editor::settings::linker();
     return scratch().c_str();
 }
 
-int rstudio_remember_linker(const char* file) {
+int ride_remember_linker(const char* file) {
     return editor::settings::rememberLinker(file ? file : "") ? 1 : 0;
 }
 
-const char* rstudio_tilinker(void) {
+const char* ride_tilinker(void) {
     scratch() = editor::settings::tilinker();
     return scratch().c_str();
 }
 
-int rstudio_remember_tilinker(const char* file) {
+int ride_remember_tilinker(const char* file) {
     return editor::settings::rememberTilinker(file ? file : "") ? 1 : 0;
 }
 
-const char* rstudio_ti(void) {
+const char* ride_ti(void) {
     scratch() = editor::settings::ti();
     return scratch().c_str();
 }
 
-const char* rstudio_tilib(void) {
+const char* ride_tilib(void) {
     scratch() = editor::settings::tilib();
     return scratch().c_str();
 }
 
-int rstudio_remember_ti(const char* dir, const char* lib) {
+int ride_remember_ti(const char* dir, const char* lib) {
     return editor::settings::rememberTi(dir ? dir : "", lib ? lib : "") ? 1 : 0;
 }
 
-int rstudio_save_project(RStudioProject* project) {
+int ride_save_project(RIDEProject* project) {
     project->last = editor::saveProject(project->project);
     return project->last.ok ? 1 : 0;
 }
 
-const char* rstudio_arch(int index) {
+const char* ride_arch(int index) {
     if (index < 0 || index >= static_cast<int>(editor::kArchCount)) index = 0;
     return editor::kArches[index];
 }
 
-int rstudio_arch_count(void) { return static_cast<int>(editor::kArchCount); }
+int ride_arch_count(void) { return static_cast<int>(editor::kArchCount); }
 
-const char* rstudio_toolchain_name(int kind) {
+const char* ride_toolchain_name(int kind) {
     return editor::toolchainName(static_cast<editor::ToolchainKind>(kind));
 }
 
-const char* rstudio_language_name(int language) {
+const char* ride_language_name(int language) {
     return editor::languageName(static_cast<editor::Language>(language));
 }
 
-const char* rstudio_config_name(int config) {
+const char* ride_config_name(int config) {
     return editor::configName(static_cast<editor::Configuration>(config));
 }
 
-int rstudio_resolve(int toolchainKind, int language) {
+int ride_resolve(int toolchainKind, int language) {
     editor::Toolchain tool;
     tool.kind = static_cast<editor::ToolchainKind>(toolchainKind);
     return static_cast<int>(editor::resolve(tool, static_cast<editor::Language>(language)));
 }
 
-int rstudio_can_compile(int kind, int language) {
+int ride_can_compile(int kind, int language) {
     return editor::canCompile(static_cast<editor::ToolchainKind>(kind),
                               static_cast<editor::Language>(language))
                ? 1 : 0;
 }
 
-const char* rstudio_refusal(int kind, int language) {
+const char* ride_refusal(int kind, int language) {
     scratch() = editor::refusal(static_cast<editor::ToolchainKind>(kind),
                                 static_cast<editor::Language>(language));
     return scratch().c_str();
 }
 
-int rstudio_uses_arch(int kind) {
+int ride_uses_arch(int kind) {
     return editor::usesArch(static_cast<editor::ToolchainKind>(kind)) ? 1 : 0;
 }
 
-const char* rstudio_shown_command(RStudioProject* project, const char* cc1, const char* cl, const char* shc, const char* cxx1, int kind,
+const char* ride_shown_command(RIDEProject* project, const char* cc1, const char* cl, const char* shc, const char* cxx1, int kind,
                               const char* source, int language, const char* arch,
                               int config) {
     editor::Toolchain tool = toolFrom(project, cc1, cl, shc, cxx1);
@@ -871,18 +872,18 @@ const char* rstudio_shown_command(RStudioProject* project, const char* cc1, cons
     return scratch().c_str();
 }
 
-int rstudio_runs_here(int kind, const char* arch) {
+int ride_runs_here(int kind, const char* arch) {
     return editor::runsHere(static_cast<editor::ToolchainKind>(kind), arch ? arch : "") ? 1 : 0;
 }
 
-const char* rstudio_why_not_run(int kind, const char* arch) {
+const char* ride_why_not_run(int kind, const char* arch) {
     scratch() = editor::whyNotRun(static_cast<editor::ToolchainKind>(kind), arch ? arch : "");
     return scratch().c_str();
 }
 
-const char* rstudio_host_arch(void) { return editor::hostArch(); }
+const char* ride_host_arch(void) { return editor::hostArch(); }
 
-const char* rstudio_shown_run_command(RStudioProject* project, const char* cc1, const char* cl, const char* shc, const char* cxx1, int kind,
+const char* ride_shown_run_command(RIDEProject* project, const char* cc1, const char* cl, const char* shc, const char* cxx1, int kind,
                                   const char* source, int language, const char* arch,
                                   int config) {
     editor::Toolchain tool = toolFrom(project, cc1, cl, shc, cxx1);
@@ -895,11 +896,11 @@ const char* rstudio_shown_run_command(RStudioProject* project, const char* cc1, 
     return scratch().c_str();
 }
 
-RStudioRan* rstudio_run(RStudioProject* project, const char* cc1, const char* cl, const char* shc, const char* cxx1, int kind, const char* source,
+RIDERan* ride_run(RIDEProject* project, const char* cc1, const char* cl, const char* shc, const char* cxx1, int kind, const char* source,
                 int language, const char* arch, int config) {
     editor::Toolchain tool = toolFrom(project, cc1, cl, shc, cxx1);
 
-    RStudioRan* out = new RStudioRan();
+    RIDERan* out = new RIDERan();
     out->ran = editor::runProgram(tool, static_cast<editor::ToolchainKind>(kind),
                                   source ? source : "",
                                   static_cast<editor::Language>(language),
@@ -908,22 +909,22 @@ RStudioRan* rstudio_run(RStudioProject* project, const char* cc1, const char* cl
     return out;
 }
 
-void rstudio_run_free(RStudioRan* ran) { delete ran; }
+void ride_run_free(RIDERan* ran) { delete ran; }
 
-int rstudio_ran_built(RStudioRan* ran) { return ran->ran.built ? 1 : 0; }
-int rstudio_ran_ran(RStudioRan* ran) { return ran->ran.ran ? 1 : 0; }
-int rstudio_ran_status(RStudioRan* ran) { return ran->ran.status; }
-const char* rstudio_ran_output(RStudioRan* ran) { return ran->ran.output.c_str(); }
-int rstudio_ran_has_error(RStudioRan* ran) { return ran->ran.diag.present ? 1 : 0; }
-int rstudio_ran_error_line(RStudioRan* ran) { return static_cast<int>(ran->ran.diag.line); }
-int rstudio_ran_error_column(RStudioRan* ran) { return static_cast<int>(ran->ran.diag.col); }
-const char* rstudio_ran_error_message(RStudioRan* ran) { return ran->ran.diag.message.c_str(); }
+int ride_ran_built(RIDERan* ran) { return ran->ran.built ? 1 : 0; }
+int ride_ran_ran(RIDERan* ran) { return ran->ran.ran ? 1 : 0; }
+int ride_ran_status(RIDERan* ran) { return ran->ran.status; }
+const char* ride_ran_output(RIDERan* ran) { return ran->ran.output.c_str(); }
+int ride_ran_has_error(RIDERan* ran) { return ran->ran.diag.present ? 1 : 0; }
+int ride_ran_error_line(RIDERan* ran) { return static_cast<int>(ran->ran.diag.line); }
+int ride_ran_error_column(RIDERan* ran) { return static_cast<int>(ran->ran.diag.col); }
+const char* ride_ran_error_message(RIDERan* ran) { return ran->ran.diag.message.c_str(); }
 
-RStudioProgram* rstudio_build_program(RStudioProject* project, const char* cc1, const char* cl, const char* shc, const char* cxx1, int kind, const char* source,
+RIDEProgram* ride_build_program(RIDEProject* project, const char* cc1, const char* cl, const char* shc, const char* cxx1, int kind, const char* source,
                               int language, const char* arch, int config) {
     editor::Toolchain tool = toolFrom(project, cc1, cl, shc, cxx1);
 
-    RStudioProgram* out = new RStudioProgram();
+    RIDEProgram* out = new RIDEProgram();
     out->built = editor::buildProgram(tool, static_cast<editor::ToolchainKind>(kind),
                                       source ? source : "",
                                       static_cast<editor::Language>(language),
@@ -932,52 +933,52 @@ RStudioProgram* rstudio_build_program(RStudioProject* project, const char* cc1, 
     return out;
 }
 
-void rstudio_program_free(RStudioProgram* built) {
+void ride_program_free(RIDEProgram* built) {
     if (!built) return;
     editor::removeProgram(built->built);
     delete built;
 }
 
-int rstudio_program_ok(RStudioProgram* built) { return built->built.ok ? 1 : 0; }
-const char* rstudio_program_path(RStudioProgram* built) { return built->built.program.c_str(); }
-const char* rstudio_program_output(RStudioProgram* built) { return built->built.output.c_str(); }
-int rstudio_program_has_error(RStudioProgram* built) { return built->built.diag.present ? 1 : 0; }
-int rstudio_program_error_line(RStudioProgram* built) {
+int ride_program_ok(RIDEProgram* built) { return built->built.ok ? 1 : 0; }
+const char* ride_program_path(RIDEProgram* built) { return built->built.program.c_str(); }
+const char* ride_program_output(RIDEProgram* built) { return built->built.output.c_str(); }
+int ride_program_has_error(RIDEProgram* built) { return built->built.diag.present ? 1 : 0; }
+int ride_program_error_line(RIDEProgram* built) {
     return static_cast<int>(built->built.diag.line);
 }
-int rstudio_program_error_column(RStudioProgram* built) {
+int ride_program_error_column(RIDEProgram* built) {
     return static_cast<int>(built->built.diag.col);
 }
-const char* rstudio_program_error_message(RStudioProgram* built) {
+const char* ride_program_error_message(RIDEProgram* built) {
     return built->built.diag.message.c_str();
 }
 
-int rstudio_debugger_for(int kind, const char* arch) {
+int ride_debugger_for(int kind, const char* arch) {
     return static_cast<int>(editor::dbg_for(static_cast<editor::ToolchainKind>(kind),
                                                 arch ? arch : ""));
 }
 
-const char* rstudio_debugger_name(int kind) {
+const char* ride_debugger_name(int kind) {
     return editor::dbg_name(static_cast<editor::DebuggerKind>(kind));
 }
 
-const char* rstudio_no_debugger_because(int kind, const char* arch) {
+const char* ride_no_debugger_because(int kind, const char* arch) {
     scratch() = editor::dbg_whyNot(static_cast<editor::ToolchainKind>(kind),
                                           arch ? arch : "");
     return scratch().c_str();
 }
 
-int rstudio_debugger_stops_itself(int kind) {
+int ride_debugger_stops_itself(int kind) {
     return editor::dbg_stopsItself(static_cast<editor::ToolchainKind>(kind)) ? 1 : 0;
 }
 
-const char* rstudio_release_cannot_stop(int kind) {
+const char* ride_release_cannot_stop(int kind) {
     return editor::dbg_stopsItself(static_cast<editor::ToolchainKind>(kind))
                ? shalimar::releaseHasNoSession()
                : "release is built without -g";
 }
 
-const char* rstudio_why_it_did_not_start(int kind, const char* arch) {
+const char* ride_why_it_did_not_start(int kind, const char* arch) {
     if (editor::dbg_stopsItself(static_cast<editor::ToolchainKind>(kind))) {
 
         scratch() = shalimar::didNotArm();
@@ -990,10 +991,10 @@ const char* rstudio_why_it_did_not_start(int kind, const char* arch) {
     return scratch().c_str();
 }
 
-RStudioDebugger* rstudio_debugger_new(void) { return new RStudioDebugger(); }
-void rstudio_debugger_free(RStudioDebugger* debugger) { delete debugger; }
+RIDEDebugger* ride_debugger_new(void) { return new RIDEDebugger(); }
+void ride_debugger_free(RIDEDebugger* debugger) { delete debugger; }
 
-int rstudio_debugger_start(RStudioDebugger* debugger, int kind, const char* arch,
+int ride_debugger_start(RIDEDebugger* debugger, int kind, const char* arch,
                        const char* program) {
     debugger->stop = editor::Stop();
     debugger->locals.clear();
@@ -1009,15 +1010,15 @@ int rstudio_debugger_start(RStudioDebugger* debugger, int kind, const char* arch
                                     program ? program : "") ? 1 : 0;
 }
 
-int rstudio_debugger_running(RStudioDebugger* debugger) {
+int ride_debugger_running(RIDEDebugger* debugger) {
     return (debugger->debugger.running() || debugger->shm.running()) ? 1 : 0;
 }
 
-int rstudio_debugging_shalimar(RStudioDebugger* debugger) {
+int ride_debugging_shalimar(RIDEDebugger* debugger) {
     return debugger->shm.running() ? 1 : 0;
 }
 
-void rstudio_debugger_stop(RStudioDebugger* debugger) {
+void ride_debugger_stop(RIDEDebugger* debugger) {
     debugger->debugger.stop();
     debugger->shm.stop();
     debugger->stop = editor::Stop();
@@ -1026,21 +1027,21 @@ void rstudio_debugger_stop(RStudioDebugger* debugger) {
     debugger->looking = 0;
 }
 
-int rstudio_debugger_break(RStudioDebugger* debugger, const char* file, int line) {
+int ride_debugger_break(RIDEDebugger* debugger, const char* file, int line) {
     if (line < 1) return 0;
     if (debugger->shm.running())
         return debugger->shm.breakAt(file ? file : "", static_cast<size_t>(line)) ? 1 : 0;
     return debugger->debugger.breakAt(file ? file : "", static_cast<size_t>(line)) ? 1 : 0;
 }
 
-int rstudio_debugger_clear(RStudioDebugger* debugger) {
+int ride_debugger_clear(RIDEDebugger* debugger) {
     if (debugger->shm.running()) return debugger->shm.clearBreakpoints() ? 1 : 0;
     return debugger->debugger.clearBreakpoints() ? 1 : 0;
 }
 
 namespace {
 
-void afterMoving(RStudioDebugger* debugger, const editor::Stop& stop, bool itself) {
+void afterMoving(RIDEDebugger* debugger, const editor::Stop& stop, bool itself) {
     debugger->stop = stop;
     debugger->locals.clear();
     debugger->stack.clear();
@@ -1057,40 +1058,40 @@ void afterMoving(RStudioDebugger* debugger, const editor::Stop& stop, bool itsel
 }
 }
 
-void rstudio_debugger_run(RStudioDebugger* debugger) {
+void ride_debugger_run(RIDEDebugger* debugger) {
     const bool itself = debugger->shm.running();
     afterMoving(debugger, itself ? debugger->shm.run() : debugger->debugger.run(), itself);
 }
-void rstudio_debugger_resume(RStudioDebugger* debugger) {
+void ride_debugger_resume(RIDEDebugger* debugger) {
     const bool itself = debugger->shm.running();
     afterMoving(debugger, itself ? debugger->shm.resume() : debugger->debugger.resume(), itself);
 }
-void rstudio_debugger_step_over(RStudioDebugger* debugger) {
+void ride_debugger_step_over(RIDEDebugger* debugger) {
     const bool itself = debugger->shm.running();
     afterMoving(debugger, itself ? debugger->shm.stepOver() : debugger->debugger.stepOver(), itself);
 }
-void rstudio_debugger_step_into(RStudioDebugger* debugger) {
+void ride_debugger_step_into(RIDEDebugger* debugger) {
     const bool itself = debugger->shm.running();
     afterMoving(debugger, itself ? debugger->shm.stepInto() : debugger->debugger.stepInto(), itself);
 }
-void rstudio_debugger_step_out(RStudioDebugger* debugger) {
+void ride_debugger_step_out(RIDEDebugger* debugger) {
     const bool itself = debugger->shm.running();
     afterMoving(debugger, itself ? debugger->shm.stepOut() : debugger->debugger.stepOut(), itself);
 }
 
-int rstudio_stop_stopped(RStudioDebugger* debugger) { return debugger->stop.stopped ? 1 : 0; }
-int rstudio_stop_exited(RStudioDebugger* debugger) { return debugger->stop.exited ? 1 : 0; }
-int rstudio_stop_status(RStudioDebugger* debugger) { return debugger->stop.status; }
-const char* rstudio_stop_file(RStudioDebugger* debugger) { return debugger->stop.file.c_str(); }
-int rstudio_stop_line(RStudioDebugger* debugger) { return static_cast<int>(debugger->stop.line); }
-const char* rstudio_stop_function(RStudioDebugger* debugger) { return debugger->stop.function.c_str(); }
-const char* rstudio_stop_said(RStudioDebugger* debugger) { return debugger->stop.said.c_str(); }
+int ride_stop_stopped(RIDEDebugger* debugger) { return debugger->stop.stopped ? 1 : 0; }
+int ride_stop_exited(RIDEDebugger* debugger) { return debugger->stop.exited ? 1 : 0; }
+int ride_stop_status(RIDEDebugger* debugger) { return debugger->stop.status; }
+const char* ride_stop_file(RIDEDebugger* debugger) { return debugger->stop.file.c_str(); }
+int ride_stop_line(RIDEDebugger* debugger) { return static_cast<int>(debugger->stop.line); }
+const char* ride_stop_function(RIDEDebugger* debugger) { return debugger->stop.function.c_str(); }
+const char* ride_stop_said(RIDEDebugger* debugger) { return debugger->stop.said.c_str(); }
 
-int rstudio_stop_no_source(RStudioDebugger* debugger) {
+int ride_stop_no_source(RIDEDebugger* debugger) {
     return editor::dbg_stoppedWithNoSource(debugger->stop.said) ? 1 : 0;
 }
 
-const char* rstudio_stop_output(RStudioDebugger* debugger) {
+const char* ride_stop_output(RIDEDebugger* debugger) {
 
     if (debugger->shm.ownsTheStop()) {
         debugger->output = debugger->stop.said;
@@ -1101,47 +1102,47 @@ const char* rstudio_stop_output(RStudioDebugger* debugger) {
     return debugger->output.c_str();
 }
 
-int rstudio_locals_count(RStudioDebugger* debugger) {
+int ride_locals_count(RIDEDebugger* debugger) {
     return static_cast<int>(debugger->locals.size());
 }
 
 namespace {
-bool holds(RStudioDebugger* debugger, int index) {
+bool holds(RIDEDebugger* debugger, int index) {
     return index >= 0 && static_cast<size_t>(index) < debugger->locals.size();
 }
 }
 
-const char* rstudio_local_name(RStudioDebugger* debugger, int index) {
+const char* ride_local_name(RIDEDebugger* debugger, int index) {
     return holds(debugger, index) ? debugger->locals[index].name.c_str() : "";
 }
-const char* rstudio_local_type(RStudioDebugger* debugger, int index) {
+const char* ride_local_type(RIDEDebugger* debugger, int index) {
     return holds(debugger, index) ? debugger->locals[index].type.c_str() : "";
 }
-const char* rstudio_local_value(RStudioDebugger* debugger, int index) {
+const char* ride_local_value(RIDEDebugger* debugger, int index) {
     return holds(debugger, index) ? debugger->locals[index].value.c_str() : "";
 }
 
-int rstudio_stack_count(RStudioDebugger* debugger) {
+int ride_stack_count(RIDEDebugger* debugger) {
     return static_cast<int>(debugger->stack.size());
 }
 
 namespace {
-bool reaches(RStudioDebugger* debugger, int index) {
+bool reaches(RIDEDebugger* debugger, int index) {
     return index >= 0 && static_cast<size_t>(index) < debugger->stack.size();
 }
 }
 
-const char* rstudio_stack_function(RStudioDebugger* debugger, int index) {
+const char* ride_stack_function(RIDEDebugger* debugger, int index) {
     return reaches(debugger, index) ? debugger->stack[index].function.c_str() : "";
 }
-const char* rstudio_stack_file(RStudioDebugger* debugger, int index) {
+const char* ride_stack_file(RIDEDebugger* debugger, int index) {
     return reaches(debugger, index) ? debugger->stack[index].file.c_str() : "";
 }
-int rstudio_stack_line(RStudioDebugger* debugger, int index) {
+int ride_stack_line(RIDEDebugger* debugger, int index) {
     return reaches(debugger, index) ? static_cast<int>(debugger->stack[index].line) : 0;
 }
 
-const char* rstudio_stack_text(RStudioDebugger* debugger, int index) {
+const char* ride_stack_text(RIDEDebugger* debugger, int index) {
 
     debugger->frameLine =
         reaches(debugger, index)
@@ -1151,19 +1152,19 @@ const char* rstudio_stack_text(RStudioDebugger* debugger, int index) {
     return debugger->frameLine.c_str();
 }
 
-const char* rstudio_local_text(RStudioDebugger* debugger, int index) {
+const char* ride_local_text(RIDEDebugger* debugger, int index) {
     debugger->variableLine = holds(debugger, index)
                                  ? editor::dbg_variableLine(debugger->locals[index])
                                  : std::string();
     return debugger->variableLine.c_str();
 }
 
-int rstudio_locals_on_line(RStudioDebugger* debugger, const char* line) {
+int ride_locals_on_line(RIDEDebugger* debugger, const char* line) {
     size_t which = editor::dbg_variableOnLine(debugger->locals, line ? line : "");
     return which < debugger->locals.size() ? static_cast<int>(which) : -1;
 }
 
-int rstudio_set_variable(RStudioDebugger* debugger, const char* name, const char* value) {
+int ride_set_variable(RIDEDebugger* debugger, const char* name, const char* value) {
     debugger->complaint.clear();
     if (!debugger->debugger.setVariable(name ? name : "", value ? value : "",
                                         &debugger->complaint))
@@ -1173,46 +1174,46 @@ int rstudio_set_variable(RStudioDebugger* debugger, const char* name, const char
     return 1;
 }
 
-const char* rstudio_set_complaint(RStudioDebugger* debugger) { return debugger->complaint.c_str(); }
+const char* ride_set_complaint(RIDEDebugger* debugger) { return debugger->complaint.c_str(); }
 
-void rstudio_watch_add(RStudioDebugger* debugger, const char* expression) {
+void ride_watch_add(RIDEDebugger* debugger, const char* expression) {
     debugger->debugger.addWatch(expression ? expression : "");
 }
 
-int rstudio_watch_count(RStudioDebugger* debugger) {
+int ride_watch_count(RIDEDebugger* debugger) {
     return static_cast<int>(debugger->debugger.watches().size());
 }
 
 namespace {
-bool watched(RStudioDebugger* debugger, int index) {
+bool watched(RIDEDebugger* debugger, int index) {
     return index >= 0 && static_cast<size_t>(index) < debugger->debugger.watches().size();
 }
 }
 
-const char* rstudio_watch_text(RStudioDebugger* debugger, int index) {
+const char* ride_watch_text(RIDEDebugger* debugger, int index) {
     debugger->watchLine = watched(debugger, index)
                               ? editor::dbg_watchLine(debugger->debugger.watches()[index])
                               : std::string();
     return debugger->watchLine.c_str();
 }
 
-const char* rstudio_watch_expression(RStudioDebugger* debugger, int index) {
+const char* ride_watch_expression(RIDEDebugger* debugger, int index) {
     return watched(debugger, index)
                ? debugger->debugger.watches()[index].expression.c_str()
                : "";
 }
 
-int rstudio_watch_on_line(RStudioDebugger* debugger, const char* line) {
+int ride_watch_on_line(RIDEDebugger* debugger, const char* line) {
     size_t which = editor::dbg_watchOnLine(debugger->debugger.watches(), line ? line : "");
     return which < debugger->debugger.watches().size() ? static_cast<int>(which) : -1;
 }
 
-void rstudio_watch_set(RStudioDebugger* debugger, int index, const char* expression) {
+void ride_watch_set(RIDEDebugger* debugger, int index, const char* expression) {
     if (!watched(debugger, index)) return;
     debugger->debugger.setWatch(static_cast<size_t>(index), expression ? expression : "");
 }
 
-int rstudio_debugger_look_at(RStudioDebugger* debugger, int which) {
+int ride_debugger_look_at(RIDEDebugger* debugger, int which) {
     if (!reaches(debugger, which)) return 0;
 
     if (debugger->shm.running()) {
@@ -1227,14 +1228,14 @@ int rstudio_debugger_look_at(RStudioDebugger* debugger, int which) {
     return 1;
 }
 
-const char* rstudio_locals_none_because(RStudioDebugger* debugger) {
+const char* ride_locals_none_because(RIDEDebugger* debugger) {
     debugger->refusal = debugger->shm.running()
                             ? "  (" + std::string(shalimar::saysWhereOnly()) + ")"
                             : std::string("  (nothing in scope here)");
     return debugger->refusal.c_str();
 }
 
-const char* rstudio_cannot_watch(RStudioDebugger* debugger) {
+const char* ride_cannot_watch(RIDEDebugger* debugger) {
 
     debugger->refusal = debugger->shm.running()
                             ? std::string(shalimar::saysWhereOnly()) +
@@ -1243,14 +1244,14 @@ const char* rstudio_cannot_watch(RStudioDebugger* debugger) {
     return debugger->refusal.c_str();
 }
 
-const char* rstudio_cannot_walk_stack(RStudioDebugger* debugger) {
+const char* ride_cannot_walk_stack(RIDEDebugger* debugger) {
 
     debugger->refusal = debugger->shm.running() ? std::string(shalimar::saysHowDeepOnly())
                                                 : std::string();
     return debugger->refusal.c_str();
 }
 
-const char* rstudio_stop_line_text(const char* file, int line, const char* function) {
+const char* ride_stop_line_text(const char* file, int line, const char* function) {
 
     scratch() = editor::dbg_stopLine(file ? file : "",
                                      static_cast<size_t>(line < 0 ? 0 : line),
@@ -1258,11 +1259,11 @@ const char* rstudio_stop_line_text(const char* file, int line, const char* funct
     return scratch().c_str();
 }
 
-int rstudio_looking_at(RStudioDebugger* debugger) {
+int ride_looking_at(RIDEDebugger* debugger) {
     return static_cast<int>(debugger->looking);
 }
 
-const char* rstudio_looking_text(RStudioDebugger* debugger) {
+const char* ride_looking_text(RIDEDebugger* debugger) {
     debugger->lookingLine =
         (debugger->looking > 0 && debugger->looking < debugger->stack.size())
             ? editor::dbg_lookingAt(debugger->stack[debugger->looking])
@@ -1270,56 +1271,56 @@ const char* rstudio_looking_text(RStudioDebugger* debugger) {
     return debugger->lookingLine.c_str();
 }
 
-int rstudio_stack_on_line(RStudioDebugger* debugger, const char* line) {
+int ride_stack_on_line(RIDEDebugger* debugger, const char* line) {
     size_t which = editor::dbg_frameOnLine(debugger->stack, line ? line : "");
     return which < debugger->stack.size() ? static_cast<int>(which) : -1;
 }
 
-int rstudio_begin_from_what_is_there(RStudioProject* project, const char* directory) {
+int ride_begin_from_what_is_there(RIDEProject* project, const char* directory) {
     if (!project) return 0;
     project->last = editor::beginFromWhatIsThere(project->project, directory ? directory : "");
     project->answer = project->last.message;
     return project->last.ok ? 1 : 0;
 }
 
-const char* rstudio_last_project(void) {
+const char* ride_last_project(void) {
 
     scratch() = editor::settings::lastProject();
     return scratch().c_str();
 }
 
-const char* rstudio_recent_project(int index) {
+const char* ride_recent_project(int index) {
     std::vector<std::string> recent = editor::settings::recentProjects();
     scratch() = (index >= 0 && index < static_cast<int>(recent.size())) ? recent[static_cast<size_t>(index)]
                                                                          : std::string();
     return scratch().c_str();
 }
 
-const char* rstudio_recent_file(int index) {
+const char* ride_recent_file(int index) {
     std::vector<std::string> recent = editor::settings::recentFiles();
     scratch() = (index >= 0 && index < static_cast<int>(recent.size())) ? recent[static_cast<size_t>(index)]
                                                                          : std::string();
     return scratch().c_str();
 }
 
-int rstudio_remember_file(const char* path) {
+int ride_remember_file(const char* path) {
     return editor::settings::rememberFile(path ? path : "") ? 1 : 0;
 }
 
-int rstudio_remember_project(const char* directory) {
+int ride_remember_project(const char* directory) {
     return editor::settings::rememberProject(directory ? directory : "") ? 1 : 0;
 }
 
-const char* rstudio_demo_directory(void) {
+const char* ride_demo_directory(void) {
     scratch() = editor::demoDirectory();
     return scratch().c_str();
 }
 
-int rstudio_project_builds(RStudioProject* project) {
+int ride_project_builds(RIDEProject* project) {
     return project && project->project.builds() ? 1 : 0;
 }
 
-int rstudio_project_target_ready(RStudioProject* project) {
+int ride_project_target_ready(RIDEProject* project) {
     if (!project) return 0;
 
     project->sources.clear();
@@ -1336,21 +1337,21 @@ int rstudio_project_target_ready(RStudioProject* project) {
     return ok ? 1 : 0;
 }
 
-int rstudio_project_target_parts(RStudioProject* project) {
+int ride_project_target_parts(RIDEProject* project) {
     return project ? static_cast<int>(project->parts.size()) : 0;
 }
 
-const char* rstudio_project_part_group(RStudioProject* project, int index) {
+const char* ride_project_part_group(RIDEProject* project, int index) {
     if (!project || index < 0 || index >= static_cast<int>(project->parts.size())) return "";
     return project->parts[static_cast<size_t>(index)].group.c_str();
 }
 
-int rstudio_project_part_language(RStudioProject* project, int index) {
+int ride_project_part_language(RIDEProject* project, int index) {
     if (!project || index < 0 || index >= static_cast<int>(project->parts.size())) return 0;
     return static_cast<int>(project->parts[static_cast<size_t>(index)].lang);
 }
 
-int rstudio_project_part_toolchain(RStudioProject* project, int index, const char* cc1,
+int ride_project_part_toolchain(RIDEProject* project, int index, const char* cc1,
                                const char* cl, const char* shc, const char* cxx1, int kind) {
     if (!project || index < 0 || index >= static_cast<int>(project->parts.size()))
         return static_cast<int>(editor::ToolAuto);
@@ -1364,37 +1365,37 @@ int rstudio_project_part_toolchain(RStudioProject* project, int index, const cha
         editor::toolchainOf(tool, project->parts[static_cast<size_t>(index)]));
 }
 
-const char* rstudio_project_target_why(RStudioProject* project) {
+const char* ride_project_target_why(RIDEProject* project) {
     return project ? project->why.c_str() : "";
 }
 
-const char* rstudio_project_target_detail(RStudioProject* project) {
+const char* ride_project_target_detail(RIDEProject* project) {
     return project ? project->detail.c_str() : "";
 }
 
-int rstudio_project_target_language(RStudioProject* project) {
+int ride_project_target_language(RIDEProject* project) {
     return project ? project->language : 0;
 }
 
-int rstudio_project_target_sources(RStudioProject* project) {
+int ride_project_target_sources(RIDEProject* project) {
     return project ? static_cast<int>(project->sources.size()) : 0;
 }
 
-const char* rstudio_project_target_source(RStudioProject* project, int index) {
+const char* ride_project_target_source(RIDEProject* project, int index) {
     if (!project || index < 0 || index >= static_cast<int>(project->sources.size())) return "";
     return project->sources[static_cast<size_t>(index)].c_str();
 }
 
-const char* rstudio_project_target_program(RStudioProject* project) {
+const char* ride_project_target_program(RIDEProject* project) {
     return project ? project->program.c_str() : "";
 }
 
-int rstudio_project_debug_plan(RStudioProject* project, const char* cc1, const char* cl,
+int ride_project_debug_plan(RIDEProject* project, const char* cc1, const char* cl,
                            const char* shc, const char* cxx1, int kind, const char* arch) {
     if (!project) return 0;
     project->plan = editor::DebugPlan();
     project->whyNot.clear();
-    if (!rstudio_project_target_ready(project)) {
+    if (!ride_project_target_ready(project)) {
         project->whyNot = project->why;
         return 0;
     }
@@ -1409,33 +1410,33 @@ int rstudio_project_debug_plan(RStudioProject* project, const char* cc1, const c
     return 0;
 }
 
-int rstudio_project_debug_kind(RStudioProject* project) {
+int ride_project_debug_kind(RIDEProject* project) {
     return project ? static_cast<int>(project->plan.kind) : static_cast<int>(editor::ToolAuto);
 }
 
-const char* rstudio_project_why_not_debug(RStudioProject* project) {
+const char* ride_project_why_not_debug(RIDEProject* project) {
     return project ? project->whyNot.c_str() : "";
 }
 
-int rstudio_project_blind_groups(RStudioProject* project) {
+int ride_project_blind_groups(RIDEProject* project) {
     return project ? static_cast<int>(project->plan.blind.size()) : 0;
 }
 
-const char* rstudio_project_blind_group(RStudioProject* project, int index) {
+const char* ride_project_blind_group(RIDEProject* project, int index) {
     if (!project || index < 0 || index >= static_cast<int>(project->plan.blind.size()))
         return "";
     return project->plan.blind[static_cast<size_t>(index)].c_str();
 }
 
-RStudioBuild* rstudio_build_target(RStudioProject* project, const char* cc1, const char* cl, const char* shc, const char* cxx1,
+RIDEBuild* ride_build_target(RIDEProject* project, const char* cc1, const char* cl, const char* shc, const char* cxx1,
                            int kind, const char* arch, int config) {
-    if (!rstudio_project_target_ready(project)) return 0;
+    if (!ride_project_target_ready(project)) return 0;
 
     editor::Toolchain tool = toolFrom(project, cc1, cl, shc, cxx1);
 
     tool.kind = static_cast<editor::ToolchainKind>(kind);
 
-    RStudioBuild* out = new RStudioBuild();
+    RIDEBuild* out = new RIDEBuild();
     editor::Built made = editor::buildParts(
         tool, project->parts, arch ? arch : "",
         static_cast<editor::Configuration>(config), project->program);
@@ -1446,17 +1447,17 @@ RStudioBuild* rstudio_build_target(RStudioProject* project, const char* cc1, con
     return out;
 }
 
-RStudioRan* rstudio_run_built(const char* program) {
-    RStudioRan* out = new RStudioRan();
+RIDERan* ride_run_built(const char* program) {
+    RIDERan* out = new RIDERan();
     out->ran = editor::runBuilt(program ? program : "");
     return out;
 }
 
-struct RStudioConversion {
+struct RIDEConversion {
     editor::Conversion made;
 };
 
-int rstudio_converts_from(int language, int* toShalimar) {
+int ride_converts_from(int language, int* toShalimar) {
     bool wanted = false;
     if (!editor::convertsFrom(static_cast<editor::Language>(language), &wanted)) {
         return 0;
@@ -1465,37 +1466,37 @@ int rstudio_converts_from(int language, int* toShalimar) {
     return 1;
 }
 
-char* rstudio_find_converter(void) {
+char* ride_find_converter(void) {
     return give(editor::findConverter());
 }
 
-char* rstudio_converted_name(const char* source, int toShalimar) {
+char* ride_converted_name(const char* source, int toShalimar) {
     return give(editor::convertedName(source ? source : "", toShalimar != 0));
 }
 
-RStudioConversion* rstudio_convert(const char* converter, const char* source,
+RIDEConversion* ride_convert(const char* converter, const char* source,
                                    const char* output, int toShalimar) {
-    RStudioConversion* out = new RStudioConversion();
+    RIDEConversion* out = new RIDEConversion();
     out->made = editor::convert(converter ? converter : "", source ? source : "",
                                 output ? output : "", toShalimar != 0);
     return out;
 }
 
-void rstudio_conversion_free(RStudioConversion* made) { delete made; }
-int rstudio_conversion_ran(RStudioConversion* made) { return made->made.ran ? 1 : 0; }
-int rstudio_conversion_ok(RStudioConversion* made) { return made->made.ok ? 1 : 0; }
-const char* rstudio_conversion_produced(RStudioConversion* made) {
+void ride_conversion_free(RIDEConversion* made) { delete made; }
+int ride_conversion_ran(RIDEConversion* made) { return made->made.ran ? 1 : 0; }
+int ride_conversion_ok(RIDEConversion* made) { return made->made.ok ? 1 : 0; }
+const char* ride_conversion_produced(RIDEConversion* made) {
     return made->made.produced.c_str();
 }
-const char* rstudio_conversion_output(RStudioConversion* made) {
+const char* ride_conversion_output(RIDEConversion* made) {
     return made->made.output.c_str();
 }
 
-RStudioBuild* rstudio_build(RStudioProject* project, const char* cc1, const char* cl, const char* shc, const char* cxx1, int kind, const char* source,
+RIDEBuild* ride_build(RIDEProject* project, const char* cc1, const char* cl, const char* shc, const char* cxx1, int kind, const char* source,
                     int language, const char* arch, int config) {
     editor::Toolchain tool = toolFrom(project, cc1, cl, shc, cxx1);
 
-    RStudioBuild* out = new RStudioBuild();
+    RIDEBuild* out = new RIDEBuild();
     out->built = editor::build(tool, static_cast<editor::ToolchainKind>(kind),
                                source ? source : "",
                                static_cast<editor::Language>(language),
@@ -1505,26 +1506,26 @@ RStudioBuild* rstudio_build(RStudioProject* project, const char* cc1, const char
     return out;
 }
 
-void rstudio_build_free(RStudioBuild* built) { delete built; }
+void ride_build_free(RIDEBuild* built) { delete built; }
 
-int rstudio_build_ok(RStudioBuild* built) { return built->built.ok ? 1 : 0; }
-const char* rstudio_build_output(RStudioBuild* built) { return built->built.output.c_str(); }
-const char* rstudio_build_assembly(RStudioBuild* built) { return built->assembly.c_str(); }
-int rstudio_build_assembly_lines(RStudioBuild* built) {
+int ride_build_ok(RIDEBuild* built) { return built->built.ok ? 1 : 0; }
+const char* ride_build_output(RIDEBuild* built) { return built->built.output.c_str(); }
+const char* ride_build_assembly(RIDEBuild* built) { return built->assembly.c_str(); }
+int ride_build_assembly_lines(RIDEBuild* built) {
     return static_cast<int>(built->built.asmLines.size());
 }
-int rstudio_build_has_error(RStudioBuild* built) { return built->built.diag.present ? 1 : 0; }
-const char* rstudio_build_error_file(RStudioBuild* built) {
+int ride_build_has_error(RIDEBuild* built) { return built->built.diag.present ? 1 : 0; }
+const char* ride_build_error_file(RIDEBuild* built) {
     return built ? built->built.diag.file.c_str() : "";
 }
 
-int rstudio_build_error_line(RStudioBuild* built) {
+int ride_build_error_line(RIDEBuild* built) {
     return static_cast<int>(built->built.diag.line);
 }
-int rstudio_build_error_column(RStudioBuild* built) {
+int ride_build_error_column(RIDEBuild* built) {
     return static_cast<int>(built->built.diag.col);
 }
-const char* rstudio_build_error_message(RStudioBuild* built) {
+const char* ride_build_error_message(RIDEBuild* built) {
     return built->built.diag.message.c_str();
 }
 
