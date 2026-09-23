@@ -9,9 +9,9 @@ under `help\`.
 
 | Language | Files        | Compiler  | Standard / version      | Debug info      |
 |----------|--------------|-----------|-------------------------|-----------------|
-| C        | `.c` `.h`    | `cc1i`    | ISO C 90                | DWARF (2 of 4)  |
-| C++      | `.cpp` `.hpp`| `cxx1i`   | ISO C++ 11              | DWARF (2 of 4)  |
-| Shalimar | `.shl`       | `shci`    | Shalimar 1.2            | none, by design |
+| C        | `.c` `.h`    | `c90`    | ISO C 90                | DWARF (2 of 4)  |
+| C++      | `.cpp` `.hpp`| `cpp11`   | ISO C++ 11              | DWARF (2 of 4)  |
+| Shalimar | `.shl`       | `shalimar`    | Shalimar 1.2            | none, by design |
 
 The suffix picks the language; **Language** menu overrides it for a file whose
 name says otherwise. Each compiler announces itself at the start of a compile
@@ -26,8 +26,8 @@ name says otherwise. Each compiler announces itself at the start of a compile
 | `arm64-darwin`    | assembly only (`-S`) on Windows   |
 | `tms6747`         | yes, on the **vm6747 emulator**   |
 
-Scope of a compiler: `cc1i` compiles C only (a `.cpp` is refused with a message,
-not a cryptic error); `cxx1i` compiles C++ only (a `.c` is refused); `shci`
+Scope of a compiler: `c90` compiles C only (a `.cpp` is refused with a message,
+not a cryptic error); `cpp11` compiles C++ only (a `.c` is refused); `shalimar`
 compiles Shalimar only. The host compiler (`cl`) is still reachable per group.
 
 --------------------------------------------------------------------------
@@ -52,7 +52,7 @@ A `.pro` is one JSON object:
 
     {
       "name": "demo",
-      "toolchain": "auto",           // auto | cc1 | cxx1 | shc | msvc
+      "toolchain": "auto",           // auto | c90 | cpp11 | shalimar | msvc
       "arch": "x86_64-windows",      // one of the four targets
       "indent": 4,
       "groups": {
@@ -66,7 +66,7 @@ A `.pro` is one JSON object:
   set its own `"toolchain"`.
 - **build** names the program (`target`) and which groups compile into it;
   headers and un-named groups are passed over. A group holding C *and* C++ is
-  split — the C to `cc1i`, the C++ to `cxx1i` — and the objects are linked.
+  split — the C to `c90`, the C++ to `cpp11` — and the objects are linked.
 - Say no `build` and nothing is built (Ctrl-B still compiles the open file).
 
 --------------------------------------------------------------------------
@@ -100,7 +100,7 @@ except the two links - for now:
 
 | Step          | x86_64-windows                        | tms6747                              |
 |---------------|---------------------------------------|--------------------------------------|
-| compile       | `cc1i` / `cxx1i` / `shci` (ours)      | `cc1i` / `cxx1i` / `shci` (ours)     |
+| compile       | `c90` / `cpp11` / `shalimar` (ours)      | `c90` / `cpp11` / `shalimar` (ours)     |
 | assemble      | **`masm`** (ours, in place of ml64)   | **`asm6x`** (ours, in place of TI's) |
 | link          | **`link`** (ours; a failure asks for link.exe) | **`lnk6x`** (ours; a failure asks for TI's) |
 | run           | this machine                          | **`vm6747`** (ours), or real silicon |
@@ -127,15 +127,15 @@ and cinit on the other); each says so and stops rather than guess.
 ## Where things are
 
     bin\      the editor (RIDE.exe), the console editor, the compilers
-              cc1i cxx1i shci, the assemblers masm (x86-64) and asm6x (C6000),
+              c90 cpp11 shalimar, the assemblers masm (x86-64) and asm6x (C6000),
               the linkers link (x86-64) and lnk6x (C6000), the vm6747
               emulator, the c2s converter
     bin\lib\  the Shalimar runtime (shmrt-x86_64-windows[-debug].lib) and the
               C6000 runtime (shmrt-tms6747\*.s)
     bin\ti\   ti-build.cmd — the real-silicon TI build path
-    include\  cxx1i's headers: C++ (<vector>, <new>, <typeinfo>, …) and the
+    include\  cpp11's headers: C++ (<vector>, <new>, <typeinfo>, …) and the
               C ones they wrap, in one directory
-    lib\      cc1i's headers: the C standard headers (<stdio.h>, <string.h>, …)
+    lib\      c90's headers: the C standard headers (<stdio.h>, <string.h>, …)
     settings.json  the installation's settings: where include\ and lib\ are,
               the default compiler (the Tools menu writes it), the assembler
               (bin/masm.exe), the linkers (bin/link.exe, bin/lnk6x.exe),

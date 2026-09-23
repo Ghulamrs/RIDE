@@ -50,14 +50,14 @@ std::string includeDir();
 std::string libDir();
 std::string vcvars();
 // **The assembler for x86_64-windows**, the project's own (Ghulamrs/MASM's
-// asm) named by its path: cc1i and cxx1i then assemble through it instead of
-// ml64 and clang - CC1_AS and CXX1_AS in their environment, and cxx1i told
+// asm) named by its path: c90 and cpp11 then assemble through it instead of
+// ml64 and clang - C90_AS and CPP11_AS in their environment, and cpp11 told
 // -masm=masm. Empty, and the compilers choose as they always did.
 std::string assembler();
 void overrideAssembler(const std::string& path);   // --assembler, for this run only
 // **The linker for x86_64-windows**, the project's own (Ghulamrs/LINK's
 // link) named by its path: a Windows build then links through it instead of
-// Microsoft's link.exe. Empty, and link.exe (or CC1_LD) as always.
+// Microsoft's link.exe. Empty, and link.exe (or C90_LD) as always.
 std::string linker();
 void overrideLinker(const std::string& path);      // --linker, for this run only
 // **TI's C6000 compiler directory**, for tms6747: CCS's ti-cgt-c6000 root,

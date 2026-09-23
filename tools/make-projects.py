@@ -7,8 +7,8 @@
 Three machines, three shapes, one idea: open one thing and get all four
 programs, with the editor built after the three it drives.
 
-    macOS    RIDE.xcworkspace          RIDE.exe, cc1i.exe, cxx1i.exe, vm6747.exe, asm6x.exe, masm.exe, link.exe, lnk6x.exe, shci.exe, c2s.exe
-    Windows  RIDE.sln                  RIDEConsole, RIDEGui, cc1i, cxx1i, vm6747, asm6x, masm, link, lnk6x, shci, c2s
+    macOS    RIDE.xcworkspace          RIDE.exe, c90.exe, cpp11.exe, vm6747.exe, asm6x.exe, masm.exe, link.exe, lnk6x.exe, shalimar.exe, c2s.exe
+    Windows  RIDE.sln                  RIDEConsole, RIDEGui, c90, cpp11, vm6747, asm6x, masm, link, lnk6x, shalimar, c2s
     Linux    workspace.mk                 make -f workspace.mk
 
 Was make-xcodeproj.py while Xcode was all it wrote.
@@ -21,7 +21,7 @@ Three command line tools, built by clang++, from three separate repositories:
     shc      the Shalimar one    ../Compiler-S/shc.xcodeproj
 
 Since 3.5 the compilers are the VM6747 line - ../VM6747/Compiler-Ci,
-Compiler-Cppi and Compiler-Si, building cc1i, cxx1i and shci - and the
+Compiler-Cppi and Compiler-Si, building c90, cpp11 and shalimar - and the
 emulator beside them. The three originals stay sealed and are not opened by
 anything written here.
     c2s      the converter       ../Converter-C2S/c2s.xcodeproj
@@ -77,7 +77,7 @@ import sys
 
 HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SIBLINGS = os.path.dirname(HERE)
-# 3.5: the C and C++ compilers are the VM6747 line - cc1i and cxx1i, three
+# 3.5: the C and C++ compilers are the VM6747 line - c90 and cpp11, three
 # host targets and the TMS320C6747 - and vm6747, the emulator, is built with
 # them. Three repositories under VM6747/ beside this one, on every machine.
 CC1_REPO = os.path.join("VM6747", "Compiler-Ci")
@@ -219,18 +219,18 @@ def projects():
             # dependency and builds only this target, which is how renaming
             # cc1 to cc1.exe stopped the workspace building the compilers
             # without anything saying so.
-            "depends": [("cc1i.exe", "../" + CC1_REPO + "/cc1.xcodeproj"),
-                        ("cxx1i.exe", "../" + CXX1_REPO + "/cxx1.xcodeproj"),
+            "depends": [("c90.exe", "../" + CC1_REPO + "/cc1.xcodeproj"),
+                        ("cpp11.exe", "../" + CXX1_REPO + "/cxx1.xcodeproj"),
                         ("vm6747.exe", "../" + VM_REPO + "/vm6747.xcodeproj"),
                         ("asm6x.exe", "../" + ASM_REPO + "/asm6x.xcodeproj"),
                         ("masm.exe", "../" + MASM_REPO + "/masm.xcodeproj"),
                         ("link.exe", "../" + LINK_REPO + "/link.xcodeproj"),
                         ("lnk6x.exe", "../" + LNK6X_REPO + "/lnk6x.xcodeproj"),
-                        ("shci.exe", "../" + SHC_REPO + "/shc.xcodeproj"),
+                        ("shalimar.exe", "../" + SHC_REPO + "/shc.xcodeproj"),
                         ("c2s.exe", "../Converter-C2S/c2s.xcodeproj")],
         },
         {
-            "product": "cc1i.exe",
+            "product": "c90.exe",
             "root": os.path.join(SIBLINGS, CC1_REPO),
             "out": os.path.join(SIBLINGS, CC1_REPO, "cc1.xcodeproj"),
             # Its Makefile says $(wildcard src/*.cpp) $(wildcard src/backend/*.cpp),
@@ -244,10 +244,10 @@ def projects():
             "defines": [("CC1_INCLUDE_DIR", "$(SRCROOT)/lib")],
         },
         {
-            # shci since 3.5: the VM6747 clone of Compiler-S, whose Makefile
-            # builds shci.exe. The project file keeps its name; the product
+            # shalimar since 3.5: the VM6747 clone of Compiler-S, whose Makefile
+            # builds shalimar.exe. The project file keeps its name; the product
             # is what changed, and that is what the identifiers derive from.
-            "product": "shci.exe",
+            "product": "shalimar.exe",
             "root": os.path.join(SIBLINGS, SHC_REPO),
             "out": os.path.join(SIBLINGS, SHC_REPO, "shc.xcodeproj"),
             # SOURCES names runtime/Shortest.cpp as well as src/, which is why
@@ -257,17 +257,17 @@ def projects():
             "headers": headers_under(os.path.join(SIBLINGS, SHC_REPO),
                                      ("src", "runtime")),
             "include": "$(SRCROOT)/src $(SRCROOT)/runtime",
-            # `make` builds shci.exe and both runtime archives; a project that
+            # `make` builds shalimar.exe and both runtime archives; a project that
             # built only the first would be the smaller program this script
             # exists to prevent. Since 3.5 the phase also writes the C6000
-            # runtime, which is cxx1i's output - so cxx1i.exe is built first,
+            # runtime, which is cpp11's output - so cpp11.exe is built first,
             # the ordering workspace.mk states as `make ... all tms6747
-            # CXX1=$(OUT)/cxx1i.exe` and RIDE.sln as a project dependency.
+            # CXX1=$(OUT)/cpp11.exe` and RIDE.sln as a project dependency.
             # The path is from *this* project's directory, not the editor's:
             # "../VM6747/Compiler-Cppi" from here would be VM6747/VM6747/...,
             # and Xcode drops a reference it cannot follow without a word -
-            # the dependency graph then says "shci.exe (no dependencies)".
-            "depends": [("cxx1i.exe",
+            # the dependency graph then says "shalimar.exe (no dependencies)".
+            "depends": [("cpp11.exe",
                          os.path.relpath(os.path.join(SIBLINGS, CXX1_REPO, "cxx1.xcodeproj"),
                                          os.path.join(SIBLINGS, SHC_REPO)))],
             "script": shc_runtime_script(),
@@ -283,7 +283,7 @@ def projects():
                               'cp -R "$BUILT_PRODUCTS_DIR/lib/shmrt-tms6747" "$dest/lib/"\n'),
         },
         {
-            "product": "cxx1i.exe",
+            "product": "cpp11.exe",
             "root": os.path.join(SIBLINGS, CXX1_REPO),
             "out": os.path.join(SIBLINGS, CXX1_REPO, "cxx1.xcodeproj"),
             # SRCS is three wildcards over src/, src/parser and src/backend -
@@ -761,7 +761,7 @@ def shc_runtime_sources():
 
 
 def shc_runtime_step():
-    """The PostBuildEvent that puts shc's runtime in lib/ beside shci.exe."""
+    """The PostBuildEvent that puts shc's runtime in lib/ beside shalimar.exe."""
     def compiled(names, into):
         return " ".join('"$(ProjectDir)runtime\%s.cpp"' % n for n in names), \
                " ".join('"$(IntDir)%s\%s.obj"' % (into, n) for n in names)
@@ -772,11 +772,11 @@ def shc_runtime_step():
     flags = ("/nologo /std:c++14 /W4 /WX /EHsc /permissive- /O2 "
              "/D_CRT_SECURE_NO_WARNINGS")
 
-    # **And the C6000 runtime, which is cxx1i's output.** Compiler-S's
+    # **And the C6000 runtime, which is cpp11's output.** Compiler-S's
     # Makefile keeps it under its own `tms6747` rule because `make` alone
-    # must not need the C++ clone; here the solution builds cxx1i.exe first
-    # (shci depends on it in RIDE.sln, below) and this step wants it beside
-    # the output. Wanted, not hoped for: a missing cxx1i.exe stops the build
+    # must not need the C++ clone; here the solution builds cpp11.exe first
+    # (shalimar depends on it in RIDE.sln, below) and this step wants it beside
+    # the output. Wanted, not hoped for: a missing cpp11.exe stops the build
     # and says so, since the alternative is an editor whose Shalimar cases
     # for the emulator are "not tried" and nothing says why. The Windows box
     # found it that way on 2026-09-15 - both archives built, no directory,
@@ -786,13 +786,13 @@ def shc_runtime_step():
     # and a stale .s left from a runtime source that was renamed would be
     # assembled beside the program with everything else.
     c6000 = "".join(
-        '"$(OutDir)cxx1i.exe" -S -arch tms6747 -nologo "$(ProjectDir)runtime\\%s.cpp" '
+        '"$(OutDir)cpp11.exe" -S -arch tms6747 -nologo "$(ProjectDir)runtime\\%s.cpp" '
         '-o "$(OutDir)lib\\shmrt-tms6747\\%s.s"\n'
         'if errorlevel 1 exit /b 1\n' % (n, n) for n in release)
 
     return (
         '    <PostBuildEvent>\n'
-        '      <Message>building the Shalimar runtime beside shci.exe</Message>\n'
+        '      <Message>building the Shalimar runtime beside shalimar.exe</Message>\n'
         '      <Command>if not exist "$(OutDir)lib" mkdir "$(OutDir)lib"\n'
         'if not exist "$(IntDir)rt" mkdir "$(IntDir)rt"\n'
         'if not exist "$(IntDir)rtd" mkdir "$(IntDir)rtd"\n'
@@ -804,9 +804,9 @@ def shc_runtime_step():
         'if errorlevel 1 exit /b 1\n'
         'lib /nologo /out:"$(OutDir)lib\shmrt-x86_64-windows-debug.lib" %s\n'
         'if errorlevel 1 exit /b 1\n'
-        'if not exist "$(OutDir)cxx1i.exe" echo shc.vcxproj: no cxx1i.exe in $(OutDir) - '
+        'if not exist "$(OutDir)cpp11.exe" echo shc.vcxproj: no cpp11.exe in $(OutDir) - '
         'the C6000 runtime is its output; build RIDE.sln, which builds it first\n'
-        'if not exist "$(OutDir)cxx1i.exe" exit /b 1\n'
+        'if not exist "$(OutDir)cpp11.exe" exit /b 1\n'
         'if not exist "$(OutDir)lib\\shmrt-tms6747" mkdir "$(OutDir)lib\\shmrt-tms6747"\n'
         '%s</Command>\n'
         '    </PostBuildEvent>\n'
@@ -909,15 +909,15 @@ def shc_runtime_phase():
                 '"$ar" rcs "$lib/%s" "%s"/*.o\n' % (leaf, objects))
 
     # The C6000 runtime is a directory of assembly, one .s per release
-    # source, written by the cxx1i.exe this workspace just built (a target
+    # source, written by the cpp11.exe this workspace just built (a target
     # dependency, so it is there); the emulator takes the directory whole
     # beside a Shalimar program. rm first for the reason ar gets it below.
-    c6000 = ('cxx1i="$BUILT_PRODUCTS_DIR/cxx1i.exe"\n'
-             'test -x "$cxx1i" || { echo "shc.xcodeproj: no cxx1i.exe beside the output - '
+    c6000 = ('cpp11="$BUILT_PRODUCTS_DIR/cpp11.exe"\n'
+             'test -x "$cpp11" || { echo "shc.xcodeproj: no cpp11.exe beside the output - '
              'the C6000 runtime is its output" >&2; exit 1; }\n'
              'rm -rf "$lib/shmrt-tms6747"\n'
              'mkdir -p "$lib/shmrt-tms6747"\n' +
-             "".join('"$cxx1i" -S -arch tms6747 -nologo "$SRCROOT/runtime/%s.cpp" '
+             "".join('"$cpp11" -S -arch tms6747 -nologo "$SRCROOT/runtime/%s.cpp" '
                      '-o "$lib/shmrt-tms6747/%s.s"\n' % (name, name) for name in release))
 
     # rm before ar: `ar rcs` replaces members in an archive that is already
@@ -940,16 +940,16 @@ def shc_runtime_script():
     release, debug = shc_runtime_sources()
     headers = ("shmrt", "Internal", "Shortest", "Debug")
     return {
-        "name": "the Shalimar runtime, beside shci.exe",
+        "name": "the Shalimar runtime, beside shalimar.exe",
         "shell": shc_runtime_phase(),
         # Named so Xcode can tell the phase is up to date and skip it. With no
         # outputs it runs on every build and says so as a warning; with these
         # it runs when a runtime source or header changes, which is the same
         # rule make follows.
-        # cxx1i.exe is an input too: a new compiler means new C6000 runtime.
+        # cpp11.exe is an input too: a new compiler means new C6000 runtime.
         "inputs": (["$(SRCROOT)/runtime/%s.cpp" % n for n in debug] +
                    ["$(SRCROOT)/runtime/%s.h" % n for n in headers] +
-                   ["$(BUILT_PRODUCTS_DIR)/cxx1i.exe"]),
+                   ["$(BUILT_PRODUCTS_DIR)/cpp11.exe"]),
         "outputs": (["$(BUILT_PRODUCTS_DIR)/lib/shmrt-%s.a" % SHC_RUNTIME_TARGET,
                      "$(BUILT_PRODUCTS_DIR)/lib/shmrt-%s-debug.a" % SHC_RUNTIME_TARGET] +
                     ["$(BUILT_PRODUCTS_DIR)/lib/shmrt-tms6747/%s.s" % n for n in release]),
@@ -1162,8 +1162,8 @@ def workspace_mk_text():
 # the same two repositories are ~/ansicc and ~/shalimar:
 #
 #   make -f workspace.mk CC1_DIR=$HOME/ansicc SHC_DIR=$HOME/shalimar
-# 3.5: the compilers are the VM6747 line - cc1i and cxx1i with the three
-# host targets and the TMS320C6747, shci with its three - and vm6747, the
+# 3.5: the compilers are the VM6747 line - c90 and cpp11 with the three
+# host targets and the TMS320C6747, shalimar with its three - and vm6747, the
 # emulator that runs the fourth, is built with them. Compiler-C, C++ and
 # Compiler-S stay sealed beside.
 CC1_DIR ?= ../VM6747/Compiler-Ci
@@ -1214,11 +1214,12 @@ all: confirm
 cc1:
 	$(MAKE) -C $(CC1_DIR) BINDIR=$(OUT) OBJDIR=$(OUT)/obj/cc1
 
-# `tms6747` as well as `all`: the Shalimar runtime for the C6000 is cxx1i's
+# `tms6747` as well as `all`: the Shalimar runtime for the C6000 is cpp11's
 # output, a directory of .s files the emulator takes beside a program, so
-# shci's build needs cxx1i - which the editor rule builds first.
-shc:
-	$(MAKE) -C $(SHC_DIR) BINDIR=$(OUT) BUILD=$(OUT)/obj/shc all tms6747 CXX1=$(OUT)/cxx1i.exe
+# shalimar's build needs cpp11, so it waits for it: said only in a comment, a
+# -j2 build on the Linux box started shalimar first and found no cpp11.exe.
+shc: cxx1
+	$(MAKE) -C $(SHC_DIR) BINDIR=$(OUT) BUILD=$(OUT)/obj/shc all tms6747 CXX1=$(OUT)/cpp11.exe
 
 # The converter. Not a compiler and nothing links it - the editor runs it over
 # the open file from the Language menu - but it is found the same way the
@@ -1276,13 +1277,13 @@ HOST := $(shell uname -s)
 
 check: confirm
 ifeq ($(HOST),Darwin)
-	cd $(CC1_DIR) && CC1=$(OUT)/cc1i.exe ./tests/arm64.sh
-	cd $(CC1_DIR) && CC1=$(OUT)/cc1i.exe ./tests/fingerprint.sh
+	cd $(CC1_DIR) && CC1=$(OUT)/c90.exe ./tests/arm64.sh
+	cd $(CC1_DIR) && CC1=$(OUT)/c90.exe ./tests/fingerprint.sh
 else
 	$(MAKE) -C $(CC1_DIR) test
 endif
-	cd $(CC1_DIR) && CC1=$(OUT)/cc1i.exe VM=$(OUT)/vm6747.exe ./tests/tms6747.sh
-	cd $(CXX1_DIR) && CXX1=$(OUT)/cxx1i.exe VM=$(OUT)/vm6747.exe ./tests/tms6747.sh
+	cd $(CC1_DIR) && CC1=$(OUT)/c90.exe VM=$(OUT)/vm6747.exe ./tests/tms6747.sh
+	cd $(CXX1_DIR) && CXX1=$(OUT)/cpp11.exe VM=$(OUT)/vm6747.exe ./tests/tms6747.sh
 # The assembler against asm6x's recorded objects, python3 alone.
 	cd $(ASM_DIR) && ASM=$(OUT)/asm6x.exe sh tests/run.sh
 # And the x86-64 one against ml64's recorded objects, the same way.
@@ -1300,15 +1301,15 @@ endif
 # Compiler-C/examples, and this is the only place that knows where Compiler-C
 # actually is on this machine - it is ~/ansicc on the Linux box. Without it
 # that check found nothing and said nothing.
-	$(MAKE) -C $(SHC_DIR) SHC=$(OUT)/shci.exe CC1=$(OUT)/cc1i.exe \
+	$(MAKE) -C $(SHC_DIR) SHC=$(OUT)/shalimar.exe CC1=$(OUT)/c90.exe \
 	    LIBDIR=$(abspath $(CC1_DIR))/examples/shalimar-library test
-# The Shalimar corpus on the emulator, with the runtime cxx1i built.
-	$(MAKE) -C $(SHC_DIR) BINDIR=$(OUT) BUILD=$(OUT)/obj/shc CXX1=$(OUT)/cxx1i.exe test-tms6747
+# The Shalimar corpus on the emulator, with the runtime cpp11 built.
+	$(MAKE) -C $(SHC_DIR) BINDIR=$(OUT) BUILD=$(OUT)/obj/shc CXX1=$(OUT)/cpp11.exe test-tms6747
 # The converter's suite is differential and needs both compilers as oracles.
 # It is given the two just built into $(OUT), for the same reason the editor's
 # is below: those are the ones this build produced, and they are the ones
 # whose behaviour the converter's output is being judged against.
-	$(MAKE) -C $(C2S_DIR) BINDIR=$(OUT) OBJDIR=$(OUT)/obj/c2s test CC1=$(OUT)/cc1i.exe SHC=$(OUT)/shci.exe
+	$(MAKE) -C $(C2S_DIR) BINDIR=$(OUT) OBJDIR=$(OUT)/obj/c2s test CC1=$(OUT)/c90.exe SHC=$(OUT)/shalimar.exe
 # cxx1's own suites, against the binary just built into $(OUT) - its Makefile
 # runs them on $(TARGET), which BINDIR names. The differential suites ask the
 # host's g++ or clang++ for the answers, so they run wherever the editor does.
@@ -1323,7 +1324,7 @@ endif
 # need a compiler and says so quietly - so the count fell from 792 and 232 to
 # 686 and 115 and everything still read as green. A suite that skips is not a
 # suite that passes.
-	$(MAKE) BINDIR=$(OUT) OBJDIR=$(OUT)/obj/editor check CC1=$(OUT)/cc1i.exe CXX1=$(OUT)/cxx1i.exe SHC=$(OUT)/shci.exe C2S=$(OUT)/c2s.exe
+	$(MAKE) BINDIR=$(OUT) OBJDIR=$(OUT)/obj/editor check CC1=$(OUT)/c90.exe CXX1=$(OUT)/cpp11.exe SHC=$(OUT)/shalimar.exe C2S=$(OUT)/c2s.exe
 
 # bin/ is where BINDIR points by default now, so `bin` is just an explicit
 # name for the ordinary build - kept so a script or a habit that says `make -f
@@ -1487,7 +1488,7 @@ def main():
                                 target="$(PRODUCT)Console", props="product.props"),
                    "RIDEConsole.vcxproj"))
     wanted.append((os.path.join(SIBLINGS, SHC_REPO, "shc.vcxproj"),
-                   vcxproj_text("shci", spec_of["shci.exe"]["sources"], ["_CRT_SECURE_NO_WARNINGS"],
+                   vcxproj_text("shalimar", spec_of["shalimar.exe"]["sources"], ["_CRT_SECURE_NO_WARNINGS"],
                                 shc_runtime_step()),
                    "shc.vcxproj"))
     # The converter's, which docs/ANALYSIS.md section 12 scheduled as part of
@@ -1510,7 +1511,7 @@ def main():
     # include path for <unistd.h>, and the five warnings it disables.
     cxx1_root = "$([System.String]::Copy('$(ProjectDir)').Replace('\\','/'))"
     wanted.append((os.path.join(SIBLINGS, CXX1_REPO, "cxx1.vcxproj"),
-                   vcxproj_text("cxx1i", spec_of["cxx1i.exe"]["sources"],
+                   vcxproj_text("cpp11", spec_of["cpp11.exe"]["sources"],
                                 ["_CRT_SECURE_NO_WARNINGS",
                                  'CXX1_INCLUDE_DIR="%slib"' % cxx1_root,
                                  'CXX1_CXX_INCLUDE_DIR="%sinclude"' % cxx1_root],
@@ -1556,23 +1557,23 @@ def main():
         # The VM6747 line, laid out on the Windows box as it is here:
         # VM6747\Compiler-Ci, VM6747\Compiler-Cppi and VM6747\Emulator beside
         # this checkout, which is where tools/to-windows.sh puts them.
-        ("cc1i", "../" + CC1_REPO.replace(os.sep, "/") + "/msvc/cc1.vcxproj", CC1_GUID, []),
-        ("cxx1i", "../" + CXX1_REPO.replace(os.sep, "/") + "/cxx1.vcxproj", guid("cxx1i"), []),
+        ("c90", "../" + CC1_REPO.replace(os.sep, "/") + "/msvc/cc1.vcxproj", CC1_GUID, []),
+        ("cpp11", "../" + CXX1_REPO.replace(os.sep, "/") + "/cxx1.vcxproj", guid("cpp11"), []),
         ("vm6747", "../" + VM_REPO.replace(os.sep, "/") + "/vm6747.vcxproj", guid("vm6747"), []),
         ("asm6x", "../" + ASM_REPO + "/asm6x.vcxproj", guid("asm6x"), []),
         ("masm", "../" + MASM_REPO + "/masm.vcxproj", guid("masm"), []),
         ("link", "../" + LINK_REPO + "/link.vcxproj", guid("link"), []),
         ("lnk6x", "../" + LNK6X_REPO + "/lnk6x.vcxproj", guid("lnk6x"), []),
-        # shci after cxx1i: its post-build step compiles the Shalimar runtime
-        # for the C6000 with the cxx1i.exe beside it (shc_runtime_step).
-        ("shci", "../" + SHC_REPO.replace(os.sep, "/") + "/shc.vcxproj", guid("shci"), [guid("cxx1i")]),
+        # shalimar after cpp11: its post-build step compiles the Shalimar runtime
+        # for the C6000 with the cpp11.exe beside it (shc_runtime_step).
+        ("shalimar", "../" + SHC_REPO.replace(os.sep, "/") + "/shc.vcxproj", guid("shalimar"), [guid("cpp11")]),
         # c2s is built with them and not by them: the editor runs it over the
         # open file from the Language menu, and finds it beside itself the
         # same way it finds the compilers.
         ("c2s", "../Converter-C2S/c2s.vcxproj", guid("c2s"), []),
         # the editor after both, which is the dependency this whole thing is
         # for - said in a .sln the way the workspace says it in a .xcodeproj.
-        ("RIDEConsole", "RIDEConsole.vcxproj", guid("RIDEConsole"), [CC1_GUID, guid("cxx1i"), guid("vm6747"), guid("asm6x"), guid("masm"), guid("link"), guid("lnk6x"), guid("shci"), guid("c2s")]),
+        ("RIDEConsole", "RIDEConsole.vcxproj", guid("RIDEConsole"), [CC1_GUID, guid("cpp11"), guid("vm6747"), guid("asm6x"), guid("masm"), guid("link"), guid("lnk6x"), guid("shalimar"), guid("c2s")]),
         # The window, on the same footing as the console half. It is in the
         # solution for two reasons: so that one build makes all four, and
         # because being in a solution is what moves its output into the
@@ -1582,7 +1583,7 @@ def main():
         # version of it set OutDir, IntDir, BasicRuntimeChecks and a platform
         # version, and the binary died at startup with heap corruption before
         # main. Nothing in that file is touched to get this.
-        ("RIDEGui", "winforms/RIDEGui.vcxproj", GUI_GUID, [CC1_GUID, guid("cxx1i"), guid("vm6747"), guid("asm6x"), guid("masm"), guid("link"), guid("lnk6x"), guid("shci"), guid("c2s")]),
+        ("RIDEGui", "winforms/RIDEGui.vcxproj", GUI_GUID, [CC1_GUID, guid("cpp11"), guid("vm6747"), guid("asm6x"), guid("masm"), guid("link"), guid("lnk6x"), guid("shalimar"), guid("c2s")]),
     ]
     wanted.append((os.path.join(HERE, "RIDE.sln"), solution_text(entries),
                    "RIDE.sln"))

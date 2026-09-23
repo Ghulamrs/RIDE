@@ -7,11 +7,11 @@ quietly**, so a construct it does not support stops the build with a message
 rather than miscompiling.
 
 --------------------------------------------------------------------------------
-## 7. C — `cc1i`
+## 7. C — `c90`
 
-**Standard: ISO C 90 (ANSI C / C89).** `cc1i` is an ANSI C compiler. It is the
+**Standard: ISO C 90 (ANSI C / C89).** `c90` is an ANSI C compiler. It is the
 oldest and most complete of the three; C90 is a small, closed language and
-`cc1i` implements it.
+`c90` implements it.
 
 **What it supports.** The whole of C90: the type system (integer and floating
 types, `struct`, `union`, `enum`, bit-fields, pointers, arrays, function
@@ -28,14 +28,14 @@ stringising `#` and pasting `##`), and the standard library headers shipped in
 them and defining them with `va_start`/`va_arg`/`va_end`. A character constant
 is an `int`, as C90 says.
 
-**What it does not do.** `cc1i` is C90, not C99 or C11, so the later additions
+**What it does not do.** `c90` is C90, not C99 or C11, so the later additions
 are not there: no `//` line comments as a guaranteed dialect feature beyond what
 the lexer accepts, no `long long` as a *standard* type name expectation, no
 mixed declarations-and-code required by C99, no variable-length arrays, no
 `inline` as a C99 keyword, no `_Bool`/`<stdbool.h>`, no `restrict`, no designated
 initialisers, no compound literals, no `_Complex`, no `<stdint.h>` guarantees
 beyond what `lib/` provides. It does not compile C++ — hand it a `.cpp` and it
-refuses by name and points at `cxx1i`. It is not a linker or an assembler; it
+refuses by name and points at `cpp11`. It is not a linker or an assembler; it
 emits assembly and calls the host tools (Part I chapter 5).
 
 **Targets.** All four: `x86_64-linux`, `x86_64-windows`, `arm64-darwin`,
@@ -44,10 +44,10 @@ emits assembly and calls the host tools (Part I chapter 5).
 emulator runs it, no debugger reads it).
 
 --------------------------------------------------------------------------------
-## 8. C++ — `cxx1i`
+## 8. C++ — `cpp11`
 
 **Standard: ISO C++ 11, minus a documented list of exclusions.** That headline
-needs the second half to be honest: `cxx1i` accepts *C++11 minus a list*, and
+needs the second half to be honest: `cpp11` accepts *C++11 minus a list*, and
 ships the simplified library in `include/` rather than a fully conforming one. A
 C++11 compiler that refuses a feature is a C++11 *subset*, and this manual says
 which subset so a program that fails has somewhere to look. The authoritative,
@@ -115,13 +115,13 @@ source-derived inventory is `docs/EXCLUSIONS.md` in the C++ compiler's own tree
 - **A few target-only refusals** — e.g. a polymorphic virtual base is refused by
   name on `x86_64-windows` (Microsoft ABI), while the Itanium targets accept it.
 
-The rule to work by: **if `cxx1i` refuses something, it will say so by name.** A
+The rule to work by: **if `cpp11` refuses something, it will say so by name.** A
 program that compiles did not step on an exclusion; a program that fails names
 the reason. When in doubt about a single construct, compile a one-line program —
 some refusals read more broadly than they actually fire.
 
 --------------------------------------------------------------------------------
-## 9. Shalimar — `shci`
+## 9. Shalimar — `shalimar`
 
 Shalimar is a small numeric language. The full, authoritative reference is
 Appendix A of this help set (`help/appendix-a-shalimar-language.md`, ~1,400
@@ -169,7 +169,7 @@ reports at the point of interception rather than as a later phase.
   conformance bug** recorded in the compiler's `docs/CONFORMANCE.md`, not a
   license to diverge.
 
-**Targets.** `shci` compiles the three host targets and `tms6747`. On tms6747 a
+**Targets.** `shalimar` compiles the three host targets and `tms6747`. On tms6747 a
 Shalimar program runs on the `vm6747` emulator beside the C6000 runtime
 (`shmrt-tms6747`), which the emulator assembles with the program.
 
@@ -184,10 +184,10 @@ language while the compiler decides which folder(s) it searches*:
 - **`include/`** holds the **C++** standard headers (`<vector>`, `<new>`,
   `<typeinfo>`, `<cstdio>`, …).
 
-- **`cc1i`** (built with `-DCC1_INCLUDE_DIR=lib`) searches **one** system
+- **`c90`** (built with `-DCC1_INCLUDE_DIR=lib`) searches **one** system
   directory: `lib/`. `#include <stdio.h>` → `lib/stdio.h`. It never looks in
   `include/`.
-- **`cxx1i`** (built with `-DCXX1_CXX_INCLUDE_DIR=include` and
+- **`cpp11`** (built with `-DCXX1_CXX_INCLUDE_DIR=include` and
   `-DCXX1_INCLUDE_DIR=lib`) searches **two**, in order: `include/` first, then
   `lib/`. `#include <vector>` → `include/vector`; `#include <cstdio>` →
   `include/cstdio`, which itself pulls `<stdio.h>` → `lib/stdio.h`.
@@ -195,7 +195,7 @@ language while the compiler decides which folder(s) it searches*:
 Both put your `-I` directories ahead of the system ones, so a project header
 wins over a standard one.
 
-**Discovery at run time**: environment overrides (`CXX1_INCLUDE`/`CXX1_LIB`)
+**Discovery at run time**: environment overrides (`CPP11_INCLUDE`/`CPP11_LIB`)
 first; else beside the binary, then one directory up (`../include`, `../lib`),
 accepting a pair only if `include/` actually has `vector` and `lib/` actually
 has `stddef.h`; else the paths compiled in with the `-D` flags. That

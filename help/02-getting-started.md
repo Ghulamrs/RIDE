@@ -18,7 +18,7 @@ looking at code rather than at an empty buffer.
 
 ## The first run
 
-If there is no project to return to, RIDE writes `~/cc1-demo` — one C
+If there is no project to return to, RIDE writes `~/c90-demo` — one C
 program with a loop and a call in it, which is enough to set a breakpoint and
 stop inside. The demo is projectile motion, and it is deliberately small: it
 exists so that `F8` does something on a machine where nothing has been written

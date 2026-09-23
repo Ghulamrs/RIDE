@@ -52,7 +52,7 @@ Ctrl-W puts the cursor in the panel; Enter on a variable sets it
 
 When a build has produced no program, this tab shows what the build *did*
 produce by way of debug information, and says plainly when there is none and
-why — cc1's MASM on Windows carries no line table, and shc writes none anywhere
+why — c90's MASM on Windows carries no line table, and shalimar writes none anywhere
 by decision.
 
 ## Assembly

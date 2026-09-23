@@ -92,7 +92,7 @@ TI's EABI, matched to `cl6x` and verified word-for-word:
   also **passed** by value in a register or pair.
 - **Near data**: scalars reached DP-relative through `B14`, in TI's near sections.
 - **Callee-saved**: `A10/B10/A12/B12` (and the frame registers) are preserved by a
-  function that uses them across a call — which `shci` also now does, so a
+  function that uses them across a call — which `shalimar` also now does, so a
   TI-compiled caller of a Shalimar comparator is safe.
 - **Exceptions**: TI's tables — `.c6xabi.extab`/`-style scope descriptors, an
   index entry per function, `__cxa_end_cleanup` at a cleanup pad — so a C++

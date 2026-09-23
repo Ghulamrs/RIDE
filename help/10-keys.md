@@ -44,7 +44,7 @@ Console, Debug, Assembly.
 **Debug** — Start / continue, Debug project, Toggle breakpoint, Step over, Step
 into, Step out, Up the stack, Down the stack, Watch expression, Stop debugging.
 **Language** — By extension, C, C++, Shalimar, JSON, Plain text.
-**Tools** — By language, cc1, cxx1, shc, MSVC (cl), C++ (host). Ours first,
+**Tools** — By language, c90, cpp11, shalimar, MSVC (cl), C++ (host). Ours first,
 then the machine's. `Ctrl-K` walks them in that order.
 **Target** — the three architectures.
 
@@ -56,8 +56,8 @@ is the most downstream of the three, which is why it comes last.
 ## The command line
 
 ```
-RIDE.exe [file] [--project dir] [--toolchain auto|cc1|cxx1|msvc|shc|c++]
-    [--config debug|release] [--cc1 path] [--cxx1 path] [--cl path] [--shc path]
+RIDE.exe [file] [--project dir] [--toolchain auto|c90|cpp11|msvc|shalimar|c++]
+    [--config debug|release] [--c90 path] [--cpp11 path] [--cl path] [--shalimar path]
     [--cxx path] [--c2s path] [--width n] [--tabs] [--case-indent] [--plain]
 ```
 
@@ -65,15 +65,15 @@ RIDE.exe [file] [--project dir] [--toolchain auto|cc1|cxx1|msvc|shc|c++]
 | --- | --- |
 | `--toolchain` | use one compiler for everything; it says so where it cannot take the file |
 | `--config` | `debug` (the default) or `release` |
-| `--cc1`, `--cxx1`, `--cl`, `--shc`, `--cxx`, `--c2s` | the programs to run |
+| `--c90`, `--cpp11`, `--cl`, `--shalimar`, `--cxx`, `--c2s` | the programs to run |
 | `--project` | what the pane on the left shows |
 | `--width n` | columns per indent step (4) |
 | `--tabs` | indent with tabs instead of spaces |
 | `--case-indent` | `case` one step inside its `switch` rather than in its own column |
 | `--plain` | frame the screen with `-`, `|` and `+` |
 
-`$CC1`, `$CXX1`, `$SHC`, `$CXX` and `$C2S` name them when the flags do not,
-and a `cc1`, `cxx1`, `shc` or `c2s` beside the editor is found before PATH is
+`$C90`, `$CPP11`, `$SHALIMAR`, `$CXX` and `$C2S` name them when the flags do not,
+and a `c90`, `cpp11`, `shalimar` or `c2s` beside the editor is found before PATH is
 asked; `cl` is also found through Visual Studio 2022 itself, so no Developer
 Command Prompt is needed.
 

@@ -41,17 +41,17 @@ int main(int argc, char** argv) {
     int caseIndent = -1;
 
     for (int i = 1; i < argc; ++i) {
-        if (std::strcmp(argv[i], "--cc1") == 0 && i + 1 < argc) {
+        if (std::strcmp(argv[i], "--c90") == 0 && i + 1 < argc) {
             cc1 = argv[++i];
         } else if (std::strcmp(argv[i], "--toolchain") == 0 && i + 1 < argc) {
             toolchain = argv[++i];
         } else if (std::strcmp(argv[i], "--cl") == 0 && i + 1 < argc) {
             cl = argv[++i];
-        } else if (std::strcmp(argv[i], "--shc") == 0 && i + 1 < argc) {
+        } else if (std::strcmp(argv[i], "--shalimar") == 0 && i + 1 < argc) {
             shc = argv[++i];
         } else if (std::strcmp(argv[i], "--cxx") == 0 && i + 1 < argc) {
             cxx = argv[++i];
-        } else if (std::strcmp(argv[i], "--cxx1") == 0 && i + 1 < argc) {
+        } else if (std::strcmp(argv[i], "--cpp11") == 0 && i + 1 < argc) {
             cxx1 = argv[++i];
         } else if (std::strcmp(argv[i], "--c2s") == 0 && i + 1 < argc) {
             c2s = argv[++i];
@@ -87,9 +87,9 @@ int main(int argc, char** argv) {
         } else if (std::strcmp(argv[i], "-h") == 0 ||
                    std::strcmp(argv[i], "--help") == 0) {
             std::printf(
-                "usage: %s [file] [--project dir] [--toolchain auto|cc1|cxx1|msvc|shc|c++]\n"
-                "           [--config debug|release] [--cc1 path] [--cxx1 path] [--cl path]\n"
-                "           [--shc path] [--cxx path] [--c2s path]\n"
+                "usage: %s [file] [--project dir] [--toolchain auto|c90|cpp11|msvc|shalimar|c++]\n"
+                "           [--config debug|release] [--c90 path] [--cpp11 path] [--cl path]\n"
+                "           [--shalimar path] [--cxx path] [--c2s path]\n"
                 "           [--width n] [--tabs] [--case-indent] [--plain]\n"
                 "       %s <project.pro or dir> [--arch a] [--assembler path] [--linker path]\n"
                 "           [--ti dir [--tilib dir] [--tilinker path]] --build | --run\n"
@@ -98,19 +98,20 @@ int main(int argc, char** argv) {
                 "  same editor in a window, over the same core.\n"
                 "\n"
                 "  --toolchain    auto (the default) lets the file choose: C goes\n"
-                "                 to cc1, C++ to cxx1 and Shalimar to shc. C and C++\n"
+                "                 to c90, C++ to cpp11 and Shalimar to shalimar. C and C++\n"
                 "                 each have a second answer - this machine's own\n"
                 "                 compiler, cl on Windows and c++ elsewhere - and\n"
                 "                 Shalimar goes to the only thing that reads it.\n"
                 "                 Naming one uses it for everything, and it says so\n"
                 "                 where it cannot take the file\n"
                 "  --config       debug (the default) or release. For cl that is\n"
-                "                 /Od /Zi /D_DEBUG or /O2 /DNDEBUG; for cc1 and cxx1,\n"
+                "                 /Od /Zi /D_DEBUG or /O2 /DNDEBUG; for c90 and cpp11,\n"
                 "                 -g and the define on the targets that carry a line\n"
                 "                 table, and the define alone on the one that does not\n"
-                "  --cc1, --cxx1, the programs to run; $CC1, $CXX1, $SHC and $CXX\n"
-                "  --cl, --shc,   name them too, and without either a cc1, cxx1 or\n"
-                "  --cxx          shc beside this editor is used, and failing that\n"
+                "  --c90, --cpp11, the programs to run; $C90, $CPP11, $SHALIMAR and\n"
+                "  --cl,          $CXX name them too, and without either a c90, cpp11\n"
+                "  --shalimar,    or shalimar beside this editor is used, and failing\n"
+                "  --cxx          that\n"
                 "                 PATH is asked. cl is also found through Visual\n"
                 "                 Studio 2022 itself, so no Developer Command Prompt\n"
                 "                 is needed. --cxx is c++ by default, which is clang++\n"
@@ -153,9 +154,9 @@ int main(int argc, char** argv) {
         }
     }
 
-    if (!toolchain.empty() && toolchain != "auto" && toolchain != "cc1" &&
-        toolchain != "msvc" && toolchain != "cl" && toolchain != "shc" &&
-        toolchain != "cxx1" && toolchain != "c++" && toolchain != "cxx" &&
+    if (!toolchain.empty() && toolchain != "auto" && toolchain != editor::product::kCompilerC &&
+        toolchain != "msvc" && toolchain != "cl" && toolchain != editor::product::kCompilerShalimar &&
+        toolchain != editor::product::kCompilerCpp && toolchain != "c++" && toolchain != "cxx" &&
         toolchain != "g++" && toolchain != "clang++") {
         std::fprintf(stderr, "%s: unknown toolchain %s\n", me.c_str(), toolchain.c_str());
         return 2;

@@ -47,11 +47,11 @@ a{color:inherit;text-decoration:none}}
 </ul></nav><p>Three languages, four targets, one editor - and, since 4.0, the project's own assemblers for both machines. This is the quick reference; the full pages are under <code>help\</code>.</p>
 <hr>
 <h2 id="1-languages-versions-and-scope">1. Languages, versions and scope</h2>
-<table><thead><tr><th>Language</th><th>Files</th><th>Compiler</th><th>Standard / version</th><th>Debug info</th></tr></thead><tbody><tr><td>C</td><td><code>.c</code> <code>.h</code></td><td><code>cc1i</code></td><td>ISO C 90</td><td>DWARF (2 of 4)</td></tr><tr><td>C++</td><td><code>.cpp</code> <code>.hpp</code></td><td><code>cxx1i</code></td><td>ISO C++ 11</td><td>DWARF (2 of 4)</td></tr><tr><td>Shalimar</td><td><code>.shl</code></td><td><code>shci</code></td><td>Shalimar 1.2</td><td>none, by design</td></tr></tbody></table>
+<table><thead><tr><th>Language</th><th>Files</th><th>Compiler</th><th>Standard / version</th><th>Debug info</th></tr></thead><tbody><tr><td>C</td><td><code>.c</code> <code>.h</code></td><td><code>c90</code></td><td>ISO C 90</td><td>DWARF (2 of 4)</td></tr><tr><td>C++</td><td><code>.cpp</code> <code>.hpp</code></td><td><code>cpp11</code></td><td>ISO C++ 11</td><td>DWARF (2 of 4)</td></tr><tr><td>Shalimar</td><td><code>.shl</code></td><td><code>shalimar</code></td><td>Shalimar 1.2</td><td>none, by design</td></tr></tbody></table>
 <p>The suffix picks the language; <strong>Language</strong> menu overrides it for a file whose name says otherwise. Each compiler announces itself at the start of a compile (e.g. <code>©2026 G. R. Akhtar - ISO C++ 11</code>).</p>
 <p><strong>The four targets</strong> (Target menu, or Ctrl-T to cycle):</p>
 <table><thead><tr><th>Target</th><th>Runs here?</th></tr></thead><tbody><tr><td><code>x86_64-windows</code></td><td>yes, on this machine (host)</td></tr><tr><td><code>x86_64-linux</code></td><td>assembly only (<code>-S</code>) on Windows</td></tr><tr><td><code>arm64-darwin</code></td><td>assembly only (<code>-S</code>) on Windows</td></tr><tr><td><code>tms6747</code></td><td>yes, on the <strong>vm6747 emulator</strong></td></tr></tbody></table>
-<p>Scope of a compiler: <code>cc1i</code> compiles C only (a <code>.cpp</code> is refused with a message, not a cryptic error); <code>cxx1i</code> compiles C++ only (a <code>.c</code> is refused); <code>shci</code> compiles Shalimar only. The host compiler (<code>cl</code>) is still reachable per group.</p>
+<p>Scope of a compiler: <code>c90</code> compiles C only (a <code>.cpp</code> is refused with a message, not a cryptic error); <code>cpp11</code> compiles C++ only (a <code>.c</code> is refused); <code>shalimar</code> compiles Shalimar only. The host compiler (<code>cl</code>) is still reachable per group.</p>
 <hr>
 <h2 id="2-making-and-updating-a-project">2. Making and updating a project</h2>
 <p>All on the <strong>Project</strong> menu:</p>
@@ -68,7 +68,7 @@ a{color:inherit;text-decoration:none}}
 <p>A <code>.pro</code> is one JSON object:</p>
 <pre><code>{
   &quot;name&quot;: &quot;demo&quot;,
-  &quot;toolchain&quot;: &quot;auto&quot;,           // auto | cc1 | cxx1 | shc | msvc
+  &quot;toolchain&quot;: &quot;auto&quot;,           // auto | c90 | cpp11 | shalimar | msvc
   &quot;arch&quot;: &quot;x86_64-windows&quot;,      // one of the four targets
   &quot;indent&quot;: 4,
   &quot;groups&quot;: {
@@ -79,7 +79,7 @@ a{color:inherit;text-decoration:none}}
 }</code></pre>
 <ul>
 <li><strong>groups</strong> name the files, in headings shown in the left pane. A group may set its own <code>&quot;toolchain&quot;</code>.</li>
-<li><strong>build</strong> names the program (<code>target</code>) and which groups compile into it; headers and un-named groups are passed over. A group holding C <em>and</em> C++ is split — the C to <code>cc1i</code>, the C++ to <code>cxx1i</code> — and the objects are linked.</li>
+<li><strong>build</strong> names the program (<code>target</code>) and which groups compile into it; headers and un-named groups are passed over. A group holding C <em>and</em> C++ is split — the C to <code>c90</code>, the C++ to <code>cpp11</code> — and the objects are linked.</li>
 <li>Say no <code>build</code> and nothing is built (Ctrl-B still compiles the open file).</li>
 </ul>
 <hr>
@@ -99,20 +99,20 @@ a{color:inherit;text-decoration:none}}
 <hr>
 <h2 id="5-the-toolchain-behind-a-build-new-in-4-0">5. The toolchain behind a build (new in 4.0)</h2>
 <p>Everything that turns your source into a program is this project's own code, except the two links - for now:</p>
-<table><thead><tr><th>Step</th><th>x86_64-windows</th><th>tms6747</th></tr></thead><tbody><tr><td>compile</td><td><code>cc1i</code> / <code>cxx1i</code> / <code>shci</code> (ours)</td><td><code>cc1i</code> / <code>cxx1i</code> / <code>shci</code> (ours)</td></tr><tr><td>assemble</td><td><strong><code>masm</code></strong> (ours, in place of ml64)</td><td><strong><code>asm6x</code></strong> (ours, in place of TI's)</td></tr><tr><td>link</td><td><strong><code>link</code></strong> (ours; a failure asks for link.exe)</td><td><strong><code>lnk6x</code></strong> (ours; a failure asks for TI's)</td></tr><tr><td>run</td><td>this machine</td><td><strong><code>vm6747</code></strong> (ours), or real silicon</td></tr></tbody></table>
+<table><thead><tr><th>Step</th><th>x86_64-windows</th><th>tms6747</th></tr></thead><tbody><tr><td>compile</td><td><code>c90</code> / <code>cpp11</code> / <code>shalimar</code> (ours)</td><td><code>c90</code> / <code>cpp11</code> / <code>shalimar</code> (ours)</td></tr><tr><td>assemble</td><td><strong><code>masm</code></strong> (ours, in place of ml64)</td><td><strong><code>asm6x</code></strong> (ours, in place of TI's)</td></tr><tr><td>link</td><td><strong><code>link</code></strong> (ours; a failure asks for link.exe)</td><td><strong><code>lnk6x</code></strong> (ours; a failure asks for TI's)</td></tr><tr><td>run</td><td>this machine</td><td><strong><code>vm6747</code></strong> (ours), or real silicon</td></tr></tbody></table>
 <p><code>settings.json</code> names <code>masm</code> as the assembler for x86_64-windows out of the box (<code>&quot;assembler&quot;: &quot;bin/masm.exe&quot;</code>, relative to that file). Tools &gt; Assembler for x86_64-windows... changes it, or clears it to go back to ml64; <code>masm</code> also answers ml64's own command line (<code>masm /nologo /c /Fo x.obj x.asm</code>), so a script that ran ml64 can run it instead. The two linkers are named the same way - <code>&quot;linker&quot;: &quot;bin/link.exe&quot;</code> (LINK, held to Microsoft's byte for byte on its probe bed) and <code>&quot;tilinker&quot;: &quot;bin/lnk6x.exe&quot;</code> (LNK6x, held to TI's) - so the project's own tools are the tools by default. When one of them fails a build and the compilers found no fault in the source, RIDE asks: <em>"The project's own masm and link did not build it. Use Visual Studio's ml64 and link.exe for this build instead?"</em> (or TI's lnk6x). <strong>Yes</strong> builds again through the vendor's tools, which RIDE finds itself - Visual Studio through vswhere, TI's lnk6x under the directory Tools names; nothing has to be on PATH. <code>&quot;askNative&quot;: false</code> in settings.json never asks and lets the build fail. Today the question comes up on every real link: neither linker yet takes its vendor's runtime (Microsoft's C runtime on one side, TI's archive and cinit on the other); each says so and stops rather than guess.</p>
 <hr>
 <h2 id="where-things-are">Where things are</h2>
 <pre><code>bin\      the editor (RIDE.exe), the console editor, the compilers
-          cc1i cxx1i shci, the assemblers masm (x86-64) and asm6x (C6000),
+          c90 cpp11 shalimar, the assemblers masm (x86-64) and asm6x (C6000),
           the linkers link (x86-64) and lnk6x (C6000), the vm6747
           emulator, the c2s converter
 bin\lib\  the Shalimar runtime (shmrt-x86_64-windows[-debug].lib) and the
           C6000 runtime (shmrt-tms6747\*.s)
 bin\ti\   ti-build.cmd — the real-silicon TI build path
-include\  cxx1i&#x27;s headers: C++ (&lt;vector&gt;, &lt;new&gt;, &lt;typeinfo&gt;, …) and the
+include\  cpp11&#x27;s headers: C++ (&lt;vector&gt;, &lt;new&gt;, &lt;typeinfo&gt;, …) and the
           C ones they wrap, in one directory
-lib\      cc1i&#x27;s headers: the C standard headers (&lt;stdio.h&gt;, &lt;string.h&gt;, …)
+lib\      c90&#x27;s headers: the C standard headers (&lt;stdio.h&gt;, &lt;string.h&gt;, …)
 settings.json  the installation&#x27;s settings: where include\ and lib\ are,
           the default compiler (the Tools menu writes it), the assembler
           (bin/masm.exe), the linkers (bin/link.exe, bin/lnk6x.exe),

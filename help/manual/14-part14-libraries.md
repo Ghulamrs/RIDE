@@ -7,8 +7,8 @@ write `#include` whether it will resolve, and to what.
 --------------------------------------------------------------------------------
 ## 70. `lib/` — the C standard headers
 
-`lib/` holds the C90 headers, searched by `cc1i` (its only system directory) and
-by `cxx1i` after `include/`. What is there:
+`lib/` holds the C90 headers, searched by `c90` (its only system directory) and
+by `cpp11` after `include/`. What is there:
 
     assert.h   ctype.h    errno.h    float.h    limits.h   locale.h
     math.h     setjmp.h   signal.h   stdarg.h   stddef.h   stdint.h
@@ -21,14 +21,14 @@ character classification; `<setjmp.h>`; `<stdarg.h>`'s `va_*`; `<time.h>`. The
 runtime behind them is the platform's C runtime (linked by the native linker),
 except on tms6747, where the emulator supplies the runtime it needs (Part VI).
 
-`<stddef.h>` is the file `cxx1i` probes for when it decides whether a directory is
+`<stddef.h>` is the file `cpp11` probes for when it decides whether a directory is
 a real C header directory — which is why the Shalimar `bin\lib\` (only `.lib`/`.s`)
 is never mistaken for the C `lib\`.
 
 --------------------------------------------------------------------------------
 ## 71. `include/` — the C++ headers
 
-`include/` holds the C++ headers, searched by `cxx1i` first. Two kinds:
+`include/` holds the C++ headers, searched by `cpp11` first. Two kinds:
 
 **The C headers wrapped into `std`** — `<cstddef>`, `<cstdlib>`, `<cstring>`,
 `<cmath>`, `<cctype>` — each includes its `lib/` C header and pulls every name it

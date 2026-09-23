@@ -647,7 +647,7 @@ bool Project::targetParts(std::vector<Part>& parts, std::string& why,
             why = target_.groups[i] + " holds Shalimar and C or C++ in one group";
             if (detail)
                 *detail = "No compiler takes both, so this is not a matter of naming one: "
-                          "shc reads Shalimar and nothing else, and cc1 and cl read C and "
+                          "shalimar reads Shalimar and nothing else, and c90 and cl read C and "
                           "C++ and not Shalimar. Put the Shalimar in a group of its own.";
             parts.clear();
             return false;
@@ -795,7 +795,7 @@ bool Project::oneShalimarProgram(std::vector<std::string>& sources, std::string&
           " Shalimar programs and builds one";
     if (detail) {
         *detail = "Every Shalimar file has a main(), so the project is what says which "
-                  "one is the program; the others are where shc looks for what it calls "
+                  "one is the program; the others are where shalimar looks for what it calls "
                   "and does not define. Name the target after the one to build - "
                   "\"build\": { \"target\": \"" +
                   (sources.empty() ? std::string("name")

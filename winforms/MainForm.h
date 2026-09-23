@@ -319,15 +319,15 @@ private:
         ride_ask_native(AskNativeInWindow);
 
         // The i-line names, since 3.5: the compilers docked beside the editor
-        // are cc1i, cxx1i and shci (the Toolchain struct defaults to the same).
+        // are c90, cpp11 and shalimar (the Toolchain struct defaults to the same).
         // Named looks for "<name>.exe" beside the editor, so the plain names
         // used to find a stale cc1.exe / cxx1.exe left over from a 3.0 build in
         // the same directory - an old cc1 then read a project's .cpp as C and
         // said "expected a type". cl stays the host compiler, found on PATH.
-        cc1_ = Named("CC1", "cc1i");
+        cc1_ = Named("C90", "c90");
         cl_ = Named("CL", "cl");
-        shc_ = Named("SHC", "shci");
-        cxx1_ = Named("CXX1", "cxx1i");
+        shc_ = Named("SHALIMAR", "shalimar");
+        cxx1_ = Named("CPP11", "cpp11");
         toolKind_ = ride_default_compiler();
         languageChoice_ = -1;
         config_ = RIDE_CONFIG_DEBUG;
@@ -649,16 +649,16 @@ private:
         toolAutoItem_->ShortcutKeyDisplayString = "Ctrl+K";
         tools->DropDownItems->Add(toolAutoItem_);
         toolCc1Item_ = gcnew ToolStripMenuItem(
-            "cc1", nullptr, gcnew EventHandler(this, &MainForm::OnToolCc1));
+            gcnew String(ride_toolchain_name(RIDE_TOOL_CC1)), nullptr, gcnew EventHandler(this, &MainForm::OnToolCc1));
         toolCc1Item_->ShortcutKeyDisplayString = "Ctrl+K";
         tools->DropDownItems->Add(toolCc1Item_);
         toolCxx1Item_ = gcnew ToolStripMenuItem(
-            "cxx1", nullptr, gcnew EventHandler(this, &MainForm::OnToolCxx1));
+            gcnew String(ride_toolchain_name(RIDE_TOOL_CXX1)), nullptr, gcnew EventHandler(this, &MainForm::OnToolCxx1));
         toolCxx1Item_->ShortcutKeyDisplayString = "Ctrl+K";
         tools->DropDownItems->Add(toolCxx1Item_);
 
         toolShcItem_ = gcnew ToolStripMenuItem(
-            "shc", nullptr, gcnew EventHandler(this, &MainForm::OnToolShc));
+            gcnew String(ride_toolchain_name(RIDE_TOOL_SHC)), nullptr, gcnew EventHandler(this, &MainForm::OnToolShc));
         toolShcItem_->ShortcutKeyDisplayString = "Ctrl+K";
         tools->DropDownItems->Add(toolShcItem_);
         toolClItem_ = gcnew ToolStripMenuItem(
@@ -834,7 +834,7 @@ private:
         Sheet^ first = MakeSheet(nullptr, "");
         text_ = first->box;
 
-        console_->Text = "cc1 or cl output appears here.  Ctrl-B builds, F5 runs.";
+        console_->Text = "c90 or cl output appears here.  Ctrl-B builds, F5 runs.";
         SayDebugTab(nullptr);
         SayWhere();
     }
@@ -2375,10 +2375,10 @@ private:
     void OnHeaderDirs(Object^, EventArgs^) {
         String^ file = FromUtf8(ride_install_file());
         if (file->Length == 0) { what_->Text = "no installation directory to keep this in"; return; }
-        String^ include = Ask("cxx1's headers (include)", "kept in " + file,
+        String^ include = Ask("cpp11's headers (include)", "kept in " + file,
                               FromUtf8(ride_include_dir()));
         if (include == nullptr) { what_->Text = "header directories unchanged"; return; }
-        String^ lib = Ask("cc1's headers (lib)", "kept in " + file, FromUtf8(ride_lib_dir()));
+        String^ lib = Ask("c90's headers (lib)", "kept in " + file, FromUtf8(ride_lib_dir()));
         if (lib == nullptr) { what_->Text = "header directories unchanged"; return; }
         array<Byte>^ a = Utf8Of(include);
         pin_ptr<Byte> aPin = &a[0];
@@ -2435,7 +2435,7 @@ private:
             what_->Text = "cannot write " + file;
             return;
         }
-        what_->Text = "cc1i and cxx1i assemble through " + pick->FileName + " - written to " + file;
+        what_->Text = "c90 and cpp11 assemble through " + pick->FileName + " - written to " + file;
     }
 
     // The project's own linkers - LINK's for x86_64-windows in place of
@@ -4024,14 +4024,9 @@ private:
         }
     }
 
-    // Friendlier compiler names for what the user sees (the driver binaries stay
-    // cc1/cxx1/shc). Display only - the core and its tests are untouched.
-    String^ PrettyCompiler(String^ name) {
-        if (name == "cc1") return "cc";
-        if (name == "cxx1" || name == "c++") return "c++";
-        if (name == "shc") return "shalimar";
-        return name;
-    }
+    // The compilers' names are what the user sees - c90, cpp11, shalimar, from
+    // product.h - so there is nothing left to translate for display.
+    String^ PrettyCompiler(String^ name) { return name; }
 
     void ShowChoices() {
         for each (ToolStripMenuItem^ one in targetItems_)
@@ -4123,10 +4118,10 @@ private:
         what_->Text = said;
     }
     void OnToolAuto(Object^, EventArgs^) { ChooseTool(RIDE_TOOL_AUTO, "compiler: chosen by the file"); }
-    void OnToolCc1(Object^, EventArgs^) { ChooseTool(RIDE_TOOL_CC1, "compiler: cc1"); }
+    void OnToolCc1(Object^, EventArgs^) { ChooseTool(RIDE_TOOL_CC1, "compiler: c90"); }
     void OnToolCl(Object^, EventArgs^) { ChooseTool(RIDE_TOOL_MSVC, "compiler: cl"); }
-    void OnToolCxx1(Object^, EventArgs^) { ChooseTool(RIDE_TOOL_CXX1, "compiler: cxx1"); }
-    void OnToolShc(Object^, EventArgs^) { ChooseTool(RIDE_TOOL_SHC, "compiler: shc"); }
+    void OnToolCxx1(Object^, EventArgs^) { ChooseTool(RIDE_TOOL_CXX1, "compiler: cpp11"); }
+    void OnToolShc(Object^, EventArgs^) { ChooseTool(RIDE_TOOL_SHC, "compiler: shalimar"); }
 
     void ChooseLanguage(int language, String^ said) {
         languageChoice_ = language;

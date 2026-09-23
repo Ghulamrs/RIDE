@@ -90,45 +90,45 @@
 		8B68C25AF35CDFA99E8A3949 /* src/utf8.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = src/utf8.h; sourceTree = "<group>"; };
 		A857117769BDD29CDE429084 /* src/workspace.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = src/workspace.h; sourceTree = "<group>"; };
 		9CEE2D93949406552792796F /* RIDE.exe */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = RIDE.exe; sourceTree = BUILT_PRODUCTS_DIR; };
-		98421E1F76671FA5A2DB60DA /* cc1i.exe.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = cc1i.exe.xcodeproj; path = "../VM6747/Compiler-Ci/cc1.xcodeproj"; sourceTree = "<group>"; };
-		5DF97653CDCBD5DACEA40D65 /* cxx1i.exe.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = cxx1i.exe.xcodeproj; path = "../VM6747/Compiler-Cppi/cxx1.xcodeproj"; sourceTree = "<group>"; };
+		3C45B3BFE8FECB84F00729DA /* c90.exe.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = c90.exe.xcodeproj; path = "../VM6747/Compiler-Ci/cc1.xcodeproj"; sourceTree = "<group>"; };
+		4A5CD1BEA6A1BB961F4947B9 /* cpp11.exe.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = cpp11.exe.xcodeproj; path = "../VM6747/Compiler-Cppi/cxx1.xcodeproj"; sourceTree = "<group>"; };
 		DAA6962FD7E424BFF364E837 /* vm6747.exe.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = vm6747.exe.xcodeproj; path = "../VM6747/Emulator/vm6747.xcodeproj"; sourceTree = "<group>"; };
 		8F025CDE2826AE5BDDA3562A /* asm6x.exe.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = asm6x.exe.xcodeproj; path = "../ASM6x/asm6x.xcodeproj"; sourceTree = "<group>"; };
 		C6FDAB869EEB7E10AE5FD082 /* masm.exe.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = masm.exe.xcodeproj; path = "../MASM/masm.xcodeproj"; sourceTree = "<group>"; };
 		50D81AC569E0F891754877FB /* link.exe.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = link.exe.xcodeproj; path = "../LINK/link.xcodeproj"; sourceTree = "<group>"; };
 		9D247B3447C62B7635D2921C /* lnk6x.exe.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = lnk6x.exe.xcodeproj; path = "../LNK6x/lnk6x.xcodeproj"; sourceTree = "<group>"; };
-		1F2293E4D356EA508E89C657 /* shci.exe.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = shci.exe.xcodeproj; path = "../VM6747/Compiler-Si/shc.xcodeproj"; sourceTree = "<group>"; };
+		20F47CFB1AFB49F45A779D94 /* shalimar.exe.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = shalimar.exe.xcodeproj; path = "../VM6747/Compiler-Si/shc.xcodeproj"; sourceTree = "<group>"; };
 		BC9013065FB079B5AABE7840 /* c2s.exe.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = c2s.exe.xcodeproj; path = "../Converter-C2S/c2s.xcodeproj"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXContainerItemProxy section */
-		F55087A62428675954010219 /* PBXContainerItemProxy */ = {
+		CAD887E43F3B33D9D4198E61 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
-			containerPortal = 98421E1F76671FA5A2DB60DA /* cc1i.exe.xcodeproj */;
+			containerPortal = 3C45B3BFE8FECB84F00729DA /* c90.exe.xcodeproj */;
 			proxyType = 2;
-			remoteGlobalIDString = A4AB2C867FBE0347639CA98D;
-			remoteInfo = cc1i.exe;
+			remoteGlobalIDString = 520B779DC5A1C1F95959FAA4;
+			remoteInfo = c90.exe;
 		};
-		C7106918FCD95D1F7690BE8A /* PBXContainerItemProxy */ = {
+		CBC49ABBBE46B88F4EBB6568 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
-			containerPortal = 98421E1F76671FA5A2DB60DA /* cc1i.exe.xcodeproj */;
+			containerPortal = 3C45B3BFE8FECB84F00729DA /* c90.exe.xcodeproj */;
 			proxyType = 1;
-			remoteGlobalIDString = CB54FB9D454F639E6B801F13;
-			remoteInfo = cc1i.exe;
+			remoteGlobalIDString = DA7E18966E5A34FC3F83139C;
+			remoteInfo = c90.exe;
 		};
-		7B503A915E4EB1DFB1150FAF /* PBXContainerItemProxy */ = {
+		E198FB8AD647080EF7CBE1A1 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
-			containerPortal = 5DF97653CDCBD5DACEA40D65 /* cxx1i.exe.xcodeproj */;
+			containerPortal = 4A5CD1BEA6A1BB961F4947B9 /* cpp11.exe.xcodeproj */;
 			proxyType = 2;
-			remoteGlobalIDString = B0DEE53FB510C2BF164ECD03;
-			remoteInfo = cxx1i.exe;
+			remoteGlobalIDString = 2DC24FDB4CCDA14233AB5364;
+			remoteInfo = cpp11.exe;
 		};
-		D58642BAD715DD012F310CD1 /* PBXContainerItemProxy */ = {
+		37BBC9D53D2C401396F15BFD /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
-			containerPortal = 5DF97653CDCBD5DACEA40D65 /* cxx1i.exe.xcodeproj */;
+			containerPortal = 4A5CD1BEA6A1BB961F4947B9 /* cpp11.exe.xcodeproj */;
 			proxyType = 1;
-			remoteGlobalIDString = 9BDE0D6970DFE91E74C9FC29;
-			remoteInfo = cxx1i.exe;
+			remoteGlobalIDString = FC5035A3144E3FE75BF41BA5;
+			remoteInfo = cpp11.exe;
 		};
 		C92249B15640A4ABC2B27161 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -200,19 +200,19 @@
 			remoteGlobalIDString = 0AF269B5D180058A3A373CDD;
 			remoteInfo = lnk6x.exe;
 		};
-		B05972A6A44002D3E850F0C8 /* PBXContainerItemProxy */ = {
+		15AE588F317C502585E71E35 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
-			containerPortal = 1F2293E4D356EA508E89C657 /* shci.exe.xcodeproj */;
+			containerPortal = 20F47CFB1AFB49F45A779D94 /* shalimar.exe.xcodeproj */;
 			proxyType = 2;
-			remoteGlobalIDString = 67AAF99CC753BFC75AAF3EAD;
-			remoteInfo = shci.exe;
+			remoteGlobalIDString = CC672FE3254F928D91AE2865;
+			remoteInfo = shalimar.exe;
 		};
-		B089536B9384DD0DA981F498 /* PBXContainerItemProxy */ = {
+		C154D1D7C305B4AFB787E4E6 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
-			containerPortal = 1F2293E4D356EA508E89C657 /* shci.exe.xcodeproj */;
+			containerPortal = 20F47CFB1AFB49F45A779D94 /* shalimar.exe.xcodeproj */;
 			proxyType = 1;
-			remoteGlobalIDString = E2B705156EA9B32DAB3E58FD;
-			remoteInfo = shci.exe;
+			remoteGlobalIDString = F6440263CC8FDF9D2B83AC61;
+			remoteInfo = shalimar.exe;
 		};
 		44F8872EAF2D2B8506B4F0E0 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -245,14 +245,14 @@
 			isa = PBXGroup;
 			children = (
 				191E62C3D56BA2791BF063B0 /* Sources */,
-				98421E1F76671FA5A2DB60DA /* cc1i.exe.xcodeproj */,
-				5DF97653CDCBD5DACEA40D65 /* cxx1i.exe.xcodeproj */,
+				3C45B3BFE8FECB84F00729DA /* c90.exe.xcodeproj */,
+				4A5CD1BEA6A1BB961F4947B9 /* cpp11.exe.xcodeproj */,
 				DAA6962FD7E424BFF364E837 /* vm6747.exe.xcodeproj */,
 				8F025CDE2826AE5BDDA3562A /* asm6x.exe.xcodeproj */,
 				C6FDAB869EEB7E10AE5FD082 /* masm.exe.xcodeproj */,
 				50D81AC569E0F891754877FB /* link.exe.xcodeproj */,
 				9D247B3447C62B7635D2921C /* lnk6x.exe.xcodeproj */,
-				1F2293E4D356EA508E89C657 /* shci.exe.xcodeproj */,
+				20F47CFB1AFB49F45A779D94 /* shalimar.exe.xcodeproj */,
 				BC9013065FB079B5AABE7840 /* c2s.exe.xcodeproj */,
 				C18780E713D0BF364A69C720 /* Products */,
 			);
@@ -325,18 +325,18 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
-		B0E213D15178BFDEDA26B325 /* Products */ = {
+		C5CA7BAF62DF7F33A94962E6 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				D5F09F6645A58C5A33CEAD2C /* cc1i.exe */,
+				5D24141C1DFBCD29AD9DD82A /* c90.exe */,
 			);
 			name = Products;
 			sourceTree = "<group>";
 		};
-		A8F98191A623D411FF68BA51 /* Products */ = {
+		AB16E088C42B9435D8488CF9 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				F5E66F0B3FE5E2FD3C1025B0 /* cxx1i.exe */,
+				62F654468495DFA2E17F6235 /* cpp11.exe */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -381,10 +381,10 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
-		6058A4B1BEF2BE07448EB194 /* Products */ = {
+		A3CADF3D129D12576654102A /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				A0C151373678C8028A20A94D /* shci.exe */,
+				47E9456A4D30B2A0D282BFDD /* shalimar.exe */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -400,18 +400,18 @@
 /* End PBXGroup section */
 
 /* Begin PBXReferenceProxy section */
-		D5F09F6645A58C5A33CEAD2C /* cc1i.exe */ = {
+		5D24141C1DFBCD29AD9DD82A /* c90.exe */ = {
 			isa = PBXReferenceProxy;
 			fileType = "compiled.mach-o.executable";
-			path = cc1i.exe;
-			remoteRef = F55087A62428675954010219 /* PBXContainerItemProxy */;
+			path = c90.exe;
+			remoteRef = CAD887E43F3B33D9D4198E61 /* PBXContainerItemProxy */;
 			sourceTree = BUILT_PRODUCTS_DIR;
 		};
-		F5E66F0B3FE5E2FD3C1025B0 /* cxx1i.exe */ = {
+		62F654468495DFA2E17F6235 /* cpp11.exe */ = {
 			isa = PBXReferenceProxy;
 			fileType = "compiled.mach-o.executable";
-			path = cxx1i.exe;
-			remoteRef = 7B503A915E4EB1DFB1150FAF /* PBXContainerItemProxy */;
+			path = cpp11.exe;
+			remoteRef = E198FB8AD647080EF7CBE1A1 /* PBXContainerItemProxy */;
 			sourceTree = BUILT_PRODUCTS_DIR;
 		};
 		DF0D30DF893DFD82C2D1A556 /* vm6747.exe */ = {
@@ -449,11 +449,11 @@
 			remoteRef = 059FE6429DCF410E55006E30 /* PBXContainerItemProxy */;
 			sourceTree = BUILT_PRODUCTS_DIR;
 		};
-		A0C151373678C8028A20A94D /* shci.exe */ = {
+		47E9456A4D30B2A0D282BFDD /* shalimar.exe */ = {
 			isa = PBXReferenceProxy;
 			fileType = "compiled.mach-o.executable";
-			path = shci.exe;
-			remoteRef = B05972A6A44002D3E850F0C8 /* PBXContainerItemProxy */;
+			path = shalimar.exe;
+			remoteRef = 15AE588F317C502585E71E35 /* PBXContainerItemProxy */;
 			sourceTree = BUILT_PRODUCTS_DIR;
 		};
 		965A07FE0131200EFF59536A /* c2s.exe */ = {
@@ -477,14 +477,14 @@
 			buildRules = (
 			);
 			dependencies = (
-				2C471ED296E11CB8ABD94306 /* PBXTargetDependency */,
-				769223DAE54899B94C25B1F7 /* PBXTargetDependency */,
+				03229F5D9E979ED24C992E40 /* PBXTargetDependency */,
+				8054FCA035751042AAA28963 /* PBXTargetDependency */,
 				6257498F8340619004D0C9FF /* PBXTargetDependency */,
 				2A53BE1BFF6A5322D03AA9D9 /* PBXTargetDependency */,
 				798AA8065CE552C784396C3D /* PBXTargetDependency */,
 				545C3C90E63EDC28BBBF1096 /* PBXTargetDependency */,
 				178E83B15A97E4AD9DE4F752 /* PBXTargetDependency */,
-				2494825F5012EED738D8D81A /* PBXTargetDependency */,
+				94F0B70E90121F03E07652E0 /* PBXTargetDependency */,
 				27CF405BAD4F100DEC0EB38F /* PBXTargetDependency */,
 			);
 			name = RIDE.exe;
@@ -495,15 +495,15 @@
 /* End PBXNativeTarget section */
 
 /* Begin PBXTargetDependency section */
-		2C471ED296E11CB8ABD94306 /* PBXTargetDependency */ = {
+		03229F5D9E979ED24C992E40 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			name = cc1i.exe;
-			targetProxy = C7106918FCD95D1F7690BE8A /* PBXContainerItemProxy */;
+			name = c90.exe;
+			targetProxy = CBC49ABBBE46B88F4EBB6568 /* PBXContainerItemProxy */;
 		};
-		769223DAE54899B94C25B1F7 /* PBXTargetDependency */ = {
+		8054FCA035751042AAA28963 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			name = cxx1i.exe;
-			targetProxy = D58642BAD715DD012F310CD1 /* PBXContainerItemProxy */;
+			name = cpp11.exe;
+			targetProxy = 37BBC9D53D2C401396F15BFD /* PBXContainerItemProxy */;
 		};
 		6257498F8340619004D0C9FF /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
@@ -530,10 +530,10 @@
 			name = lnk6x.exe;
 			targetProxy = 0E662B3717904866837E32FE /* PBXContainerItemProxy */;
 		};
-		2494825F5012EED738D8D81A /* PBXTargetDependency */ = {
+		94F0B70E90121F03E07652E0 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			name = shci.exe;
-			targetProxy = B089536B9384DD0DA981F498 /* PBXContainerItemProxy */;
+			name = shalimar.exe;
+			targetProxy = C154D1D7C305B4AFB787E4E6 /* PBXContainerItemProxy */;
 		};
 		27CF405BAD4F100DEC0EB38F /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
@@ -561,12 +561,12 @@
 			projectDirPath = "";
 			projectReferences = (
 				{
-					ProductGroup = B0E213D15178BFDEDA26B325 /* Products */;
-					ProjectRef = 98421E1F76671FA5A2DB60DA /* cc1i.exe.xcodeproj */;
+					ProductGroup = C5CA7BAF62DF7F33A94962E6 /* Products */;
+					ProjectRef = 3C45B3BFE8FECB84F00729DA /* c90.exe.xcodeproj */;
 				},
 				{
-					ProductGroup = A8F98191A623D411FF68BA51 /* Products */;
-					ProjectRef = 5DF97653CDCBD5DACEA40D65 /* cxx1i.exe.xcodeproj */;
+					ProductGroup = AB16E088C42B9435D8488CF9 /* Products */;
+					ProjectRef = 4A5CD1BEA6A1BB961F4947B9 /* cpp11.exe.xcodeproj */;
 				},
 				{
 					ProductGroup = 5D8A75882788B6F1BD26CDC4 /* Products */;
@@ -589,8 +589,8 @@
 					ProjectRef = 9D247B3447C62B7635D2921C /* lnk6x.exe.xcodeproj */;
 				},
 				{
-					ProductGroup = 6058A4B1BEF2BE07448EB194 /* Products */;
-					ProjectRef = 1F2293E4D356EA508E89C657 /* shci.exe.xcodeproj */;
+					ProductGroup = A3CADF3D129D12576654102A /* Products */;
+					ProjectRef = 20F47CFB1AFB49F45A779D94 /* shalimar.exe.xcodeproj */;
 				},
 				{
 					ProductGroup = 5C02F1DED24053162AFBCF50 /* Products */;

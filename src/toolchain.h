@@ -47,7 +47,7 @@ struct Toolchain {
     std::string cxx;
     std::string cxx1;
 
-    // cc1i, cxx1i and shci since 3.5: the VM6747 line, the first two
+    // c90, cpp11 and shalimar since 3.5: the VM6747 line, the first two
     // carrying tms6747. The kinds keep their names, cc1, cxx1 and shc, being
     // the same compilers one target on.
     // Where the shipped headers are, from the settings: include/ is cxx1's
@@ -62,8 +62,8 @@ struct Toolchain {
     std::vector<std::string> libraries;
 
     Toolchain()
-        : kind(ToolAuto), cc1("cc1i.exe"), cl("cl"), shc("shci.exe"),
-          cxx(hostCxxName()), cxx1("cxx1i.exe") {}
+        : kind(ToolAuto), cc1("c90.exe"), cl("cl"), shc("shalimar.exe"),
+          cxx(hostCxxName()), cxx1("cpp11.exe") {}
 };
 
 // The header directories a compiler is given, as its flags: the project's
@@ -82,7 +82,7 @@ const char* toolchainWord(ToolchainKind kind);
 const char* programOf(const Toolchain& tool, ToolchainKind kind);
 
 // **The fourth target runs on an emulator.** tms6747 is the TI TMS320C6747;
-// the compilers docked with this editor since 3.5 are cc1i and cxx1i - the
+// the compilers docked with this editor since 3.5 are c90 and cpp11 - the
 // VM6747 line, which know it along with the three host targets - and vm6747,
 // the VM6747 emulator, runs what they emit. There is nothing to assemble or
 // link: the program is the .s file, or a directory of them for a project.
@@ -138,7 +138,7 @@ std::string shownProgramCommand(const Toolchain& tool, ToolchainKind kind,
                                 const std::string& source, Language lang,
                                 const std::string& arch, Configuration config);
 
-// " -masm=masm" for cxx1i on x86_64-windows when settings name an assembler.
+// " -masm=masm" for cpp11 on x86_64-windows when settings name an assembler.
 std::string assemblerFlag(ToolchainKind kind, const std::string& arch);
 Recipe targetRecipe(const Toolchain& tool, ToolchainKind kind,
                     const std::vector<std::string>& sources, Language lang,

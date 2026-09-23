@@ -1,4 +1,5 @@
 #include "editor.h"
+#include "product.h"
 
 #include "about.h"
 #include "convert.h"
@@ -253,40 +254,40 @@ Editor::Editor()
     for (size_t i = 0; i < kArchCount; ++i)
         if (std::string(kArches[i]) == hostArch()) arch_ = i;
 
-    const char* fromEnv = std::getenv("CC1");
+    const char* fromEnv = std::getenv("C90");
     if (fromEnv && *fromEnv) {
         tool_.cc1 = fromEnv;
     } else {
 
-        // cc1i since 3.5, the compiler that carries tms6747; a cc1 beside
+        // c90 since 3.5, the compiler that carries tms6747; a cc1 beside
         // the editor still serves for the three host targets.
-        std::string beside = path::besideProgram("cc1i.exe");
-        if (beside.empty()) beside = path::besideProgram("cc1i");
+        std::string beside = path::besideProgram("c90.exe");
+        if (beside.empty()) beside = path::besideProgram("c90");
         if (beside.empty()) beside = path::besideProgram("cc1.exe");
         if (beside.empty()) beside = path::besideProgram("cc1");
         if (!beside.empty()) tool_.cc1 = beside;
     }
 
     // cxx1 the same way: named, beside this program, or left to PATH.
-    const char* cxx1FromEnv = std::getenv("CXX1");
+    const char* cxx1FromEnv = std::getenv("CPP11");
     if (cxx1FromEnv && *cxx1FromEnv) {
         tool_.cxx1 = cxx1FromEnv;
     } else {
-        std::string beside = path::besideProgram("cxx1i.exe");
-        if (beside.empty()) beside = path::besideProgram("cxx1i");
+        std::string beside = path::besideProgram("cpp11.exe");
+        if (beside.empty()) beside = path::besideProgram("cpp11");
         if (beside.empty()) beside = path::besideProgram("cxx1.exe");
         if (beside.empty()) beside = path::besideProgram("cxx1");
         if (!beside.empty()) tool_.cxx1 = beside;
     }
 
-    const char* shcFromEnv = std::getenv("SHC");
+    const char* shcFromEnv = std::getenv("SHALIMAR");
     if (shcFromEnv && *shcFromEnv) {
         tool_.shc = shcFromEnv;
     } else {
-        // shci since 3.5, the VM6747 line; a shc beside the editor still
+        // shalimar since 3.5, the VM6747 line; a shc beside the editor still
         // serves, being the same compiler.
-        std::string beside = path::besideProgram("shci.exe");
-        if (beside.empty()) beside = path::besideProgram("shci");
+        std::string beside = path::besideProgram("shalimar.exe");
+        if (beside.empty()) beside = path::besideProgram("shalimar");
         if (beside.empty()) beside = path::besideProgram("shc.exe");
         if (beside.empty()) beside = path::besideProgram("shc");
         if (!beside.empty()) tool_.shc = beside;
@@ -954,26 +955,33 @@ void Editor::drawStatus(std::string& out) const {
     if (buf_.dirty()) left += " *";
     left += "  " + lineCountText(buf_.lineCount());
 
+    // **What will not fit goes a part at a time, least use first**, so the
+    // language and the compiler are the last to go: all or nothing lost both at
+    // once when "shalimar*" replaced a shorter name on an 80-column console.
     ToolchainKind kind = resolve(tool_, lang_);
-    std::string right = languageName(lang_);
-    right += "  ";
-    right += configName(config_);
-    right += "  ";
-
-    right += toolchainShown(tool_, kind);
-    if (tool_.kind == ToolAuto) right += "*";
-
-    if (usesArch(kind)) {
+    std::string compiler = toolchainShown(tool_, kind);
+    if (tool_.kind == ToolAuto) compiler += "*";
+    if (usesArch(kind)) compiler += std::string(" ") + kArches[arch_];
+    const std::string parts[] = {
+        languageName(lang_), configName(config_), compiler,
+        number(cy_ + 1) + "/" + number(buf_.lineCount()), "col " + number(rx_ + 1),
+        (focus_ == FocusText) ? "[text]" : (focus_ == FocusTree ? "[tree]" : "[panel]") };
+    const int kParts = 6;
+    // Dropped in this order when the bar is too narrow: focus, column, position, configuration.
+    const int dropOrder[] = { 5, 4, 3, 1 };
+    bool shown[kParts] = { true, true, true, true, true, true };
+    size_t width = static_cast<size_t>(screenCols_);
+    std::string right;
+    for (int d = 0;; ++d) {
+        right.clear();
+        for (int k = 0; k < kParts; ++k)
+            if (shown[k]) right += (right.empty() ? "" : "  ") + parts[k];
         right += " ";
-        right += kArches[arch_];
+        if (left.size() + right.size() <= width || d == 4) break;
+        shown[dropOrder[d]] = false;
     }
-    right += "  " + number(cy_ + 1) + "/" + number(buf_.lineCount());
-    right += "  col " + number(rx_ + 1);
-    right += (focus_ == FocusText) ? "  [text]" : (focus_ == FocusTree ? "  [tree]" : "  [panel]");
-    right += " ";
 
     std::string bar = left;
-    size_t width = static_cast<size_t>(screenCols_);
     if (bar.size() + right.size() <= width) {
         bar.resize(width - right.size(), ' ');
         bar += right;
@@ -2131,9 +2139,9 @@ void Editor::editHeaderDirs() {
     std::string file = settings::installFile();
     if (file.empty()) { say("no installation directory to keep this in"); return; }
     bool cancelled = false;
-    std::string include = prompt("cxx1's headers (include) [" + settings::includeDir() + "]: ", cancelled);
+    std::string include = prompt("cpp11's headers (include) [" + settings::includeDir() + "]: ", cancelled);
     if (cancelled) { say("header directories unchanged"); return; }
-    std::string lib = prompt("cc1's headers (lib) [" + settings::libDir() + "]: ", cancelled);
+    std::string lib = prompt("c90's headers (lib) [" + settings::libDir() + "]: ", cancelled);
     if (cancelled) { say("header directories unchanged"); return; }
     if (include.empty()) include = settings::includeDir();
     if (lib.empty()) lib = settings::libDir();
@@ -2193,8 +2201,8 @@ void Editor::locateAssembler() {
     if (cancelled || as.empty()) { say("assembler unchanged"); return; }
     if (as != "-" && !path::exists(as)) { say("no such file: " + as); return; }
     if (settings::rememberAssembler(as == "-" ? std::string() : as))
-        say("written to " + file + (as == "-" ? " - cc1i and cxx1i assemble as they choose again"
-                                             : " - cc1i and cxx1i assemble through " + as));
+        say("written to " + file + (as == "-" ? " - c90 and cpp11 assemble as they choose again"
+                                             : " - c90 and cpp11 assemble through " + as));
     else
         say("cannot write " + file);
 }
@@ -2311,7 +2319,7 @@ void Editor::chooseArch(size_t which) {
     std::string said = std::string("target: ") + kArches[arch_];
     ToolchainKind takes = resolve(tool_, lang_);
     if (!usesArch(takes))
-        said += " - a cc1, cxx1 or shc setting; " + toolchainShown(tool_, takes) + " builds for its own host";
+        said += " - a c90, cpp11 or shalimar setting; " + toolchainShown(tool_, takes) + " builds for its own host";
     if (project_.loaded()) {
         project_.setArch(kArches[arch_]);
         std::string error;
@@ -3246,7 +3254,7 @@ void Editor::showKeys() {
     console_.push_back("             program under the debugger instead of this file");
     console_.push_back("F2 / F3      previous / next file Ctrl-L   line numbers");
     console_.push_back("Ctrl-K       next compiler        Ctrl-T   next target");
-    console_.push_back("             automatic, cc1, cxx1, shc, cl and the host's C++");
+    console_.push_back("             automatic, c90, cpp11, shalimar, cl and the host's C++");
     console_.push_back("Ctrl-D       debug or release");
     console_.push_back("Ctrl-W       next pane            Ctrl-T   next target");
     console_.push_back("Ctrl-P       project pane         Ctrl-A   re-indent (selection)");
@@ -3259,7 +3267,7 @@ void Editor::showKeys() {
     console_.push_back("Ctrl-S       save                 Ctrl-Q   leave");
     console_.push_back("In the project pane, enter opens. In the panel, left and right");
     console_.push_back("change tab - Console, Debug, Assembly - and on Console,");
-    console_.push_back("enter goes to the line cc1 named. On Debug, enter on a frame");
+    console_.push_back("enter goes to the line c90 named. On Debug, enter on a frame");
     console_.push_back("looks at it, and on the top line goes back to the stop.");
     panelOff_ = 0;
     say("keys");
@@ -3416,10 +3424,10 @@ void Editor::perform(Action action) {
             say(std::string("language: ") + languageName(lang_) + ", for every file");
             break;
         }
-        case ActionToolShc:  chooseTool(ToolShc, "shc"); break;
+        case ActionToolShc:  chooseTool(ToolShc, product::kCompilerShalimar); break;
         case ActionToolAuto: chooseTool(ToolAuto, "chosen by the file"); break;
-        case ActionToolCc1:  chooseTool(ToolCc1, "cc1"); break;
-        case ActionToolCxx1: chooseTool(ToolCxx1, "cxx1"); break;
+        case ActionToolCc1:  chooseTool(ToolCc1, product::kCompilerC); break;
+        case ActionToolCxx1: chooseTool(ToolCxx1, product::kCompilerCpp); break;
         case ActionToolMsvc: chooseTool(ToolMsvc, "cl"); break;
         case ActionToolCxx:  chooseTool(hostCppToolchain(), toolchainShown(tool_, hostCppToolchain())); break;
         case ActionHelpContents: showHelpContents(); break;

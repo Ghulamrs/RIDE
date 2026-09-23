@@ -1,6 +1,6 @@
 #!/bin/sh
 # Gathers the nine programs into progs/: seven of RIDE's examples and two
-# cxx1i cases with recorded output. Run from this directory, then relay
+# cpp11 cases with recorded output. Run from this directory, then relay
 # progs/ with win.sh (Windows box, C:\meas0923\rc) or lin.sh (Linux box, ~/rc).
 set -e
 HERE=$(cd "$(dirname "$0")" && pwd)

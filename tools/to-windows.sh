@@ -37,7 +37,7 @@ ROOT="${ED1_WINDOWS_ROOT:-C:\\Users\\GRA\\source}"
 DIR="$ROOT\\RIDE"
 # 3.5: the four VM6747 repositories travel with the editor - they have no
 # remote, by that line's rules - laid out on the box as they are here.
-# Compiler-Si joined when shci was docked; the Compiler-S beside it on the
+# Compiler-Si joined when shalimar was docked; the Compiler-S beside it on the
 # box is the sealed original and is no longer what the solution builds.
 VM_ROOT="$ROOT\\VM6747"
 CC1I_DIR="$VM_ROOT\\Compiler-Ci"
@@ -71,7 +71,7 @@ tar --no-mac-metadata \
 # The parts its Visual Studio project compiles and includes, and nothing of
 # its own build tree.
 ( cd ../VM6747/Compiler-Ci && tar --no-mac-metadata --exclude '* 2.*' --exclude 'obj' --exclude '*.exe' --exclude 'out-*' \
-    -czf "$TMP/cc1i-src.tgz" src lib msvc tests examples Makefile README.md ) || exit 2
+    -czf "$TMP/c90-src.tgz" src lib msvc tests examples Makefile README.md ) || exit 2
 ( cd ../VM6747/Compiler-Cppi && tar --no-mac-metadata --exclude '* 2.*' --exclude 'obj' --exclude '*.exe' --exclude 'out-*' \
     -czf "$TMP/cxx1-src.tgz" src include lib msvc tests Makefile cxx1.vcxproj README.md ) || exit 2
 ( cd ../VM6747/Emulator && tar --no-mac-metadata --exclude '* 2.*' --exclude '*.exe' \
@@ -91,10 +91,10 @@ tar --no-mac-metadata \
 # tests/ref holds the .out images TI's lnk6x made, which its bed is held to.
 ( cd ../LNK6x && tar --no-mac-metadata --exclude '* 2.*' --exclude 'build' --exclude 'x64' \
     -czf "$TMP/lnk6x-src.tgz" src tests Makefile lnk6x.vcxproj README.md ) || exit 2
-# shci: what shc.vcxproj compiles - src and the runtime it builds beside the
+# shalimar: what shc.vcxproj compiles - src and the runtime it builds beside the
 # binary - and nothing built here; lib/ holds this machine's archives.
 ( cd ../VM6747/Compiler-Si && tar --no-mac-metadata --exclude '* 2.*' --exclude '*.exe' --exclude 'lib' --exclude 'out-*' \
-    -czf "$TMP/shci-src.tgz" src runtime tests examples Makefile build.bat shc.vcxproj README.md ) || exit 2
+    -czf "$TMP/shalimar-src.tgz" src runtime tests examples Makefile build.bat shc.vcxproj README.md ) || exit 2
 
 say "copying to $BOX:$DIR and $VM_ROOT"
 # One directory per call: in cmd, `if not exist X mkdir X & if ...` makes the
@@ -103,14 +103,14 @@ for d in "$DIR" "$CC1I_DIR" "$CXX1_DIR" "$SHCI_DIR" "$EMU_DIR" "$ASM_DIR" "$MASM
   ssh -n "$BOX" "if not exist \"$d\" mkdir \"$d\"" || exit 2
 done
 scp -q "$TMP/ride-src.tgz" "$BOX:$DIR\\ride-src.tgz" || exit 2
-scp -q "$TMP/cc1i-src.tgz" "$BOX:$CC1I_DIR\\cc1i-src.tgz" || exit 2
+scp -q "$TMP/c90-src.tgz" "$BOX:$CC1I_DIR\\c90-src.tgz" || exit 2
 scp -q "$TMP/cxx1-src.tgz" "$BOX:$CXX1_DIR\\cxx1-src.tgz" || exit 2
 scp -q "$TMP/vm6747-src.tgz" "$BOX:$EMU_DIR\\vm6747-src.tgz" || exit 2
 scp -q "$TMP/asm6x-src.tgz" "$BOX:$ASM_DIR\\asm6x-src.tgz" || exit 2
 scp -q "$TMP/masm-src.tgz" "$BOX:$MASM_DIR\\masm-src.tgz" || exit 2
 scp -q "$TMP/link-src.tgz" "$BOX:$LINK_DIR\\link-src.tgz" || exit 2
 scp -q "$TMP/lnk6x-src.tgz" "$BOX:$LNK6X_DIR\\lnk6x-src.tgz" || exit 2
-scp -q "$TMP/shci-src.tgz" "$BOX:$SHCI_DIR\\shci-src.tgz" || exit 2
+scp -q "$TMP/shalimar-src.tgz" "$BOX:$SHCI_DIR\\shalimar-src.tgz" || exit 2
 
 # ---- the script that does the work there -----------------------------------
 # One .cmd, generated here so that what runs is what this file says. The
@@ -127,9 +127,9 @@ BIN="$DIR\\bin"
   # Linux box reported two probes the Mac no longer has (RIDE 19c73e6).
   # Only tests\: the rest is laid over, since these directories also hold
   # hand-run experiments that are not ours.
-  for pair in "$DIR ride" "$CC1I_DIR cc1i" "$CXX1_DIR cxx1" \
+  for pair in "$DIR ride" "$CC1I_DIR c90" "$CXX1_DIR cxx1" \
               "$EMU_DIR vm6747" "$ASM_DIR asm6x" "$MASM_DIR masm" "$LINK_DIR link" \
-              "$LNK6X_DIR lnk6x" "$SHCI_DIR shci"; do
+              "$LNK6X_DIR lnk6x" "$SHCI_DIR shalimar"; do
     set -- $pair
     printf 'cd /d "%s" || exit /b 2\r\n' "$1"
     printf 'if exist tests rmdir /s /q tests\r\n'
@@ -137,10 +137,10 @@ BIN="$DIR\\bin"
     printf 'del /q %s-src.tgz\r\n' "$2"
   done
   printf 'cd /d "%s"\r\n' "$DIR"
-  printf 'set CC1=%s\\cc1i.exe\r\n' "$BIN"
-  printf 'set CXX1=%s\\cxx1i.exe\r\n' "$BIN"
+  printf 'set CC1=%s\\c90.exe\r\n' "$BIN"
+  printf 'set CXX1=%s\\cpp11.exe\r\n' "$BIN"
   printf 'set VM6747=%s\\vm6747.exe\r\n' "$BIN"
-  printf 'set SHC=%s\\shci.exe\r\n' "$BIN"
+  printf 'set SHC=%s\\shalimar.exe\r\n' "$BIN"
   printf 'set C2S=%s\\c2s.exe\r\n' "$BIN"
   case "$WHAT" in
     build)

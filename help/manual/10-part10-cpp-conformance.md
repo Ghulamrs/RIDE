@@ -1,6 +1,6 @@
-# Part X — C++11 in cxx1i, feature by feature
+# Part X — C++11 in cpp11, feature by feature
 
-`cxx1i` accepts C++11 minus a documented list (Part II chapter 8). This part goes
+`cpp11` accepts C++11 minus a documented list (Part II chapter 8). This part goes
 through the language a feature at a time, each with a one-line probe you can
 compile, and says **accepted** or **refused** — and for a refusal, what to do
 instead. The authoritative, source-derived inventory is the C++ compiler's own
@@ -113,6 +113,6 @@ every refusal is by name:
 - a small set of `x86_64-windows`-only refusals (polymorphic virtual base, some
   exception shapes).
 
-The working rule: **cxx1i is a large, usable C++11 subset; it never miscompiles a
+The working rule: **cpp11 is a large, usable C++11 subset; it never miscompiles a
 construct it does not support — it refuses it, by name, with a line.** A program
 that compiles has stepped on none of the above.

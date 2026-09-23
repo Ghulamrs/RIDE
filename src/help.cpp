@@ -18,9 +18,9 @@ const Page kPages[] = {
     {"8",  "Debugging",        "breakpoints, stepping, variables, the stack",   "08-debugging.md"},
     {"9",  "The panel",        "Console, Debug, Assembly, enter on a line",     "09-the-panel.md"},
     {"10", "Keys",            "every key, every menu, every flag",             "10-keys.md"},
-    {"",   "C",                "cc1, three targets, DWARF on two of them",      "c.md"},
-    {"",   "C++",              "cxx1, three targets, and the host's compiler",  "cpp.md"},
-    {"",   "Shalimar",         "shc, the borrowed library, the indent dialect", "shalimar.md"},
+    {"",   "C",                "c90, three targets, DWARF on two of them",      "c.md"},
+    {"",   "C++",              "cpp11, three targets, and the host's compiler",  "cpp.md"},
+    {"",   "Shalimar",         "shalimar, the borrowed library, the indent dialect", "shalimar.md"},
     {"",   "C and Shalimar",   "calling a C library from a Shalimar program",   "mixing-c-and-shalimar.md"},
     {"",   "Appendix A",       "the Shalimar language, in full",                "appendix-a-shalimar-language.md"},
 };

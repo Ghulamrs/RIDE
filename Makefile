@@ -114,11 +114,11 @@ EDITOR := $(BINDIR)/$(PRODUCT).exe
 # still skips those cases with its own message rather than failing to find a
 # file - the behaviour before this, kept for the case it was right for. And
 # `?=`, so CC1 in the environment or on the command line still wins.
-# cc1i, cxx1i and shci since 3.5: the VM6747 line, which carries tms6747
+# c90, cpp11 and shalimar since 3.5: the VM6747 line, which carries tms6747
 # in the first two as well as the three host targets.
-CC1 ?= $(abspath $(wildcard $(BINDIR)/cc1i.exe))
-CXX1 ?= $(abspath $(wildcard $(BINDIR)/cxx1i.exe))
-SHC ?= $(abspath $(wildcard $(BINDIR)/shci.exe))
+CC1 ?= $(abspath $(wildcard $(BINDIR)/c90.exe))
+CXX1 ?= $(abspath $(wildcard $(BINDIR)/cpp11.exe))
+SHC ?= $(abspath $(wildcard $(BINDIR)/shalimar.exe))
 C2S ?= $(abspath $(wildcard $(BINDIR)/c2s.exe))
 
 # Exported because the two suites read them differently: `session` is handed
@@ -188,7 +188,7 @@ check-tools:
 	    exit 1; }
 
 # The compilers are handed to the suites absolutely: a build runs them from
-# another directory, where `bin/cc1i.exe` names nothing.
+# another directory, where `bin/c90.exe` names nothing.
 test: tests/test check-tools
 	CC1="$(abspath $(CC1))" CXX1="$(abspath $(CXX1))" SHC="$(abspath $(SHC))" C2S="$(abspath $(C2S))" ./tests/test
 
@@ -240,14 +240,14 @@ check: test session
 # checks the second. It is not a compiler and nothing links it - the Language
 # menu's two Convert items run it over the open file.
 # cxx1 joined in 3.0, found the same way and for the same reason. 3.5 docks
-# the VM6747 line instead - cc1i.exe and cxx1i.exe, the same compilers with
-# the TMS320C6747 as a fourth target, shci.exe the same Shalimar compiler with
+# the VM6747 line instead - c90.exe and cpp11.exe, the same compilers with
+# the TMS320C6747 as a fourth target, shalimar.exe the same Shalimar compiler with
 # its three - and vm6747.exe, the emulator that runs the fourth target's
 # programs, found beside the editor like the compilers. 4.0 adds masm.exe,
 # the x86-64 assembler that stands in for ml64 when settings.json names it,
 # and the two linkers: link.exe for x86-64, in place of Microsoft's, and
 # lnk6x.exe for the C6000, in place of TI's, each when settings.json names it.
-DEPENDENCIES := cc1i.exe cxx1i.exe vm6747.exe asm6x.exe masm.exe link.exe lnk6x.exe shci.exe c2s.exe \
+DEPENDENCIES := c90.exe cpp11.exe vm6747.exe asm6x.exe masm.exe link.exe lnk6x.exe shalimar.exe c2s.exe \
        lib/shmrt-$(SHM_TARGET).a lib/shmrt-$(SHM_TARGET)-debug.a \
        lib/shmrt-tms6747/Runtime.s
 
@@ -285,7 +285,7 @@ PRODUCT_DIR ?= $(HOME)/$(PRODUCT_LOWER)
 # Where cxx1's headers are copied from for the product. The binary comes from
 # BINDIR like the others; the headers stay in the checkout - C++ beside this
 # one, Compiler-Cpp on GitHub and the Windows box, ~/cxx1 on the Linux box.
-# Since 3.5 the binary is cxx1i from the VM6747 line, so its headers come
+# Since 3.5 the binary is cpp11 from the VM6747 line, so its headers come
 # from there too.
 CXX1_DIR ?= ../VM6747/Compiler-Cppi
 CC1_DIR ?= ../VM6747/Compiler-Ci
@@ -311,10 +311,10 @@ product: confirm
 	rm -rf "$(PRODUCT_DIR)/bin" "$(PRODUCT_DIR)/examples"
 	mkdir -p "$(PRODUCT_DIR)/bin/lib" "$(PRODUCT_DIR)/examples"
 	cp $(EDITOR) "$(PRODUCT_DIR)/bin/"
-	cp $(BINDIR)/cc1i.exe $(BINDIR)/cxx1i.exe $(BINDIR)/vm6747.exe $(BINDIR)/shci.exe $(BINDIR)/c2s.exe "$(PRODUCT_DIR)/bin/"
+	cp $(BINDIR)/c90.exe $(BINDIR)/cpp11.exe $(BINDIR)/vm6747.exe $(BINDIR)/shalimar.exe $(BINDIR)/c2s.exe "$(PRODUCT_DIR)/bin/"
 # The headers go with the compilers, one directory above bin/ - because
-# bin/lib/ is shc's runtime. include/ is cxx1i's: its C++ headers and the C
-# ones they wrap, in one directory; lib/ is cc1i's. Each looks there for its
+# bin/lib/ is shc's runtime. include/ is cpp11's: its C++ headers and the C
+# ones they wrap, in one directory; lib/ is c90's. Each looks there for its
 # own before the paths compiled into it, which name the checkout it was built
 # from - a product that outlives that checkout would otherwise compile
 # nothing that says #include. settings.json beside them tells the editor the

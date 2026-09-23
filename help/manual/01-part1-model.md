@@ -7,7 +7,7 @@
 
 - Part I — The compilation model (this file): input, output, the pipeline, the
   native tools, and where every artefact lands.
-- Part II — The three languages: C (cc1i), C++ (cxx1i) and Shalimar (shci) —
+- Part II — The three languages: C (c90), C++ (cpp11) and Shalimar (shalimar) —
   what each supports and, just as carefully, what each does not.
 - Part III — Projects: the `.pro` file, what it provides and what it lacks,
   making and updating a project, groups, the build target, mixed C/C++.
@@ -34,9 +34,9 @@ The pieces that ship, and what each one is:
 |--------------------|--------------------------------------------------------|
 | `RIDE.exe`      | the windowed editor (on Windows). On Unix the same name is the console editor. |
 | `RIDEConsole.exe` | the console (terminal) editor on Windows.            |
-| `cc1i.exe`         | the C compiler. ISO C 90. Four targets.                |
-| `cxx1i.exe`        | the C++ compiler. ISO C++ 11. Four targets.            |
-| `shci.exe`         | the Shalimar compiler. Three host targets + tms6747.   |
+| `c90.exe`         | the C compiler. ISO C 90. Four targets.                |
+| `cpp11.exe`        | the C++ compiler. ISO C++ 11. Four targets.            |
+| `shalimar.exe`         | the Shalimar compiler. Three host targets + tms6747.   |
 | `vm6747.exe`       | the TMS320C6747 (C6000) instruction-set emulator.      |
 | `c2s.exe`          | the C89 ↔ Shalimar converter.                          |
 
@@ -47,7 +47,7 @@ a compiler you cannot script, cannot put in a build, and cannot test in
 isolation. Each of these runs on its own, reads files, writes files, and says
 what it did on its standard streams.
 
-The "i" in `cc1i`/`cxx1i`/`shci` is the *i-line* — the same three compilers, one
+The "i" in `c90`/`cpp11`/`shalimar` is the *i-line* — the same three compilers, one
 target on (the fourth, tms6747), built beside the originals under distinct
 names. RIDE drives the i-line since 3.5; RIDE 3.0 drove the originals
 (`cc1`/`cxx1`/`shc`), which are frozen and three-target. Everything in this
@@ -67,22 +67,22 @@ command line, and the command line is the whole of what the compiler sees.
 **Source text.** One or more source files named on the command line. The suffix
 declares the language, and each compiler refuses a language that is not its own:
 
-- `cc1i` takes `.c` (and `.h` if you hand it one). A `.cpp`, `.cc`, `.cxx`,
+- `c90` takes `.c` (and `.h` if you hand it one). A `.cpp`, `.cc`, `.cxx`,
   `.hpp`, `.hh` or `.hxx` is turned away by name, with a message that points you
-  at `cxx1i`, rather than being read as C and failing on the first `class` or
+  at `cpp11`, rather than being read as C and failing on the first `class` or
   `::` with a confusing "expected a type".
-- `cxx1i` takes `.cpp` and its family. A `.c` is turned away by name, because a
+- `cpp11` takes `.cpp` and its family. A `.c` is turned away by name, because a
   C source read as C++ can be quietly miscompiled where the two languages
-  disagree; the message points at `cc1i`.
-- `shci` takes `.shl` (and `.shm`, the suffix the phone app writes). It reads
+  disagree; the message points at `c90`.
+- `shalimar` takes `.shl` (and `.shm`, the suffix the phone app writes). It reads
   nothing else.
 
 A compiler can also take an object or a library as an input — but that is an
-input to the *link* step only, not something to compile. `cxx1i` sorts `.o`,
+input to the *link* step only, not something to compile. `cpp11` sorts `.o`,
 `.obj`, `.a` and `.lib` out of its inputs and hands them straight to the linker.
 
 **Options.** Flags that say what to produce (`-S`, `-c`, plain), where to put it
-(`-o`), what target to generate for (`-arch`, or `--target` for shci), what to
+(`-o`), what target to generate for (`-arch`, or `--target` for shalimar), what to
 define (`-D`, `-U`), where to look for headers (`-I`), and how much to say
 (`-nologo`, `-time`). Part IV is the complete list.
 
@@ -230,17 +230,17 @@ before it looks at `PATH`, which is why they must sit together — see Part VII'
 layout. A build you started from the installed editor runs the installed
 compilers, not whatever else is on the machine.
 
-**`bin\lib\`.** The Shalimar runtime archives live here, beside `shci` —
-`shmrt-x86_64-windows.lib` (release) and `-debug.lib` (debug) — because `shci`
+**`bin\lib\`.** The Shalimar runtime archives live here, beside `shalimar` —
+`shmrt-x86_64-windows.lib` (release) and `-debug.lib` (debug) — because `shalimar`
 looks for `lib\` next to its own binary when it links. The C6000 Shalimar
 runtime is here too, as `shmrt-tms6747\*.s` (a directory of assembly, not an
 archive; Part VI says why).
 
-**`include\` and `lib\`, one level up from `bin\`.** `cxx1i`'s C++ headers and C
-headers. `cxx1i` looks for them beside its binary and then one directory up, so
-from `bin\cxx1i.exe` it finds `..\include` and `..\lib`. This is the reason the
+**`include\` and `lib\`, one level up from `bin\`.** `cpp11`'s C++ headers and C
+headers. `cpp11` looks for them beside its binary and then one directory up, so
+from `bin\cpp11.exe` it finds `..\include` and `..\lib`. This is the reason the
 Shalimar `bin\lib\` (runtime) and the top-level `lib\` (C headers) never
-collide: they are at different levels, and `cxx1i` accepts a `lib\` as its
+collide: they are at different levels, and `cpp11` accepts a `lib\` as its
 header directory only if it actually contains `stddef.h`.
 
 **Temporary directories.** When the editor builds, intermediate `.s` and objects

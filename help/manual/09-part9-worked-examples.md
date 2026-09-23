@@ -19,12 +19,12 @@ converter and the TI build. Run them from the install's `bin\` on `PATH`.
 
 Build and run on the host:
 
-    cc1i hello.c -o hello
+    c90 hello.c -o hello
     ./hello                  →  hello
 
 Just the assembly, and read it:
 
-    cc1i -S hello.c -o hello.s
+    c90 -S hello.c -o hello.s
 
 The compiler announces itself (`©2026 G. R. Akhtar - ISO C 90`) unless you pass
 `-nologo`. The program's return value is what the editor shows as
@@ -52,7 +52,7 @@ The compiler announces itself (`©2026 G. R. Akhtar - ISO C 90`) unless you pass
         return 0;
     }
 
-    cc1i main.c sum.c -o prog
+    c90 main.c sum.c -o prog
     ./prog                   →  answer 42
 
 Several inputs on one command line link into one program. Headers are found next
@@ -74,7 +74,7 @@ to the file that includes them and by any `-I` directory.
         return 0;
     }
 
-    cxx1i shape.cpp -o shape
+    cpp11 shape.cpp -o shape
     ./shape                  →  area=36
 
 This exercises an abstract base, a pure-virtual override, virtual dispatch
@@ -104,7 +104,7 @@ through the vtable, `new`/`delete` and a virtual destructor — all supported.
         return 0;
     }
 
-    cxx1i newdel.cpp -o newdel
+    cpp11 newdel.cpp -o newdel
     ./newdel                 →  5 9 42  g=1 c=1
 
 The global `operator new` fires for `int`, the class one for `Counter`,
@@ -126,29 +126,29 @@ placement allocates nothing, and each `delete` routes to the matching operator.
       ? "gcd" a
     }
 
-    shci gcd.shl -o gcd
+    shalimar gcd.shl -o gcd
     ./gcd                    →  gcd 6
 
 Assignment is `name : value`; `?` prints (a space after each item); `while`
-controls flow. `shci` links the Shalimar runtime from `bin\lib\` for you.
+controls flow. `shalimar` links the Shalimar runtime from `bin\lib\` for you.
 
 --------------------------------------------------------------------------------
 ## 42. The same programs on the four targets
 
 Assembly for any target, on any host:
 
-    cc1i -S -arch x86_64-linux   hello.c -o hello-linux.s
-    cc1i -S -arch arm64-darwin   hello.c -o hello-mac.s
-    cc1i -S -arch x86_64-windows hello.c -o hello-win.asm     (MASM spelling)
-    cc1i -S -arch x86_64-windows -masm=gnu hello.c -o hello-win-gnu.s
+    c90 -S -arch x86_64-linux   hello.c -o hello-linux.s
+    c90 -S -arch arm64-darwin   hello.c -o hello-mac.s
+    c90 -S -arch x86_64-windows hello.c -o hello-win.asm     (MASM spelling)
+    c90 -S -arch x86_64-windows -masm=gnu hello.c -o hello-win-gnu.s
 
 Run on the host target (build a program):
 
-    cc1i -arch x86_64-windows hello.c -o hello.exe     (on the Windows box)
+    c90 -arch x86_64-windows hello.c -o hello.exe     (on the Windows box)
 
 Run on the C6000 through the emulator (any host):
 
-    cc1i -S -arch tms6747 hello.c -o hello.s
+    c90 -S -arch tms6747 hello.c -o hello.s
     vm6747 hello.s          →  hello   [program returned 0]
 
 A foreign target from the editor: pressing F5 on `arm64-darwin` on the Windows
@@ -168,10 +168,10 @@ compiler and links the objects. `four.pro`:
     }
 
 with `main.c` calling both a C function (`add_up`) and a C++ one (`area`). In the
-editor, F4 builds it; the console shows two `Assembling` lines from `cc1i` (the C
-part), then `cxx1i` compiling `shape.cpp`, then the link, and Run project prints
-`answer 42, area 12`. By hand it is the same steps: `cc1i -c main.c sum.c`,
-`cxx1i -c shape.cpp`, then link the three objects with the C++ driver.
+editor, F4 builds it; the console shows two `Assembling` lines from `c90` (the C
+part), then `cpp11` compiling `shape.cpp`, then the link, and Run project prints
+`answer 42, area 12`. By hand it is the same steps: `c90 -c main.c sum.c`,
+`cpp11 -c shape.cpp`, then link the three objects with the C++ driver.
 
 --------------------------------------------------------------------------------
 ## 44. The whole project lifecycle in the editor
@@ -198,12 +198,12 @@ Every add and remove is reflected in the `.pro` immediately. This is exactly the
 C to Shalimar, and compile the result:
 
     c2s primes.c            →  primes.shl
-    shci primes.shl -o primes && ./primes
+    shalimar primes.shl -o primes && ./primes
 
 Shalimar to C, and compile the result with the host compiler:
 
     c2s primes.shl          →  primes.c (with the c2s_* preamble)
-    cc1i primes.c -o primes2 && ./primes2
+    c90 primes.c -o primes2 && ./primes2
 
 Ask for the line map and the pragmatic rewrites:
 
@@ -226,4 +226,4 @@ runtime once into `%LOCALAPPDATA%\RIDE\tilib`, then drives
 `cl6x`/`asm6x`/`lnk6x`/`hex6x`. The same works for `.cpp` and `.shl`. To run and
 test the program instead, the emulator needs no TI install:
 
-    cc1i -S -arch tms6747 fib.c -o fib.s && vm6747 fib.s
+    c90 -S -arch tms6747 fib.c -o fib.s && vm6747 fib.s

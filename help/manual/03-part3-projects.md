@@ -23,14 +23,14 @@ directory above `bin\`, beside `include\` and `lib\`:
       "libraries": ["C:/work/common/lib/mathlib.lib"]
     }
 
-It is read for every compile, project or none. `include` is where `cxx1i`'s
+It is read for every compile, project or none. `include` is where `cpp11`'s
 headers are (its C++ headers and the C ones they wrap, in one directory) and
-`lib` where `cc1i`'s are, each relative to the file unless absolute; the
+`lib` where `c90`'s are, each relative to the file unless absolute; the
 editor passes each compiler its own as `-I`, and the compilers also look
 there themselves, so the command line works without the editor. `vcvars` is
 empty until Visual Studio's tools could not be found by looking, and then
 names the `vcvars64.bat` to use. `compiler` is the one chosen when the editor
-starts - `auto` (the file's extension decides), `cc1`, `cxx1`, `shc`, `msvc`
+starts - `auto` (the file's extension decides), `c90`, `cpp11`, `shalimar`, `msvc`
 or `c++` - and choosing one from the Tools menu with no project open writes
 it here; with a project open the choice is the project's and goes to its
 `.pro`, and a project that names its own compiler takes precedence while it
@@ -69,7 +69,7 @@ Field by field:
 - **`name`** — the project's name. Shown in the title bar (`RIDE 4.0 -
   <name> - <file>`).
 - **`toolchain`** — the project-wide compiler choice: `auto` (the file's suffix
-  decides), or a named one: `cc1`, `cxx1`, `shc`, or `msvc` (the host's `cl`).
+  decides), or a named one: `c90`, `cpp11`, `shalimar`, or `msvc` (the host's `cl`).
   `auto` is almost always right; a named one forces every auto group to that
   compiler. The Tools menu (and Ctrl-K) writes it while the project is open.
 - **`arch`** — the target the project builds for: one of `x86_64-windows`,
@@ -90,13 +90,13 @@ Field by field:
 - **`include`** — header directories of the project's own, relative to the
   project's directory (an absolute path stays as written). Every compile of
   the project's sources searches them, in this order, before the shipped
-  headers: `-I` to `cc1i`, `cxx1i` and the host's C++, `/I` to `cl`. Shalimar
-  has no include and `shci` is given none. The installation's own, from
+  headers: `-I` to `c90`, `cpp11` and the host's C++, `/I` to `cl`. Shalimar
+  has no include and `shalimar` is given none. The installation's own, from
   `settings.json`, are searched after these.
 - **`libraries`** — libraries linked into the program after its objects, each
   relative to the project's directory: `.lib` files under Windows, `.a` under
   Unix. A project that names any is built as objects and linked by the host's
-  linker, whatever its compilers (`cc1i` and `cxx1i` take sources only). They
+  linker, whatever its compilers (`c90` and `cpp11` take sources only). They
   do not apply to `tms6747`, which is not linked. The installation's own,
   from `settings.json`, are linked after these.
 - **`open`** — the file that opens with the project, relative to its
@@ -117,7 +117,7 @@ Field by field:
   file` (F5) on one of those sources runs the project too: one file of several
   links against nothing on its own, and the status line says which it did.
 - Per-group compiler choice, so a C-and-C++ program is expressible: a group of
-  both languages is split, the C to `cc1i` and the C++ to `cxx1i`, and the
+  both languages is split, the C to `c90` and the C++ to `cpp11`, and the
   objects are linked (Part IV chapter 15).
 - A remembered target and layout, so the project opens the same way wherever it
   is opened.
@@ -187,11 +187,11 @@ hold one language or several. What happens at build time depends on the group's
 - A group left at `auto` holding **one** language compiles with that language's
   compiler.
 - A group left at `auto` holding **C and C++ together** is **split**: the C files
-  become one part compiled by `cc1i`, the C++ files another part compiled by
-  `cxx1i`, and the editor links the two sets of objects — because no compiler
+  become one part compiled by `c90`, the C++ files another part compiled by
+  `cpp11`, and the editor links the two sets of objects — because no compiler
   here takes an object as a compile input, and "a C and C++ project together" is
-  the point. You see two lines in the console: `Sources (cc1)` and
-  `Sources (cxx1)`.
+  the point. You see two lines in the console: `Sources (c90)` and
+  `Sources (cpp11)`.
 - A group that **names** a `toolchain` (say `msvc`) is one part and that compiler
   takes all of it — which is the only way to make `cl` compile C as C++ on
   purpose.
@@ -203,8 +203,8 @@ the same three startup symbols, the runtime owns `main`, and there are no
 cross-file declarations to check a link against). A project that wants Shalimar
 beside C builds two programs.
 
-**Debug information does not mix.** `cl` writes CodeView, `cc1i`/`cxx1i` write
-DWARF on two targets and nothing on the third, and `shci` writes none anywhere.
+**Debug information does not mix.** `cl` writes CodeView, `c90`/`cpp11` write
+DWARF on two targets and nothing on the third, and `shalimar` writes none anywhere.
 So a debug build of a mixed-compiler target is limited by the least-capable
 piece; the editor handles this rather than producing a debugger session that
 half-works.

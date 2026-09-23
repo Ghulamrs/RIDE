@@ -16,7 +16,7 @@ one that leaves four things to their defaults.
 | --- | --- |
 | `name` | the directory's own name |
 | `arch` | this machine |
-| `toolchain` | `auto` — the language chooses: C to cc1, C++ to cxx1, Shalimar to shc |
+| `toolchain` | `auto` — the language chooses: C to c90, C++ to cpp11, Shalimar to shalimar |
 | a group's `toolchain` | the project's, and then the language |
 | `build` | no project program; Ctrl-B still builds the file in front of you |
 
@@ -124,24 +124,24 @@ Saying nothing is not an error. It means the project builds nothing, and
 ## A compiler per group
 
 **C and C++ have the same decision in them, and Shalimar has none.** C goes
-to **cc1** and C++ to **cxx1** — the compilers this editor was written for,
+to **c90** and C++ to **cpp11** — the compilers this editor was written for,
 and the defaults — and each can go instead to the machine's own compiler,
 `cl` on Windows and `clang++` or `g++` elsewhere, when a group says so.
-Shalimar goes to `shc`, the only thing that reads it.
+Shalimar goes to `shalimar`, the only thing that reads it.
 
 So a group naming a compiler is a group of C or C++ saying it wants the
 host's. That is why `Legacy` above is the only group with a `"toolchain"` in
-it, and why a group of C++ that is happy with cxx1 needs none. (Until 3.0
-C++ had no cxx1 to go to and went to the host's on its own; a project written
-then still builds, with its C++ now going to cxx1 - name `"c++"` on the group
+it, and why a group of C++ that is happy with cpp11 needs none. (Until 3.0
+C++ had no cpp11 to go to and went to the host's on its own; a project written
+then still builds, with its C++ now going to cpp11 - name `"c++"` on the group
 to have it go where it went.)
 
-The words are `cc1`, `cxx1`, `cl` (or `msvc`), `shc`, `c++`, and `auto`.
+The words are `c90`, `cpp11`, `cl` (or `msvc`), `shalimar`, `c++`, and `auto`.
 `"c++"` means *this machine's* C++ compiler rather than g++ specifically —
 which one that is is a fact about a machine, and a project file does not get
 to have an opinion about it. For the same reason the *paths* to the compilers
-are not in here either; they come from `--cc1`, `--cxx1`, `--cl`, `--cxx`,
-`$CC1`, `$CXX1`, `$CXX`, or PATH.
+are not in here either; they come from `--c90`, `--cpp11`, `--cl`, `--cxx`,
+`$C90`, `$CPP11`, `$CXX`, or PATH.
 
 **A group under `auto` holding two languages is split**, one part per language,
 rather than refused. A group that names a compiler is one part and that

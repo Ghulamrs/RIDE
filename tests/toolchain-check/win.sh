@@ -8,9 +8,9 @@ rm -f /c/meas0923/rc/progs/._*
 BIN="C:/Program Files/RIDE 4.0/bin"; ROOT="C:/Program Files/RIDE 4.0"
 P=/c/meas0923/rc/progs; W=/c/meas0923/rc/w; rm -rf $W; mkdir -p $W; R=/c/meas0923/rc/results.txt; : > $R; : > $R.detail
 TI=C:/ti/ccsv7/tools/compiler/ti-cgt-c6000_8.2.2; TILIB=C:/Users/GRA/Documents/VM6747/tilib
-tool() { case $1 in c) echo cc1i CC1;; cpp) echo cxx1i CXX1;; shl) echo shci SHC;; esac; }
+tool() { case $1 in c) echo c90 C90;; cpp) echo cpp11 CPP11;; shl) echo shalimar SHALIMAR;; esac; }
 norm() { tr -d '\r' < "$1" | md5sum | cut -c1-8; }
-unsetall() { unset CC1_AS CC1_LD CXX1_AS CXX1_LD SHC_AS SHC_LD CC1_TI CC1_TILIB CXX1_TI CXX1_TILIB; }
+unsetall() { unset C90_AS C90_LD CPP11_AS CPP11_LD SHALIMAR_AS SHALIMAR_LD C90_TI C90_TILIB CPP11_TI CPP11_TILIB; }
 while read name lang srcs; do
   set -- $(tool $lang); exe=$1; V=$2; d=$W/$name; mkdir -p $d
   files=""; for f in $srcs; do files="$files $(cygpath -w $P/$f)"; done
@@ -40,7 +40,7 @@ while read name lang srcs; do
   rt="$BIN/lib/shmrt-tms6747"
   if [ $ok = 1 ]; then if [ $lang = shl ]; then (cd $d && timeout 120 "$BIN/vm6747.exe" $ss "$rt" < /dev/null > c6.out 2>&1); else (cd $d && timeout 120 "$BIN/vm6747.exe" $ss < /dev/null > c6.out 2>&1); fi; e3=$?; o3=$(norm $d/c6.out); line="$line c6000-vm=$o3/$e3"
   else o3=FAIL; line="$line c6000-vm=S-FAIL"; fi
-  # 4/5. C6000 linked: ASM6x with LNK6x (ours) and with TI's lnk6x (vendor) - cc1i and cxx1i
+  # 4/5. C6000 linked: ASM6x with LNK6x (ours) and with TI's lnk6x (vendor) - c90 and cpp11
   if [ $lang != shl ]; then
     unsetall; export ${V}_AS="$BIN/asm6x.exe" ${V}_TI=$TI ${V}_TILIB=$TILIB ${V}_LD="$BIN/lnk6x.exe"
     (cd $d && "$BIN/$exe.exe" -arch tms6747 $files -o ours.out6 > ours6.build 2>&1) && [ -f $d/ours.out6 ] && l4="ok($(stat -c %s $d/ours.out6))" || { l4=FAIL; echo "  $name lnk6x ours: $(tail -2 $d/ours6.build | tr -d '\r')" >> $R.detail; }

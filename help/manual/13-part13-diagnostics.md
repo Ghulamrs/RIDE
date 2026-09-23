@@ -28,19 +28,19 @@ there. Two principles govern every message:
 --------------------------------------------------------------------------------
 ## 66. Messages you will actually meet
 
-- **`cc1: <file>.cpp looks like C++ (.cpp), and cc1 compiles C, not C++ — compile
-  it with cxx1`** — the C compiler was handed a C++ file. Use `cxx1i`, or let
+- **`c90: <file>.cpp looks like C++ (.cpp), and c90 compiles C, not C++ — compile
+  it with cpp11`** — the C compiler was handed a C++ file. Use `cpp11`, or let
   `auto` route it.
-- **`cxx1: <file>.c looks like C (.c), and cxx1 compiles C++, not C — compile it
-  with cc1`** — the mirror.
+- **`cpp11: <file>.c looks like C (.c), and cpp11 compiles C++, not C — compile it
+  with c90`** — the mirror.
 - **`<arch> only reaches -S here — switch to <host> to run it`** — a foreign
   target: assembly is produced, this host cannot assemble/link it.
-- **`… has no <arch> target — it is cc1's, cxx1's and shc's`** — you asked a
+- **`… has no <arch> target — it is c90's, cpp11's and shalimar's`** — you asked a
   compiler for a target it does not have (e.g. the host compiler for tms6747).
 - **`-g asks where each line went, and this compiler writes no such thing for
   x86_64-windows in the MASM spelling …`** — `-g` on the MASM path; use
   `-masm=gnu` or build the C++ with `cl`.
-- **cxx1i "… is not supported yet" / "… is C++14, and this compiler is C++11"** —
+- **cpp11 "… is not supported yet" / "… is C++14, and this compiler is C++11"** —
   a documented exclusion (Part X).
 - **c2s `C2100` with a marker** — a construct the converter cannot carry
   faithfully; the message names what to write instead.
@@ -58,8 +58,8 @@ The rule the compilers follow: **a question answered is not a failure.**
 | Code | Meaning                                                               |
 |------|----------------------------------------------------------------------|
 | 0    | success — or a question answered (`--version`, `--help`) leaves with 0. |
-| 1    | a compile/build error (a diagnostic was issued), or a bad argument for cc1/cxx1. |
-| 2    | shci's bad-argument code; also a suite/tool "an oracle is missing" exit (it exits 2 rather than passing when a required binary is absent). |
+| 1    | a compile/build error (a diagnostic was issued), or a bad argument for c90/cpp11. |
+| 2    | shalimar's bad-argument code; also a suite/tool "an oracle is missing" exit (it exits 2 rather than passing when a required binary is absent). |
 | 3    | ti-build: TI CGT not found, or the EH runtime could not be built.     |
 
 Two scripting traps worth stating:
@@ -76,12 +76,12 @@ Two scripting traps worth stating:
 
 A file build (`Ctrl-B`) shows the one command and its output. A project build
 (`F4`/Run project) shows a header naming the compilers and the sources, then, per
-part, the compiler's own output — for a mixed target, `Sources (cc1)` and its
-assembling lines, then `Sources (cxx1)` and its banner, then `linking with …`,
+part, the compiler's own output — for a mixed target, `Sources (c90)` and its
+assembling lines, then `Sources (cpp11)` and its banner, then `linking with …`,
 then `[built <program>]` or the first error. Each compiler prints its banner at
 the start of a compile (unless `-nologo`), so the console names the compiler that
 produced each object — which is how you tell, at a glance, that `main.c` went to
-`cc1i` and `shape.cpp` to `cxx1i`.
+`c90` and `shape.cpp` to `cpp11`.
 
 The bottom panel has three tabs: **Console** (the build and the program's output),
 **Debug** (the debugger, where the target supports it), and **Assembly** (the

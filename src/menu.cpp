@@ -1,4 +1,5 @@
 #include "menu.h"
+#include "product.h"
 
 #include "terminal.h"
 
@@ -119,9 +120,9 @@ Menu::Menu() : active_(false), dropped_(false), column_(0), item_(0) {
     tools.title = "Tools";
 
     tools.items.push_back({"By language", "Ctrl-K", ActionToolAuto});
-    tools.items.push_back({"cc1", "", ActionToolCc1});
-    tools.items.push_back({"cxx1", "", ActionToolCxx1});
-    tools.items.push_back({"shc", "", ActionToolShc});
+    tools.items.push_back({product::kCompilerC, "", ActionToolCc1});
+    tools.items.push_back({product::kCompilerCpp, "", ActionToolCxx1});
+    tools.items.push_back({product::kCompilerShalimar, "", ActionToolShc});
     tools.items.push_back({"MSVC (cl)", "", ActionToolMsvc});
     tools.items.push_back({"C++ (host)", "", ActionToolCxx});
     tools.items.push_back(separator());
