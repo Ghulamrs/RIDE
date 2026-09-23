@@ -76,8 +76,8 @@ for f in "$ROOT"/bin/*; do
 done
 cp -f "$ROOT"/bin/lib/*.a "$STAGE/bin/lib/" 2>/dev/null || true
 [ -d "$ROOT/bin/lib/shmrt-tms6747" ] && cp -rf "$ROOT/bin/lib/shmrt-tms6747" "$STAGE/bin/lib/"
-# include/ is cxx1i's - its C++ headers and the C ones they wrap, in one
-# directory; lib/ is cc1i's. Each compiler looks one directory above its bin/
+# include/ is cpp11's - its C++ headers and the C ones they wrap, in one
+# directory; lib/ is c90's. Each compiler looks one directory above its bin/
 # for its own, and settings.json beside them says so for the editor.
 [ -d "$CPP/include" ] && cp -rf "$CPP/include" "$STAGE/include"
 [ -d "$CPP/lib" ] && cp -f "$CPP"/lib/*.h "$STAGE/include/"

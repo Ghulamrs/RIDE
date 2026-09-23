@@ -1,9 +1,12 @@
 #!/bin/sh
 # RIDE's Linux toolchain (~/ride/bin): x86 through gcc/as/ld, C6000 on vm6747.
 set -u
-BIN=$HOME/ride/bin; P=$HOME/rc/progs; W=$HOME/rc/w; rm -rf $W; mkdir -p $W; R=$HOME/rc/results.txt; : > $R; : > $R.detail
+# macOS has no timeout(1); perl's alarm does the same there.
+command -v timeout >/dev/null 2>&1 || timeout() { t=$1; shift; perl -e 'alarm shift; exec @ARGV' "$t" "$@"; }
+# BIN, P (the staged programs) and W (scratch) may be named; the defaults are the box's.
+BIN=${BIN:-$HOME/ride/bin}; P=${P:-$HOME/rc/progs}; W=${W:-$HOME/rc/w}; rm -rf $W; mkdir -p $W; R=$W.results.txt; : > $R; : > $R.detail
 ls $BIN/lib | tr '\n' ' ' >> $R.detail; echo >> $R.detail
-tool() { case $1 in c) echo cc1i;; cpp) echo cxx1i;; shl) echo shci;; esac; }
+tool() { case $1 in c) echo c90;; cpp) echo cpp11;; shl) echo shalimar;; esac; }
 norm() { tr -d '\r' < "$1" | md5sum | cut -c1-8; }
 while read name lang srcs; do
   exe=$(tool $lang); d=$W/$name; mkdir -p $d; files=""; for f in $srcs; do files="$files $P/$f"; done

@@ -68,7 +68,7 @@ Name: "{autodesktop}\{#MyName}"; Filename: "{app}\bin\{#PRODUCT}.exe"; WorkingDi
 Name: "desktopicon"; Description: "Create a desktop shortcut"
 ; bin holds a link.exe of the project's own. Appended, it sits after everything
 ; already on PATH, and a Developer Command Prompt puts Microsoft's first anyway.
-Name: "addtopath"; Description: "Add the bin folder to PATH (cc1i, cxx1i, shci, masm, asm6x, vm6747, c2s on the command line)"; Flags: unchecked
+Name: "addtopath"; Description: "Add the bin folder to PATH (c90, cpp11, shalimar, masm, asm6x, vm6747, c2s on the command line)"; Flags: unchecked
 
 [Registry]
 ; The user's own PATH, HKCU\Environment, on purpose. The machine-wide one is

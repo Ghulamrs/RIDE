@@ -42,7 +42,7 @@ if not exist obj mkdir obj
 
 rem **Into bin\, which is where the compilers are.** This built the
 rem console editor into the repository root until 2026-08-27, and an editor
-rem there has nothing beside it: the solution puts cc1i.exe, shci.exe, c2s.exe
+rem there has nothing beside it: the solution puts c90.exe, shalimar.exe, c2s.exe
 rem and shc's lib\ in bin\ (via /p:OutDir), and RIDE finds what it drives with
 rem path::besideProgram before it looks at PATH. So a `build.bat` editor could
 rem not compile anything without $CC1 being named, and said so in its own About
@@ -106,7 +106,7 @@ rem found. One place knows where Visual Studio is.
 rem
 rem RIDE.sln reaches ..\VM6747\Compiler-Ci, ..\VM6747\Compiler-Cppi,
 rem ..\VM6747\Emulator, ..\VM6747\Compiler-Si and ..\Converter-C2S - since
-rem 3.5 the compilers are the VM6747 line, cc1i, cxx1i and shci, with vm6747
+rem 3.5 the compilers are the VM6747 line, c90, cpp11 and shalimar, with vm6747
 rem the emulator that runs the fourth target - so all six are laid out beside each other
 rem on this machine, as tools/to-windows.sh lays them.
 msbuild %PRODUCT%.sln /p:Configuration=Release /p:Platform=x64 /p:OutDir=%CD%\bin\ /v:minimal /m
@@ -133,13 +133,13 @@ rem
 rem Both runtime archives are named. Debug is the editor's default
 rem configuration and links the other one, so checking a single archive would
 rem confirm exactly the half that was not about to be used. And the C6000
-rem runtime, a directory of assembly cxx1i writes for shci's post-build step:
+rem runtime, a directory of assembly cpp11 writes for shalimar's post-build step:
 rem the Makefile's DEPENDENCIES has named it since 3.5 and this did not, so a
 rem box with both archives and no directory confirmed clean while a Shalimar
 rem program for the emulator had nothing to run beside.
 if "%BINDIR%"=="" set BINDIR=bin
 set MISSING=0
-for %%f in (cc1i.exe cxx1i.exe vm6747.exe asm6x.exe masm.exe link.exe lnk6x.exe shci.exe c2s.exe lib\shmrt-x86_64-windows.lib lib\shmrt-x86_64-windows-debug.lib lib\shmrt-tms6747\Runtime.s) do (
+for %%f in (c90.exe cpp11.exe vm6747.exe asm6x.exe masm.exe link.exe lnk6x.exe shalimar.exe c2s.exe lib\shmrt-x86_64-windows.lib lib\shmrt-x86_64-windows-debug.lib lib\shmrt-tms6747\Runtime.s) do (
    if exist "%BINDIR%\%%f" (echo   ok       %%f) else (echo   MISSING  %%f& set MISSING=1)
 )
 if "%MISSING%"=="1" (
@@ -182,12 +182,12 @@ rem
 rem shc's runtime goes too, and into bin\lib\ rather than anywhere tidier,
 rem because that is where shc looks: beside its own binary.
 if "%BINDIR%"=="" set BINDIR=bin
-if exist "%BINDIR%\cc1i.exe" copy /y "%BINDIR%\cc1i.exe" "%PRODUCT_DIR%\bin\" >nul
-if exist "%BINDIR%\cxx1i.exe" copy /y "%BINDIR%\cxx1i.exe" "%PRODUCT_DIR%\bin\" >nul
+if exist "%BINDIR%\c90.exe" copy /y "%BINDIR%\c90.exe" "%PRODUCT_DIR%\bin\" >nul
+if exist "%BINDIR%\cpp11.exe" copy /y "%BINDIR%\cpp11.exe" "%PRODUCT_DIR%\bin\" >nul
 if exist "%BINDIR%\vm6747.exe" copy /y "%BINDIR%\vm6747.exe" "%PRODUCT_DIR%\bin\" >nul
 rem The headers go with the compilers, one directory above bin\ - because
-rem bin\lib\ is shc's. include\ is cxx1i's, its C++ headers and the C ones
-rem they wrap in one directory; lib\ is cc1i's. Each looks there for its own
+rem bin\lib\ is shc's. include\ is cpp11's, its C++ headers and the C ones
+rem they wrap in one directory; lib\ is c90's. Each looks there for its own
 rem before the paths compiled into it, which name the checkout, and the
 rem settings.json beside them tells the editor the same.
 if "%CXX1_DIR%"=="" set CXX1_DIR=..\VM6747\Compiler-Cppi
@@ -210,7 +210,7 @@ if exist "%CC1_DIR%\lib" xcopy /e /i /q "%CC1_DIR%\lib" "%PRODUCT_DIR%\lib" >nul
    echo   "libraries": []
    echo }
 ) > "%PRODUCT_DIR%\settings.json"
-if exist "%BINDIR%\shci.exe" copy /y "%BINDIR%\shci.exe" "%PRODUCT_DIR%\bin\" >nul
+if exist "%BINDIR%\shalimar.exe" copy /y "%BINDIR%\shalimar.exe" "%PRODUCT_DIR%\bin\" >nul
 if exist "%BINDIR%\%PRODUCT%.exe" copy /y "%BINDIR%\%PRODUCT%.exe" "%PRODUCT_DIR%\bin\" >nul
 if exist "%BINDIR%\lib\*.lib" (
    if not exist "%PRODUCT_DIR%\bin\lib" mkdir "%PRODUCT_DIR%\bin\lib"

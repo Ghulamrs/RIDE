@@ -51,7 +51,7 @@ std::string askVersion(const std::string& program) {
     // The first line is the banner, and the banner is what About shows:
     // every one of the four opens with one, cxx1's version line beneath is
     // detail. Its own copyright is taken off, since the box ends with it
-    // once - so a row reads "cxx1i - ISO C++ 11" beside "cc1i - ISO C 90".
+    // once - so a row reads "cpp11 - ISO C++ 11" beside "c90 - ISO C 90".
     char buffer[256];
     std::string first;
     while (std::fgets(buffer, sizeof buffer, pipe)) {
@@ -100,9 +100,9 @@ std::vector<std::string> lines() {
     // The VM6747 line since 3.5 - what the editor actually looks for, so
     // that a copy standing beside the sealed originals says so. Shalimar
     // first, the converter fourth: the user's order.
-    tool(said, "shci.exe");
-    tool(said, "cc1i.exe");
-    tool(said, "cxx1i.exe");
+    tool(said, "shalimar.exe");
+    tool(said, "c90.exe");
+    tool(said, "cpp11.exe");
     tool(said, "c2s.exe");
     said.push_back("");
     // The sign docked to the year, the word left out: the user's wording.

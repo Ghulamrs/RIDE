@@ -42,7 +42,7 @@ the project follows the file; there is no Save, since every change is written
 as it is made), Build (Compile / Run / Build project / Run project / Debug /
 Release), Debug, View (Project pane / Bottom panel / Console / Debug / Assembly
 / Line numbers / Plain frame), Language (By extension / C / C++ / Shalimar /
-JSON / Plain text / Convert), Tools (By language / cc1 / cxx1 / shc / MSVC (cl)
+JSON / Plain text / Convert), Tools (By language / c90 / cpp11 / shalimar / MSVC (cl)
 / C++ (host), then Header directories, the *shared* include paths and libraries
 of the installation, the *project's* include paths and libraries in its `.pro`,
 and where vcvars64, the assembler and TI's compiler are), Target (the
@@ -53,18 +53,18 @@ architectures), Help. The last three — Language, Tools, Target — are one cha
 ## 27. The editor's own command line
 
     RIDE.exe [file] [--project dir]
-        [--toolchain auto|cc1|cxx1|msvc|shc|c++]
+        [--toolchain auto|c90|cpp11|msvc|shalimar|c++]
         [--config debug|release]
-        [--cc1 path] [--cxx1 path] [--cl path] [--shc path]
+        [--c90 path] [--cpp11 path] [--cl path] [--shalimar path]
 
 - A bare `file` opens that file; `--project dir` opens the project in `dir`.
 - With nothing, the editor opens nothing: the last three projects it was in
   are remembered and named at the end of the Project menu, never opened on
   their own.
 - `--toolchain` and `--config` preset the Tools and Debug/Release choices.
-- `--cc1`/`--cxx1`/`--cl`/`--shc` name the compilers explicitly; otherwise the
-  editor finds them beside itself (`bin\`) before `PATH`. `$CC1`/`$CXX1`/`$CL`/
-  `$SHC` do the same through the environment.
+- `--c90`/`--cpp11`/`--cl`/`--shalimar` name the compilers explicitly; otherwise the
+  editor finds them beside itself (`bin\`) before `PATH`. `$C90`/`$CPP11`/`$CL`/
+  `$SHALIMAR` do the same through the environment.
 
 --------------------------------------------------------------------------------
 ## 28. Reading a diagnostic
@@ -74,15 +74,15 @@ message, and the editor turns the top one into the status line and (on a
 double-click, or Enter on the Console) jumps the caret there. The compilers
 **diagnose at the point of interception** — the error is reported where the rule
 was broken, not deferred to a later phase — and they **refuse by name**: an
-unsupported construct produces a specific message (e.g. cxx1i's "…is not
+unsupported construct produces a specific message (e.g. cpp11's "…is not
 supported yet" or "…is C++14, and this compiler is C++11"), not a generic
 parser stumble. If you see a message you do not expect from a one-line program,
 that message is the truth of what the compiler did.
 
 Two diagnostics worth recognising:
 
-- **`cc1: <file>.cpp looks like C++ … compile it with cxx1`** — you handed the C
-  compiler a C++ file. Use `cxx1i` (or let `auto` route it).
+- **`c90: <file>.cpp looks like C++ … compile it with cpp11`** — you handed the C
+  compiler a C++ file. Use `cpp11` (or let `auto` route it).
 - **`<arch> only reaches -S here — switch to <host> to run it`** — a foreign
   target: the assembly is produced, but this host cannot assemble/link it.
 
@@ -97,10 +97,10 @@ Two diagnostics worth recognising:
   confirm the editor and compilers are the ones you just built (they must sit
   together in `bin\`); an editor without its compilers beside it says so in its
   About box.
-- **`cc1i`/`cxx1i` refuses a file by suffix** — the language guard. `.c` → cc1i,
-  `.cpp` → cxx1i; use the matching compiler or the Language menu.
+- **`c90`/`cpp11` refuses a file by suffix** — the language guard. `.c` → c90,
+  `.cpp` → cpp11; use the matching compiler or the Language menu.
 - **A C++ feature is refused** — check it against Part II chapter 8 and the C++
-  compiler's `docs/EXCLUSIONS.md`; cxx1i is C++11 minus a documented list, and it
+  compiler's `docs/EXCLUSIONS.md`; cpp11 is C++11 minus a documented list, and it
   refuses by name.
 - **`-g` refused for `x86_64-windows`** — MASM carries no line table; use
   `-masm=gnu` for a steppable DWARF build, or build the C++ with `cl` for
@@ -122,7 +122,7 @@ Two diagnostics worth recognising:
 - **Target** — the machine the code is generated for (`x86_64-windows`,
   `x86_64-linux`, `arm64-darwin`, `tms6747`). Distinct from the host.
 - **Host** — the machine you are compiling on.
-- **i-line** — `cc1i`/`cxx1i`/`shci`, the compilers RIDE drives since 3.5; the same
+- **i-line** — `c90`/`cpp11`/`shalimar`, the compilers RIDE drives since 3.5; the same
   three compilers as 3.0's originals, one target on (tms6747).
 - **`-S` / `-c`** — stop at assembly / stop at an object. No flag: build a
   program.
@@ -130,7 +130,7 @@ Two diagnostics worth recognising:
 - **Group** — a named list of files in a project; the build selects by group; a
   group may name its own compiler.
 - **The runtime (`shmrt-*`)** — the Shalimar support library, in `bin\lib\`
-  beside `shci`.
+  beside `shalimar`.
 - **`vm6747`** — the C6000 instruction-set emulator; runs tms6747 assembly with
   no TI tools.
 - **CGT** — TI's Code Generation Tools (`cl6x`/`asm6x`/`lnk6x`/`hex6x`), used by

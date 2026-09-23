@@ -3,7 +3,7 @@ rem ti-build.cmd <source.c|.cpp|.shl> - a REAL TMS320C674x build (.out + .hex).
 rem
 rem License-safe: this ships NO Texas Instruments binaries. It FINDS a TI Code
 rem Generation Tools install already on the machine and uses it. Our compiler
-rem (cc1i/cxx1i/shci) emits the C6000 assembly; TI's cl6x/asm6x assemble it,
+rem (c90/cpp11/shalimar) emits the C6000 assembly; TI's cl6x/asm6x assemble it,
 rem lnk6x links against TI's runtime, hex6x makes the Intel .hex. As against the
 rem vm6747 emulator, which runs the .s directly and needs no TI install.
 rem
@@ -18,8 +18,8 @@ set EXT=%~x1
 set SELF=%~dp0
 rem --- our compilers: beside this script's bin (installed: bin\ti\ -> bin\) ---
 set OURBIN=%SELF%..
-if not exist "%OURBIN%\cc1i.exe" set OURBIN=%SELF%..\bin
-if not exist "%OURBIN%\cc1i.exe" set OURBIN=C:\Users\GRA\source\RIDE\bin
+if not exist "%OURBIN%\c90.exe" set OURBIN=%SELF%..\bin
+if not exist "%OURBIN%\c90.exe" set OURBIN=C:\Users\GRA\source\RIDE\bin
 
 rem --- find TI CGT ---
 set CGT=
@@ -57,11 +57,11 @@ set PATH=%CGTBIN%;%PATH%
 set LNKCMD=%SELF%ti-link.cmd
 
 rem --- 1. our compiler emits tms6747 assembly ---
-set CC="%OURBIN%\cc1i.exe"
+set CC="%OURBIN%\c90.exe"
 set LANG=c
-if /I "%EXT%"==".cpp" (set LANG=cpp& set CC="%OURBIN%\cxx1i.exe")
-if /I "%EXT%"==".cc"  (set LANG=cpp& set CC="%OURBIN%\cxx1i.exe")
-if /I "%EXT%"==".shl" (set LANG=shl& set CC="%OURBIN%\shci.exe")
+if /I "%EXT%"==".cpp" (set LANG=cpp& set CC="%OURBIN%\cpp11.exe")
+if /I "%EXT%"==".cc"  (set LANG=cpp& set CC="%OURBIN%\cpp11.exe")
+if /I "%EXT%"==".shl" (set LANG=shl& set CC="%OURBIN%\shalimar.exe")
 if "%LANG%"=="shl" (%CC% -S --target=tms6747 -nologo "%SRC%" -o "%STEM%.s") else (%CC% -S -arch tms6747 -nologo "%SRC%" -o "%STEM%.s")
 if errorlevel 1 (echo COMPILE_FAILED & exit /b 1)
 

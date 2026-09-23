@@ -1,13 +1,13 @@
 # Shalimar
 
 Shalimar is a small numeric language of our own, interpreted by an iOS app and
-compiled by **shc**. The full specification is
+compiled by **shalimar**. The full specification is
 [Appendix A](appendix-a-shalimar-language.md).
 
 | | |
 | --- | --- |
 | suffix | `.shl` |
-| compiler | `shc` |
+| compiler | `shalimar` |
 | targets | `x86_64-windows`, `x86_64-linux`, `arm64-darwin` |
 | debug | `--debug` — links a runtime that can stop, changes no code |
 | release | nothing |
@@ -80,7 +80,7 @@ nothing to keep up to date.
   nobody wants may be in as many files as it likes.
 
 **The project is what says which files those are.** Given one file on a command
-line, shc looks beside it; given a project, the editor hands it the group, with
+line, shalimar looks beside it; given a project, the editor hands it the group, with
 the program first. A directory knows what is next to it and a project knows
 what is its own.
 
@@ -97,7 +97,7 @@ can name where it happened, and a **debug build offers that same position to a
 session inside the program**.
 
 So `F9`, `F8`, `F7` and `F6` work on Shalimar with no debugger installed
-anywhere, on all three targets — including `x86_64-windows`, where cc1's own
+anywhere, on all three targets — including `x86_64-windows`, where c90's own
 debugging stops. **In the window as well as in the terminal**, which makes
 Shalimar the only language the window can stop on the machine it runs on.
 

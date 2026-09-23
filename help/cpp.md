@@ -1,6 +1,6 @@
 # C++
 
-C++ goes to **cxx1**, the C++11 compiler that grew out of cc1, and has had
+C++ goes to **cpp11**, the C++11 compiler that grew out of c90, and has had
 the same shape as C since 3.0: the editor's own compiler by default, and the
 machine's own — `cl` on Windows, `clang++` on a Mac, `g++` on Linux — when a
 group asks for it by name. Until 3.0 C++ had no decision in it and went
@@ -10,37 +10,37 @@ away, and every project written for it still builds.
 | | |
 | --- | --- |
 | suffix | `.cpp`, `.cc`, `.cxx` |
-| compiler | `cxx1` by default; `cl` or the host's `c++` when a group says so |
-| targets | `x86_64-windows`, `x86_64-linux`, `arm64-darwin` — the same three as cc1 |
+| compiler | `cpp11` by default; `cl` or the host's `c++` when a group says so |
+| targets | `x86_64-windows`, `x86_64-linux`, `arm64-darwin` — the same three as c90 |
 | debug | `-g -D_DEBUG=1`, and the define alone where there is no line table |
-| release | `-DNDEBUG=1` — cxx1, like cc1, has no optimiser |
+| release | `-DNDEBUG=1` — cpp11, like c90, has no optimiser |
 
-## Where cxx1 is found
+## Where cpp11 is found
 
-`--cxx1`, then `$CXX1`, then a `cxx1` beside the editor, then PATH — the same
-four steps as cc1, and the same rule about naming one that is not there: the
+`--cpp11`, then `$CPP11`, then a `cpp11` beside the editor, then PATH — the same
+four steps as c90, and the same rule about naming one that is not there: the
 editor drops it with a word and carries on as if nothing had been named.
 
-cxx1 carries its own standard headers, in `include/` and `lib/` beside its
+cpp11 carries its own standard headers, in `include/` and `lib/` beside its
 binary or one directory above it, and falls back to the paths compiled into
 it. A copy that is moved on its own still finds the checkout it was built
 from; `make product` and `build.bat product` copy the two directories so that
 a product does not depend on one.
 
-## What cxx1 reads
+## What cpp11 reads
 
-C++11, as a subset on purpose — the language cxx1 accepts is not the one it
+C++11, as a subset on purpose — the language cpp11 accepts is not the one it
 is written in, and its own README says which. Two things a C++ file may
 reasonably hold that it refuses today are `= delete` on a member and a
 `static const int` member used as an array bound in its own class; the
 examples here spell both the older way, which every compiler reads. A file
-that needs more than cxx1 has is a file for the host's compiler, and Ctrl-K
+that needs more than cpp11 has is a file for the host's compiler, and Ctrl-K
 is how it gets there.
 
-cxx1 announces itself on every compile — one line on standard error before
+cpp11 announces itself on every compile — one line on standard error before
 the work starts — and the Console tab shows it above whatever else the
-compiler said, in both front ends. That is cxx1's own behaviour and the
-editor does not edit it: cc1 and shc say nothing on a compile, and cxx1 says
+compiler said, in both front ends. That is cpp11's own behaviour and the
+editor does not edit it: c90 and shalimar say nothing on a compile, and cpp11 says
 who it is, and the console reports each as it is.
 
 ## The host's compiler, by name
@@ -66,10 +66,10 @@ newer Visual Studio, which is not the toolset this is built with.
 
 ## Debugging
 
-**cxx1 writes DWARF for `x86_64-linux` and `arm64-darwin`** — line tables,
-types, objects and lexical blocks — and lldb or gdb read it like cc1's, so
+**cpp11 writes DWARF for `x86_64-linux` and `arm64-darwin`** — line tables,
+types, objects and lexical blocks — and lldb or gdb read it like c90's, so
 breakpoints, stepping, locals and the stack all work. On `x86_64-windows` it
-writes MASM and no line table, exactly as cc1 does, and the Debug tab says so.
+writes MASM and no line table, exactly as c90 does, and the Debug tab says so.
 
 **cl writes CodeView into a `.pdb`, and `cdb` reads one.** cdb comes with the
 Windows SDK's debugging tools and is not installed by default, so the editor
@@ -79,7 +79,7 @@ one, but cdb is not installed"* when it is missing.
 `clang++` and `g++` write DWARF and are read by lldb and gdb like anything
 else.
 
-So on Windows, C++ under cxx1 is where C under cc1 is — no line table — and
+So on Windows, C++ under cpp11 is where C under c90 is — no line table — and
 C++ under cl carries everything. That is a fact about the compilers, not about
 the machine, which is why the editor asks `debuggerFor(compiler, target)` and
 never `debuggerFor(machine)`.
@@ -88,10 +88,10 @@ never `debuggerFor(machine)`.
 
 A target may hold both. Each group compiles to objects with its own compiler
 and the editor links them — see [page 7](07-building.md). The ordinary case
-is now cc1 and cxx1 side by side, with nothing named in the project file at
+is now c90 and cpp11 side by side, with nothing named in the project file at
 all, and the host's linker joining what the two produced.
 
 One thing the editor has to arrange for you on Windows: **cl is given `/MT`**
-there, because cc1's own driver links `libcmt` and two C runtimes in one
+there, because c90's own driver links `libcmt` and two C runtimes in one
 program is `LNK4098` at best and two heaps at worst. Nothing else is in a
 position to make them agree.

@@ -226,7 +226,7 @@ std::string demoDirectory() {
     std::string home = path::homeDir();
     if (home.empty()) return std::string();
 
-    std::string dir = path::join(home, "cc1-demo");
+    std::string dir = path::join(home, "c90-demo");
     std::string file = path::join(dir, "src/first.c");
 
     if (path::exists(file)) return dir;

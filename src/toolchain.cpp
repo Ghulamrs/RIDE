@@ -192,10 +192,10 @@ ToolchainKind resolve(const Toolchain& tool, Language lang) {
 }
 
 ToolchainKind toolchainFrom(const std::string& word) {
-    if (word == "cc1") return ToolCc1;
+    if (word == product::kCompilerC) return ToolCc1;
     if (word == "msvc" || word == "cl") return ToolMsvc;
-    if (word == "shc") return ToolShc;
-    if (word == "cxx1") return ToolCxx1;
+    if (word == product::kCompilerShalimar) return ToolShc;
+    if (word == product::kCompilerCpp) return ToolCxx1;
 
     if (word == "c++" || word == "cxx" || word == "g++" || word == "clang++")
         return hostCppToolchain();
@@ -203,10 +203,10 @@ ToolchainKind toolchainFrom(const std::string& word) {
 }
 
 const char* toolchainWord(ToolchainKind kind) {
-    if (kind == ToolCc1) return "cc1";
+    if (kind == ToolCc1) return product::kCompilerC;
     if (kind == ToolMsvc) return "msvc";
-    if (kind == ToolShc) return "shc";
-    if (kind == ToolCxx1) return "cxx1";
+    if (kind == ToolShc) return product::kCompilerShalimar;
+    if (kind == ToolCxx1) return product::kCompilerCpp;
 
     if (kind == ToolCxx) return "c++";
     return "auto";
@@ -215,10 +215,10 @@ const char* toolchainWord(ToolchainKind kind) {
 const char* toolchainName(ToolchainKind kind) {
     switch (kind) {
         case ToolMsvc: return "cl";
-        case ToolCc1:  return "cc1";
-        case ToolShc:  return "shc";
+        case ToolCc1:  return product::kCompilerC;
+        case ToolShc:  return product::kCompilerShalimar;
         case ToolCxx:  return "c++";
-        case ToolCxx1: return "cxx1";
+        case ToolCxx1: return product::kCompilerCpp;
         default:       return "auto";
     }
 }
@@ -285,7 +285,7 @@ std::string emulatedProgram(const std::string& program) {
     return name + ".vm";
 }
 
-// The Shalimar runtime for the emulator: a directory of the .s cxx1i wrote
+// The Shalimar runtime for the emulator: a directory of the .s cpp11 wrote
 // from it, beside the editor in lib/, which vm6747 assembles with the program.
 std::string shalimarRuntimeDir() {
     const char* fromEnv = std::getenv("SHMRT6747");
@@ -385,7 +385,7 @@ std::vector<std::string> debugNote(ToolchainKind kind, const std::string& arch) 
         said.push_back("nothing has been assembled, linked or run. What the build did leave");
         said.push_back("behind is the assembly, and this is what is in it.");
     } else if (kind == ToolShc) {
-        said.push_back("shc writes no debug information for any target, and that is a");
+        said.push_back("shalimar writes no debug information for any target, and that is a");
         said.push_back("decision rather than a gap: a Shalimar program carries its own");
         said.push_back("position instead - shm_line before every statement, in every");
         said.push_back("build - which is what names the line of a runtime error and what");
@@ -423,14 +423,14 @@ bool canCompile(ToolchainKind kind, Language lang) {
 std::string refusal(ToolchainKind kind, Language lang) {
     if (lang == LangShalimar && kind != ToolShc)
         return std::string(toolchainName(kind)) +
-               " does not compile Shalimar - Ctrl-K for automatic, and it picks shc";
+               " does not compile Shalimar - Ctrl-K for automatic, and it picks shalimar";
     if (kind == ToolShc && lang != LangShalimar)
-        return std::string("shc compiles Shalimar, not ") + languageName(lang) +
+        return std::string("shalimar compiles Shalimar, not ") + languageName(lang) +
                " - Ctrl-K for automatic";
     if (lang == LangCpp && kind == ToolCc1)
-        return "cc1 compiles C, not C++ - Ctrl-K for automatic, and it picks cxx1";
+        return "c90 compiles C, not C++ - Ctrl-K for automatic, and it picks cpp11";
     if (lang == LangC && kind == ToolCxx1)
-        return "cxx1 compiles C++, not C - Ctrl-K for automatic, and it picks cc1";
+        return "cpp11 compiles C++, not C - Ctrl-K for automatic, and it picks c90";
     if (lang == LangPlain)
         return "nothing to compile: no extension names a language - .c, .cpp or .shl picks the compiler";
     if (lang != LangC && lang != LangCpp)
@@ -464,7 +464,7 @@ bool runsHere(ToolchainKind kind, const std::string& arch) {
 std::string whyNotRun(ToolchainKind kind, const std::string& arch) {
     if (runsHere(kind, arch)) return std::string();
     if (isEmulated(arch))
-        return std::string(toolchainName(kind)) + " has no " + arch + " target - it is cc1's, cxx1's and shc's";
+        return std::string(toolchainName(kind)) + " has no " + arch + " target - it is c90's, cpp11's and shalimar's";
     return arch + " only reaches -S here - switch to " + hostArch() + " to run it";
 }
 
@@ -583,12 +583,12 @@ Recipe targetRecipe(const Toolchain& tool, ToolchainKind kind,
 namespace {
 
 const char* hostDriver() {
-    const char* named = std::getenv("CC1_CC");
+    const char* named = std::getenv("C90_CC");
     return (named && *named) ? named : "cc";
 }
 
 const char* hostLinker() {
-    const char* named = std::getenv("CC1_LD");
+    const char* named = std::getenv("C90_LD");
     return (named && *named) ? named : "link.exe";
 }
 
@@ -740,7 +740,7 @@ Recipe programRecipe(const Toolchain& tool, ToolchainKind kind,
 
     // cc1 and cxx1 take sources only, so a library rides on F4, where the
     // objects are linked by the host; the machine's own C++ takes them here.
-    // assemblerFlag as on F4: without it cxx1i writes the GNU spelling and
+    // assemblerFlag as on F4: without it cpp11 writes the GNU spelling and
     // hands masm.exe clang's command line - "usage: asm -t x64 ..." was what
     // Run file on smart.cpp said in the first 4.0 install, F4 being fine.
     recipe.command = quote(program) + " " + quote(source) + " -o " +
@@ -825,19 +825,19 @@ bool prepareFor(ToolchainKind kind) {
 
     importMsvcEnvironment();
     // The project's assembler, where one is named: all three compilers read
-    // the variable, and cxx1i also needs -masm=masm - see assemblerFlag.
+    // the variable, and cpp11 also needs -masm=masm - see assemblerFlag.
     std::string as = settings::assembler();
-    _putenv_s("CC1_AS", as.c_str());
-    _putenv_s("CXX1_AS", as.c_str());
-    _putenv_s("SHC_AS", as.c_str());
+    _putenv_s("C90_AS", as.c_str());
+    _putenv_s("CPP11_AS", as.c_str());
+    _putenv_s("SHALIMAR_AS", as.c_str());
     // And the linker for x86_64-windows the same way, where one is named:
     // each compiler links its own program through what *_LD says, else
     // link.exe. An empty value unsets the variable, which is what a yes to
     // the native tools needs (settings::forceNative).
     std::string ld = settings::linker();
-    _putenv_s("CC1_LD", ld.c_str());
-    _putenv_s("CXX1_LD", ld.c_str());
-    _putenv_s("SHC_LD", ld.c_str());
+    _putenv_s("C90_LD", ld.c_str());
+    _putenv_s("CPP11_LD", ld.c_str());
+    _putenv_s("SHALIMAR_LD", ld.c_str());
     return true;
 #else
     (void)kind;

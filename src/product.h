@@ -20,5 +20,13 @@ constexpr const char* kLower = "ride";
 constexpr const char* kStateDirectory = ".ride";
 constexpr const char* kStateFile = "state.json";
 
+// The three compilers, as a user reads and types them: the Toolchain menu,
+// --toolchain, a .pro's "toolchain", settings.json's "compiler" and the line
+// a build prints. Their programs are these names with .exe; each compiler's
+// own src/Name.h and its Makefile's PROGRAM spell it the same.
+constexpr const char* kCompilerC = "c90";
+constexpr const char* kCompilerCpp = "cpp11";
+constexpr const char* kCompilerShalimar = "shalimar";
+
 }
 }

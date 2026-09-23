@@ -70,9 +70,9 @@ tar --no-mac-metadata \
 
 # ---- what it drives ---------------------------------------------------------
 # Each repository's sources, tests and Makefile, and nothing built here.
-# cc1i's lib/ is its C headers and travels; shci's lib/ is this machine's
-# runtime archives and does not. cxx1i's suites want tools/ (the mangling
-# oracle, the comment-line policy) and cc1i's the same.
+# c90's lib/ is its C headers and travels; shalimar's lib/ is this machine's
+# runtime archives and does not. cpp11's suites want tools/ (the mangling
+# oracle, the comment-line policy) and c90's the same.
 pack() {  # pack <name> <directory> <what...>
     local name=$1 dir=$2; shift 2
     ( cd "$dir" && tar --no-mac-metadata --exclude '* 2.*' --exclude 'obj' \
@@ -80,9 +80,9 @@ pack() {  # pack <name> <directory> <what...>
         --exclude 'DerivedData' --exclude 'build' \
         -czf "$TMP/$name-src.tgz" "$@" ) || exit 2
 }
-pack cc1i   ../VM6747/Compiler-Ci   src lib tools tests examples Makefile README.md
-pack cxx1i  ../VM6747/Compiler-Cppi src include lib tools tests Makefile README.md
-pack shci   ../VM6747/Compiler-Si   src runtime tests examples Makefile README.md
+pack c90   ../VM6747/Compiler-Ci   src lib tools tests examples Makefile README.md
+pack cpp11  ../VM6747/Compiler-Cppi src include lib tools tests Makefile README.md
+pack shalimar   ../VM6747/Compiler-Si   src runtime tests examples Makefile README.md
 pack vm6747 ../VM6747/Emulator      src tests Makefile README.md
 # asm6x's run.sh rechecks the review's probes against the oracle's recorded objects
 # (2026-09-19): the three directories it reads travel, without the review's own outputs.
@@ -105,9 +105,9 @@ pack c2s    ../Converter-C2S        src tests Makefile README.md
 # array, because the Mac's bash is 3.2 and has no associative arrays.
 there() {
     case "$1" in
-        cc1i)   echo 'VM6747/Compiler-Ci' ;;
-        cxx1i)  echo 'VM6747/Compiler-Cppi' ;;
-        shci)   echo 'VM6747/Compiler-Si' ;;
+        c90)   echo 'VM6747/Compiler-Ci' ;;
+        cpp11)  echo 'VM6747/Compiler-Cppi' ;;
+        shalimar)   echo 'VM6747/Compiler-Si' ;;
         vm6747) echo 'VM6747/Emulator' ;;
         asm6x)  echo 'ASM6x' ;;
         masm)   echo 'MASM' ;;
@@ -116,7 +116,7 @@ there() {
         c2s)    echo 'Converter-C2S' ;;
     esac
 }
-NAMES="cc1i cxx1i shci vm6747 asm6x masm link lnk6x c2s"
+NAMES="c90 cpp11 shalimar vm6747 asm6x masm link lnk6x c2s"
 
 say "copying to $BOX"
 dirs=""; for name in $NAMES; do dirs="$dirs ~/$(there $name)"; done

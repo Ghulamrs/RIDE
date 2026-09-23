@@ -1,6 +1,6 @@
 # Part VIII — The Shalimar ecosystem and the c2s converter
 
-Shalimar is more than the `shci` compiler inside RIDE. It is a small family of
+Shalimar is more than the `shalimar` compiler inside RIDE. It is a small family of
 projects that share one language, and the C↔Shalimar converter (`c2s`) that
 RIDE ships is the bridge between the C world and the Shalimar one. This part
 maps the family, then documents `c2s` in full — because `c2s.exe` is in your
@@ -14,15 +14,15 @@ separate projects that share the language:
 
 **Inside RIDE (what you install):**
 
-- **`shci`** — the Shalimar compiler (the i-line of Compiler-S), four targets.
+- **`shalimar`** — the Shalimar compiler (the i-line of Compiler-S), four targets.
   This is what F5/F4/Run project use for a `.shl` file.
-- **`shmrt-*`** — the Shalimar runtime, in `bin\lib\` beside `shci`.
+- **`shmrt-*`** — the Shalimar runtime, in `bin\lib\` beside `shalimar`.
 - **`c2s`** — the C89↔Shalimar source converter, driven from the Language menu.
 
 **Beside RIDE (separate projects that share the language):**
 
-- **Compiler-S** — the upstream Shalimar native compiler that `shci` is built
-  from. C++14, three host targets; RIDE's `shci` (since 3.5) adds `tms6747`.
+- **Compiler-S** — the upstream Shalimar native compiler that `shalimar` is built
+  from. C++14, three host targets; RIDE's `shalimar` (since 3.5) adds `tms6747`.
 - **The Shalimar app family** — the iOS apps whose Swift interpreter *runs*
   Shalimar on a phone. These are not compilers and are not part of RIDE; they
   are where the language's own specification lives, and RIDE's Shalimar help
@@ -34,7 +34,7 @@ separate projects that share the language:
     with `c2s` to Shalimar and interpreting the result: `C source → c2s →
     Shalimar → the interpreter already in the app`. iOS only, no code generation
     — `c2s` is the only native code, and it carries its own C front end so it
-    needs neither `cc1` nor `shc`.
+    needs neither `c90` nor `shalimar`.
   - **Shalimar-3** — a further iteration of the app line, reviewed and hardened
     (for example, a character-count output ceiling beside the line ceiling, and
     not leaking the parse tree on a refused compile).
@@ -43,15 +43,15 @@ The relationships that make them look like one project but do not make them one:
 Compiler-S records its expected output *from* the app's interpreter (the
 interpreter is the oracle, the document is the authority); `c2s` *vendors*
 Compiler-S's Shalimar front end so the two agree on what Shalimar accepts; and
-`shci` is Compiler-S one target on. RIDE ships `shci` and `c2s`; everything
+`shalimar` is Compiler-S one target on. RIDE ships `shalimar` and `c2s`; everything
 else in this list is upstream or a sibling.
 
 --------------------------------------------------------------------------------
-## 32. Compiler-S, `shc` and `shci`
+## 32. Compiler-S, `shc` and `shalimar`
 
 **Compiler-S** is the native Shalimar compiler. It compiles `.shm`/`.shl`
 programs to native assembly for `arm64-darwin`, `x86_64-linux` and
-`x86_64-windows`; RIDE's **`shci`** (since 3.5) is the same compiler with `tms6747`
+`x86_64-windows`; RIDE's **`shalimar`** (since 3.5) is the same compiler with `tms6747`
 added. It is C++14, held to the same `-Wall -Wextra -Werror -pedantic`
 discipline as the C and C++ compilers.
 
@@ -59,7 +59,7 @@ discipline as the C and C++ compilers.
 runtime archive (`shmrt-<target>`) that owns `main`, formats numbers, does the
 console I/O, manages arrays and carries the failure paths. The compiler looks
 for that runtime in `lib/` beside its own binary and then in `../lib` — which is
-why the install puts `shmrt-*` in `bin\lib\`. A `shc` that stands without its
+why the install puts `shmrt-*` in `bin\lib\`. A `shalimar` that stands without its
 runtime compiles and writes correct assembly and then fails at the link, which
 is why the editor's `confirm` step checks the runtime is present, not just the
 compiler.
@@ -85,8 +85,8 @@ The Debug menu turns a Shalimar file away by name.
 
 It is a source-to-source translator, not a compiler: it never generates machine
 code. It has its **own C front end** (its own lexer, parser, preprocessor and
-pre-scan — about 1,000 lines, sharing only idiom with `cc1`) and it **vendors
-Shalimar's front end** from Compiler-S, so it agrees exactly with `shci` about
+pre-scan — about 1,000 lines, sharing only idiom with `c90`) and it **vendors
+Shalimar's front end** from Compiler-S, so it agrees exactly with `shalimar` about
 what Shalimar accepts. In the editor, two Language-menu items put `c2s` over the
 open file (C→Shalimar, and back). From a shell, `c2s.exe` takes the file and a
 direction.
@@ -184,7 +184,7 @@ only risks are asked about.
 it decides nothing. But in a file with any `#include`, that same drop is a
 **warning**, because the included header might define the name to something else
 (a real `<math.h>` `M_PI` is the full pi, not `3.14`). `__LINE__` and `__FILE__`
-are expanded (they are what `cc1` supplies); other conditionals stop the run,
+are expanded (they are what `c90` supplies); other conditionals stop the run,
 because they ask which program this is and the file does not say.
 
 **Diagnostics and the line map.** A construct it cannot carry is reported as a
@@ -227,7 +227,7 @@ Language menu drives it in the editor, and by hand:
     c2s --lines program.c      also print the out:in line map on stderr
     c2s --canon program.c      print the parsed C back as C (the lowered form)
 
-Because `c2s` only ever *runs* `cc1`/`shc` for its differential tests and never
+Because `c2s` only ever *runs* `c90`/`shalimar` for its differential tests and never
 builds or edits them, it works even while those compilers are otherwise busy, and
 it is the safe way to move a program between the two languages: it carries what
 it can prove faithful and refuses — by name, with a line — what it cannot.

@@ -5,7 +5,7 @@
   "groups": {
     "Sources": {
       "files": ["counter.c", "hello.c", "projectile.c"],
-      "toolchain": "cc1"
+      "toolchain": "c90"
     },
     "Engine": {
       "files": ["table.cpp", "vector3.cpp", "smart.cpp"],
@@ -16,7 +16,7 @@
     },
     "Shalimar": {
       "files": ["gcd.shl", "primes.shl", "rotmat.shl"],
-      "toolchain": "shc"
+      "toolchain": "shalimar"
     }
   },
   "build": {

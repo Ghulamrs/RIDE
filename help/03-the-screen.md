@@ -11,10 +11,10 @@
 │                      │  6     return 0;                                  │
 │                      │  7 }                                              │
 ├──────────────────────┴─ Console ─ Debug ─ Assembly ───────────── 8 lines ─┤
-│$ cc1 2 sources -o sums                                                    │
+│$ c90 2 sources -o sums                                                    │
 │[built /home/you/work/sums]                                                │
 └───────────────────────────────────────────────────────────────────────────┘
- main.c  7 lines            C  debug  cc1* arm64-darwin  5/7  col 5  [text]
+ main.c  7 lines            C  debug  c90* arm64-darwin  5/7  col 5  [text]
 ```
 
 ## The four regions
@@ -31,13 +31,13 @@ so the item naming the one you are in carries a `•` (a `*` under `--plain`):
 ```
 ┌─────────────────────┐
 │• By language  Ctrl-K │
-│  cc1                 │
-│  shc                 │
+│  c90                 │
+│  shalimar                 │
 └─────────────────────┘
 ```
 
-The status bar carries some of the same news and not all of it. `cc1*` says the
-language chose that compiler and `cc1` says you did — but the language field
+The status bar carries some of the same news and not all of it. `c90*` says the
+language chose that compiler and `c90` says you did — but the language field
 reads `C` for a `.c` file whether that came from its name or from your picking
 `Language ▸ C` by hand, and the menu is the only place that distinguishes them.
 
@@ -86,7 +86,7 @@ status bar's last field says where it is.
 ## The status bar
 
 ```
- main.c  7 lines            C  debug  cc1* arm64-darwin  5/7  col 5  [text]
+ main.c  7 lines            C  debug  c90* arm64-darwin  5/7  col 5  [text]
 ```
 
 | field | means |
@@ -95,7 +95,7 @@ status bar's last field says where it is.
 | `7 lines` | how long it is |
 | `C` | the language, which decides the colouring and the compiler |
 | `debug` | the configuration — `Ctrl-D` toggles it with `release` |
-| `cc1*` | the compiler; the `*` means it was chosen by language, not by you |
+| `c90*` | the compiler; the `*` means it was chosen by language, not by you |
 | `arm64-darwin` | the target — `Ctrl-T` moves to the next one |
 | `5/7` | the line the caret is on, of how many |
 | `col 5` | the column, counted in characters and not in bytes |

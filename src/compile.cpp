@@ -373,7 +373,7 @@ Build build(const Toolchain& tool, ToolchainKind kind, const std::string& source
 
     if (!result.ok && !result.diag.present && looksLikeMissingProgram(result.output)) {
         std::string hint = std::string(programOf(tool, kind)) +
-                           " could not be run - name it with --cc1, --cxx1 or --cl, or put it on PATH";
+                           " could not be run - name it with --c90, --cpp11 or --cl, or put it on PATH";
         result.output += hint + "\n";
         if (sink) sink(context, hint);
     }
@@ -439,7 +439,7 @@ Built buildProgramOnce(const Toolchain& tool, ToolchainKind kind, const std::str
 
     if (!result.ok && !result.diag.present && looksLikeMissingProgram(result.output)) {
         std::string hint = std::string(programOf(tool, kind)) +
-                           " could not be run - name it with --cc1, --cxx1 or --cl, or put it on PATH";
+                           " could not be run - name it with --c90, --cpp11 or --cl, or put it on PATH";
         result.output += hint + "\n";
         if (sink) sink(context, hint);
     }
@@ -671,7 +671,7 @@ Built buildTargetOnce(const Toolchain& tool, ToolchainKind kind,
 
     if (!result.ok && !result.diag.present && looksLikeMissingProgram(result.output)) {
         std::string hint = std::string(programOf(tool, kind)) +
-                           " could not be run - name it with --cc1, --cxx1 or --cl, or put it on PATH";
+                           " could not be run - name it with --c90, --cpp11 or --cl, or put it on PATH";
         result.output += hint + "\n";
         if (sink) sink(context, hint);
     }
@@ -760,7 +760,7 @@ Built buildPartsOnce(const Toolchain& tool, const std::vector<Part>& parts,
             result.diag = parseDiagnostic(result.output, parts[i].sources[0]);
             if (rc < 0 || (!result.diag.present && looksLikeMissingProgram(result.output))) {
                 std::string hint = std::string(programOf(tool, kind)) +
-                                   " could not be run - name it with --cc1, --cxx1 or --cl, or put "
+                                   " could not be run - name it with --c90, --cpp11 or --cl, or put "
                                    "it on PATH";
                 result.output += hint + "\n";
                 if (sink) sink(context, hint);

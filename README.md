@@ -1,7 +1,7 @@
 # RIDE
 
-An editor for three languages of our own: **C** through [cc1](../Compiler-C),
-**C++** through [cxx1](../C++), and **Shalimar** through [shc](../Compiler-S)
+An editor for three languages of our own: **C** through c90,
+**C++** through cpp11, and **Shalimar** through shalimar
 - with the machine's own C and C++ compiler, `cl` on Windows and `c++`
 elsewhere, one key away for the first two. It runs on Windows, which is what
 it is for, and on a Mac and a Linux box, which are where it is written and
@@ -16,7 +16,7 @@ name above is what the pair of them is called.
 > arrived and the old name stopped describing it.
 
 It is not [CC1 Studio](../CC1Studio), which is a different thing for the same
-compiler: that one is an extension that teaches VS Code about cc1, and this one
+compiler: that one is an extension that teaches VS Code about c90, and this one
 is an editor of our own.
 
 ```
@@ -30,7 +30,7 @@ is an editor of our own.
 |   README               |   5 }                                 |
 +------------------------+---------------------------------------+
 | Console  Debug  Assembly                             6 lines   |
-| $ cc1 -S src/broken.c -arch x86_64-windows                     |
+| $ c90 -S src/broken.c -arch x86_64-windows                     |
 | src/broken.c:3:13: error: expected an expression               |
 |         int x = ;                                              |
 |                 ^                                              |
@@ -62,14 +62,14 @@ The rules come from Shalimar's indenter, which had already settled them, with
 four things added that C has and that language did not: escapes inside literals,
 block comments that outlive their line, the preprocessor, and switch labels.
 
-**It builds, and lands on the error.** Ctrl-B saves and runs `cc1 -S`. cc1 stops
+**It builds, and lands on the error.** Ctrl-B saves and runs `c90 -S`. c90 stops
 at the first error - `Source::fail` is `[[noreturn]]` - so this is a fix-one,
 build-again rhythm rather than a list of twelve problems, and the editor is
-built for that rhythm. The caret goes to the line and column cc1 named, and
-cc1's own words, caret line and all, are in the console.
+built for that rhythm. The caret goes to the line and column c90 named, and
+c90's own words, caret line and all, are in the console.
 
 **It runs what it built.** F5, or Run in the Build menu, saves the file and
-hands it to the compiler with neither `-S` nor `-c` - so cc1 compiles, assembles
+hands it to the compiler with neither `-S` nor `-c` - so c90 compiles, assembles
 and links it, and cl does the same without `/c` - and then starts the program
 and puts everything it prints in the console, under everything the compiler
 said. What it returned is shown as a number rather than as success or failure,
@@ -79,7 +79,7 @@ reads does not eat the keyboard.
 
 Only for the target this machine is. Everything else is turned away before
 anything is built, with the target to switch to named - the assembler and linker
-cc1 hands off to are the host's, so a cross build stops at the assembly and
+c90 hands off to are the host's, so a cross build stops at the assembly and
 there is nothing to start. cl is never in that position: it builds for the
 machine it was installed on.
 
@@ -99,7 +99,7 @@ stopped at stepped.c:11 in main
 ```
 
 F6 steps into a call, F7 over one, F8 carries on, and the Debug menu has those
-and step-out. Those variables are cc1's own DWARF, read back by the machine's
+and step-out. Those variables are c90's own DWARF, read back by the machine's
 own debugger.
 
 **And it says how the program got there.** Stepping into a call, the Debug tab
@@ -218,7 +218,7 @@ box, cdb on Windows - all three spoken through `src/debugger.cpp`, which is the
 one place their vocabularies differ.
 
 Which of them applies is a question about the compiler, not about the machine,
-and on Windows the two languages part company. A C file goes to cc1 and comes
+and on Windows the two languages part company. A C file goes to c90 and comes
 out as MASM, which carries no line table, so it can never be stopped on a line
 there and the editor says why. A C++ file goes to cl, which writes CodeView
 into a `.pdb`, and cdb reads it - so C++ is debugged inside this editor with
@@ -244,7 +244,7 @@ the same words in its Debug tab.
 
 There used to be an awkwardness here worth stating plainly, and it is half
 gone. The window only runs on Windows, and Windows is where none of the three
-debuggers can read what cc1 writes - so for C, F8 there still answers "no
+debuggers can read what c90 writes - so for C, F8 there still answers "no
 debugger here" and sets breakpoints against the day there is one. **For
 Shalimar it stops.** A Shalimar program carries its own session, needs nothing
 installed, and works on all three targets including this one, so the window
@@ -252,7 +252,7 @@ stops on a line of source on the machine where that had never been possible.
 
 Which of the two halves a program goes to is `dbg_stopsItself` and is asked
 **before** `dbg_for`, in the core, by both front ends. That order is the whole
-of it: `dbg_for` answers "none" for shc and is right to, and a front end
+of it: `dbg_for` answers "none" for shalimar and is right to, and a front end
 reading that as a refusal refuses the one language that needs nothing to be
 installed. The window read it that way for a day and a half.
 
@@ -280,7 +280,7 @@ project that does not name a target gets this machine's, rather than the
 **It colours what it shows, per language.** Keywords, types, strings, character
 constants, comments, numbers and the preprocessor, chosen from the file's
 suffix: `.c` and `.h` as C, `.cpp` and its family as C++, `.s` and `.asm` as
-assembly - which means the assembly tab is coloured too, with cc1's directives,
+assembly - which means the assembly tab is coloured too, with c90's directives,
 labels and mnemonics told apart. A keyword inside a string stays a string, an
 escaped quote ends nothing, and a block comment opened above the top of the
 screen still colours what is on it. Sixteen-colour codes throughout, because
@@ -331,19 +331,19 @@ which rather than pretending they are the same:
 | | debug | release |
 |---|---|---|
 | `cl` | `/Od /D_DEBUG` | `/O2 /DNDEBUG` |
-| `cc1`, `x86_64-linux` and `arm64-darwin` | `-g -D_DEBUG=1` | `-DNDEBUG=1` |
-| `cc1`, `x86_64-windows` | `-D_DEBUG=1` | `-DNDEBUG=1` |
+| `c90`, `x86_64-linux` and `arm64-darwin` | `-g -D_DEBUG=1` | `-DNDEBUG=1` |
+| `c90`, `x86_64-windows` | `-D_DEBUG=1` | `-DNDEBUG=1` |
 
-cc1 still has no `-O`, so for it release is the define and nothing else. That is
+c90 still has no `-O`, so for it release is the define and nothing else. That is
 not nothing - it is what `assert` and every `#ifdef NDEBUG` in the source are
 looking for - but passing it a `-O` it would refuse would be worse than saying
 so plainly.
 
-Debug is more than the define now. cc1 writes DWARF for two of its three
+Debug is more than the define now. c90 writes DWARF for two of its three
 targets - line tables, types, objects and lexical blocks, read by both `gdb`
 and `lldb` - so a debug build for those asks for `-g` and gets it. The third
-does not: cc1 generates MASM for `x86_64-windows`, MASM carries no line table,
-and the assembler there cannot spell the relocations CodeView would need. cc1
+does not: c90 generates MASM for `x86_64-windows`, MASM carries no line table,
+and the assembler there cannot spell the relocations CodeView would need. c90
 does take `-g` for that target in the GNU spelling, which routes the DWARF out
 of the Linux emitter, but the editor asks each target for the assembly its own
 assembler reads. So that target gets the define alone, and no `-g` it would
@@ -394,23 +394,23 @@ ssh most of all. The frame is written between the two halves of the
 F2 and F3 move between them. Each tab remembers its own caret and its own
 scroll, so coming back to a file puts you where you were rather than at the top.
 
-**The file chooses its own compiler.** C goes to cc1, C++ to cxx1 and
-Shalimar to shc. That is the whole routing rule, and it is the default - the
+**The file chooses its own compiler.** C goes to c90, C++ to cpp11 and
+Shalimar to shalimar. That is the whole routing rule, and it is the default - the
 status bar shows what will actually run, with a `*` when the file is what
-picked it. `Ctrl-K` cycles through automatic, cc1, cxx1, shc, cl and the
+picked it. `Ctrl-K` cycles through automatic, c90, cpp11, shalimar, cl and the
 host's C++ compiler when you want to say so yourself; a choice made by hand is
 kept rather than quietly overridden, and a file the chosen compiler cannot
 take is turned away with a reason instead of a wall of somebody else's parse
 errors.
 
 > C++ went to cl - to the machine's own C++ compiler - until 3.0, there being
-> nothing else that read it. cxx1 is that now, and the host's compiler is
+> nothing else that read it. cpp11 is that now, and the host's compiler is
 > what a group asks for by name, which is where the host's C compiler has
 > always stood.
 
 Each compiler is also *told* which language it is being handed - `/TC` or
 `/TP /EHsc /std:c++14` - rather than left to infer it from the suffix. C++14
-because that is what this arena holds itself to: cc1 is written in it, so the
+because that is what this arena holds itself to: c90 is written in it, so the
 editor is built in it, and C++ compiled here is compiled as it.
 
 **cl is found without a Developer Command Prompt.** RIDE asks Visual Studio
@@ -425,7 +425,7 @@ nothing would be the status bar telling a lie.
 Both diagnostic spellings are read without being told which to expect:
 
 ```
-file:line:col: error: message         cc1, and gcc and clang with it
+file:line:col: error: message         c90, and gcc and clang with it
 file(line,col): error C2059: message  cl, and ml64
 ```
 
@@ -437,9 +437,9 @@ and cl's own listing is MASM, which the assembly tab already colours.
 
 | Language | Suffix | Compiler | Targets | Debug information |
 | --- | --- | --- | --- | --- |
-| C | `.c` `.h` | [cc1](../Compiler-C), or the host's | three | DWARF, on two of them |
-| C++ | `.cpp` `.hpp` … | [cxx1](../C++), or the host's | three | DWARF, on two of them |
-| Shalimar | `.shl` | [shc](../Compiler-S) | three | none, by decision |
+| C | `.c` `.h` | c90, or the host's | three | DWARF, on two of them |
+| C++ | `.cpp` `.hpp` … | cpp11, or the host's | three | DWARF, on two of them |
+| Shalimar | `.shl` | shalimar | three | none, by decision |
 
 The host's compiler - `cl` on Windows, `clang++` on a Mac, `g++` on the Linux
 box - builds for its own machine only and carries CodeView or DWARF always.
@@ -458,7 +458,7 @@ not. An app-written `.shm` opens as plain text; the Language menu reads it as
 Shalimar without renaming it, and renaming it to `.shl` is the permanent
 answer. **Language ▸ Convert writes `.shl` for the same reason** - it wrote
 `.shm` until 2026-08-27, so the file the editor had just made opened as plain
-text in it, with no colouring and `cc1` behind Build.
+text in it, with no colouring and `c90` behind Build.
 
 ### Shalimar is not C with fewer rules
 
@@ -479,7 +479,7 @@ program that shows the difference.
 
 This is the part that is not like C, and the difference belongs to the
 language rather than to the editor. Shalimar has **no include, no import and
-no way to name another file**, and `shc` takes one program at a time. So
+no way to name another file**, and `shalimar` takes one program at a time. So
 several `.shl` in a group are several programs, not the parts of one - which
 is the ordinary shape for it: the app ships twelve examples and each is its
 own program.
@@ -503,7 +503,7 @@ move.
 
 ### No debug information for Shalimar, and a debugger anyway
 
-`shc` writes no debug information for any target, and that is settled rather
+`shalimar` writes no debug information for any target, and that is settled rather
 than pending - see the Known limitations in `../Compiler-S/README.md`. The
 Debug panel says so in words rather than showing an empty pane.
 
@@ -552,14 +552,14 @@ valid project file.
 **A group is a list of files, or an object that also names a compiler.** The
 plain list is not deprecated and is what a group with nothing to say is written
 back as, so adding a file to a project written before any of this leaves the
-file looking the way its author left it. The words are `cc1`, `cl` (or `msvc`),
-`shc`, `c++`, and `auto`. Comments with `//` are allowed, because a file people edit
+file looking the way its author left it. The words are `c90`, `cl` (or `msvc`),
+`shalimar`, `c++`, and `auto`. Comments with `//` are allowed, because a file people edit
 by hand is a file people leave notes in.
 
-Two things are deliberately *not* in it. Where cc1 and cl live is a fact about
+Two things are deliberately *not* in it. Where c90 and cl live is a fact about
 a machine rather than about a project, and a path written into a shared file is
-a path that is wrong on the other machine - those come from `--cc1`, `--cl`,
-`--cxx`, `$CC1`, `$CXX`, the directory the editor itself is installed in, or
+a path that is wrong on the other machine - those come from `--c90`, `--cl`,
+`--cxx`, `$C90`, `$CXX`, the directory the editor itself is installed in, or
 PATH. That is also why `"toolchain": "c++"` means *this machine's C++
 compiler* rather than g++ specifically: which one that is - cl, clang++, g++ -
 is a fact about a machine, and the project file does not get to have an opinion
@@ -607,7 +607,7 @@ out of its program. Say nothing and nothing is built: that is not an error and
 it is what every project written before this says. The program is left beside
 the project file, so it is still there when the editor is not.
 
-Where one compiler makes the whole of it, it does the linking too - `cc1 a.c
+Where one compiler makes the whole of it, it does the linking too - `c90 a.c
 b.c -o prog`, since several inputs link together, and cl the same when it is
 not given `/c`.
 
@@ -615,32 +615,32 @@ not given `/c`.
 
 **A target can hold C and C++ together.** Each group compiles to objects with
 its own compiler and the editor links them, because no compiler here takes an
-object as an input - hand cc1 a `.o` and it reads it as C and complains about a
+object as an input - hand c90 a `.o` and it reads it as C and complains about a
 stray byte on line 1.
 
 ```
-$ cc1, clang++ and cxx1 3 sources -o three
+$ c90, clang++ and cpp11 3 sources -o three
     src/main.c
     src/legacy.c
     engine/engine.cpp
-$ Sources (cc1)
+$ Sources (c90)
 $ Legacy (clang++)
-$ Engine (cxx1)
+$ Engine (cpp11)
 $ linking with clang++
 [built /home/you/three/three]
 ```
 
 **C and C++ have the same decision in them, and Shalimar has none.** C goes
-to cc1 and C++ to cxx1 - the compilers this editor was written for, and the
+to c90 and C++ to cpp11 - the compilers this editor was written for, and the
 defaults - and each can go instead to the machine's own compiler, cl on
 Windows and clang++ or g++ elsewhere, when a group says so. Shalimar goes to
-shc, which is the only thing that reads it. Until 3.0 C was the only language
+shalimar, which is the only thing that reads it. Until 3.0 C was the only language
 with a decision in it, C++ having nothing but the host's compiler to go to;
 what changed is that C++ now has the pair C always had.
 
 So a group naming its compiler is a group of C or C++ saying it wants the
 host's - which is why `Legacy` above is the only group in that project with a
-`"toolchain"` in it, and why `Engine`, which is happy with cxx1, needs none.
+`"toolchain"` in it, and why `Engine`, which is happy with cpp11, needs none.
 
 A group under `auto` holding both languages is **split**, one part per
 language, rather than refused. "A C and C++ project together" is the point, and
@@ -658,13 +658,13 @@ against. `../Compiler-S/docs/LINKING.md` has it with the linker output and with
 what would have to change. A project that wants Shalimar beside C is a project
 that builds two programs.
 
-**Debug information does not mix.** cl writes CodeView, cc1 writes DWARF on two
-targets and nothing on the third, and shc writes none anywhere by decision. So
+**Debug information does not mix.** cl writes CodeView, c90 writes DWARF on two
+targets and nothing on the third, and shalimar writes none anywhere by decision. So
 the debugger is the first one any part has, and the groups it will not be able
 to stop in are named in the console before the build starts rather than
 discovered by pressing F8.
 
-**An error in a file nothing has opened opens it.** cc1 stops at the first one,
+**An error in a file nothing has opened opens it.** c90 stops at the first one,
 and in a build of six files it is usually not the file you were looking at, so
 the editor opens the one it named before putting the caret on the line and
 column.
@@ -692,11 +692,11 @@ entry of its own.
 
 Three tabs:
 
-* **Console** - the command, everything cc1 said, and the error. Enter goes to
+* **Console** - the command, everything c90 said, and the error. Enter goes to
   the line it named.
 * **Debug** - what the build produced, read back out of its own assembly, and a
   line above it saying what debug information this target actually has. This is
-  not a debugger and does not pretend to be: cc1 does write DWARF for two of the
+  not a debugger and does not pretend to be: c90 does write DWARF for two of the
   three targets now, but a debugger needs a program to run and nothing here is
   assembled, linked or run - the build stops at `-S`. What there always is, is
   the assembly: which functions came out and how much stack each takes, what is
@@ -705,7 +705,7 @@ Three tabs:
   the core for those words rather than writing them out, which is how the window
   came to be saying there was no debug information a day after there was.
 
-  It reads both spellings, since cc1 writes GNU on two targets and MASM on the
+  It reads both spellings, since c90 writes GNU on two targets and MASM on the
   third and cl writes MASM always - including a string MASM broke across two
   `DB` lines, and the arm64 frame size that is put in a register before it is
   subtracted. C++ names are decorated in a listing, so on Windows
@@ -723,20 +723,20 @@ RIDE examples/smart.cpp --project examples
 `examples/smart.cpp` is the one to open first. It is a small owning class - one
 object, deleted once, moved rather than copied, copying refused by the compiler
 rather than by the destructor - and something that exercises it and prints what
-it is doing. It is C++ on purpose: cc1 compiles C, so this is the file that
-goes to cxx1. Ctrl-B fills the assembly tab with cxx1's listing, and Ctrl-T
+it is doing. It is C++ on purpose: c90 compiles C, so this is the file that
+goes to cpp11. Ctrl-B fills the assembly tab with cpp11's listing, and Ctrl-T
 changes which of the three architectures it is for; Ctrl-K over to cl, or to
 clang++ or g++ off Windows, gives the same file under the machine's own
 compiler for comparison.
 
-The examples are written in the C++ every one of those reads. cxx1 takes a
+The examples are written in the C++ every one of those reads. cpp11 takes a
 subset of C++11 on purpose, so `smart.cpp` spells its refused copy the older
 way - private, declared, never defined - and `table.h` names its bound with an
 enumerator rather than a `static const int`; both say so where they do it.
 
-`examples/hello.c` is the C one, for cc1, where Ctrl-T does the same.
+`examples/hello.c` is the C one, for c90, where Ctrl-T does the same.
 
-Handing C++ to cc1, or C to cxx1, is caught before it is run: the editor says
+Handing C++ to c90, or C to cpp11, is caught before it is run: the editor says
 so and points at Ctrl-K, rather than letting the wrong compiler fail somewhere
 inside the first class with a diagnostic that explains nothing.
 
@@ -813,7 +813,7 @@ comes with a change to the editor. There is one thing to open on each machine
 that builds all five, with the editor built *after* the four it drives:
 
 ```
-RIDE.xcworkspace                    macOS - RIDE, cc1, cxx1, shc, c2s
+RIDE.xcworkspace                    macOS - RIDE, c90, cpp11, shalimar, c2s
 RIDE.sln                            Visual Studio 2022 - the same, plus the window
 make -f workspace.mk                   Linux - the same, since make is what Linux has
 make -f workspace.mk check             and every suite, all five projects
@@ -837,7 +837,7 @@ before `main`.
 What can be compared is what they compile, and that is the part that drifts.
 `--check` now reads both source lists and holds them against the Makefiles.
 That gap was real rather than theoretical: the window's project sat outside
-every check while the script's own comment claimed it counted cc1's sources
+every check while the script's own comment claimed it counted c90's sources
 "below", which nothing did. Wiring the Shalimar session into the window needed
 two files added to it by hand, and nothing would have said so if they had been
 forgotten - except a link error, on the one machine that builds the window.
@@ -850,7 +850,7 @@ has not been taught - which is how the second of those two drifts happened.
 
 The five repositories are expected side by side. That is the only assumption
 any of this makes, and `workspace.mk` takes `CC1_DIR`, `CXX1_DIR`, `SHC_DIR`
-and `C2S_DIR` for the machine where they are not called that. cxx1's is the
+and `C2S_DIR` for the machine where they are not called that. cpp11's is the
 one whose name differs by machine: `C++` beside this checkout on the Mac,
 `Compiler-Cpp` - the repository's name - on the Windows box, which is what
 `RIDE.sln` says, and `~/cxx1` on the Linux box. Its two project files here,
@@ -907,7 +907,7 @@ file in the middle, Console, Debug and Assembly across the bottom. It is C++/CLI
 and it **consumes the native core directly** - the same indent.cpp, syntax.cpp,
 project.cpp and compile.cpp the terminal editor uses, compiled into the same
 binary as native code. Nothing is duplicated: laying a file out, colouring it,
-reading the project file and choosing between cc1 and cl are all the same code running.
+reading the project file and choosing between c90 and cl are all the same code running.
 
 **File ▸ New** gives a blank buffer with no name, as the terminal's does, and
 `Ctrl+PageDown` / `Ctrl+PageUp` move between the open files rather than the
@@ -960,7 +960,7 @@ without that, Enter on the console would be a key nobody could press.
 
 **The status bar says what the next build will use** — the language, debug or
 release, the compiler that will actually run with a `*` when the file chose it
-rather than the menu, and the target when it means anything. `C  debug  cc1*
+rather than the menu, and the target when it means anything. `C  debug  c90*
 x86_64-windows`. It is the terminal's own line, through the same four core
 functions, so the two cannot drift into different words for the same state; the
 target is left out for cl, which builds for the host it was installed as, since
@@ -1196,7 +1196,7 @@ line the compiler named and that its two configurations produce different
 code. One program for both machines, rather
 than a shell script and a PowerShell script that would drift apart.
 
-Set `CC1` to run the cc1 build cases; the cl ones need nothing, since the
+Set `CC1` to run the c90 build cases; the cl ones need nothing, since the
 editor finds Visual Studio itself.
 
 `build.bat` finds Visual Studio 2022 itself. The search is pinned to `[17.0,18.0)`
@@ -1216,7 +1216,7 @@ on both machines. The key decoding in particular lives in `terminal_common.cpp`
 rather than in each platform file: two copies of that drifting apart is the
 house bug, and this is the one place it was easy to prevent.
 
-**This is C++14, and `src/path.cpp` is what that costs.** cc1 is written in
+**This is C++14, and `src/path.cpp` is what that costs.** c90 is written in
 C++14, so the editor that drives it is too - one standard across the arena,
 enforced by all three toolchains rather than agreed and forgotten. The only
 thing in here that wanted C++17 was `<filesystem>`, and what was actually used
@@ -1232,7 +1232,7 @@ the diagnostic parser are the pieces with a contract, and `tests/test.cpp`
 checks them - 332 cases, including that a Windows path's drive letter is not
 mistaken for a `line:col` separator, that a brace inside a string is not
 counted, and that `class` is a keyword in C++ and nothing in particular in C,
-and that cl's `bad.c(3,13)` is read as well as cc1's `bad.c:3:13`. They run on
+and that cl's `bad.c(3,13)` is read as well as c90's `bad.c:3:13`. They run on
 both machines.
 
 One bug in here could only have been found by running it on Windows: `_popen`
@@ -1245,20 +1245,20 @@ thing for cmd to eat. Until then the compiler was never reached, and cmd said
 ## Usage
 
 ```
-RIDE [file] [--project dir] [--toolchain auto|cc1|cxx1|msvc|shc|c++]
-    [--config debug|release] [--cc1 path] [--cxx1 path] [--cl path]
-    [--shc path] [--cxx path] [--c2s path]
+RIDE [file] [--project dir] [--toolchain auto|c90|cpp11|msvc|shalimar|c++]
+    [--config debug|release] [--c90 path] [--cpp11 path] [--cl path]
+    [--shalimar path] [--cxx path] [--c2s path]
     [--width n] [--tabs] [--case-indent] [--plain]
 ```
 
-`--cc1`, `--cxx1` and `--shc` name the compilers; `$CC1`, `$CXX1` and `$SHC`
+`--c90`, `--cpp11` and `--shalimar` name the compilers; `$C90`, `$CPP11` and `$SHALIMAR`
 do the same. Told none of them, both front ends look for each **beside the
 editor** before asking PATH - `make product` and `build.bat product` put the
-editor and everything it drives in one directory, cxx1's headers included,
+editor and everything it drives in one directory, cpp11's headers included,
 and that directory should work whatever directory you started the editor in.
 A compiler shipped with a copy of the editor is the one that copy is meant to
 run, so it is preferred to whatever PATH would have answered. Indentation is
-four spaces because that is what cc1's own sources use, and they contain no
+four spaces because that is what c90's own sources use, and they contain no
 tab at all.
 
 | key | |
@@ -1280,8 +1280,8 @@ tab at all.
 | `Ctrl-D` | debug or release |
 | `F2` / `F3` | previous / next open file |
 | `Ctrl-L` | line numbers |
-| `Ctrl-K` | cc1 or cl |
-| `Ctrl-T` | next target (cc1 only) |
+| `Ctrl-K` | c90 or cl |
+| `Ctrl-T` | next target (c90 only) |
 | `Ctrl-W` | next pane |
 | `Ctrl-P` / `Ctrl-E` | project pane / bottom panel |
 | `Ctrl-S` / `Ctrl-Q` | save / leave - twice when any open file has changes |

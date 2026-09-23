@@ -125,7 +125,7 @@ which targets can be stepped and says so for the ones that cannot.
 compiler (`cl`), `cl` writes CodeView into a `.pdb` and `cdb` reads it, so C++
 built with `cl` steps on the box (cdb is installed there under the Windows Kits,
 found by the debugger even though it is not on `PATH`). What cannot be stepped is
-**C built by `cc1i` for `x86_64-windows`**, because that is the MASM-no-line-table
+**C built by `c90` for `x86_64-windows`**, because that is the MASM-no-line-table
 path above. The editor's status and Debug menu say which case you are in rather
 than failing quietly.
 
@@ -133,9 +133,9 @@ than failing quietly.
 
 | Built by | Target          | Debug info | Steppable on the box |
 |----------|-----------------|------------|----------------------|
-| `cc1i`   | x86_64-windows (MASM) | none  | no (MASM, no line table) |
-| `cc1i`   | x86_64-windows (`-masm=gnu`) | DWARF | with a DWARF debugger |
-| `cxx1i`  | x86_64-windows (MASM) | none  | no                   |
+| `c90`   | x86_64-windows (MASM) | none  | no (MASM, no line table) |
+| `c90`   | x86_64-windows (`-masm=gnu`) | DWARF | with a DWARF debugger |
+| `cpp11`  | x86_64-windows (MASM) | none  | no                   |
 | `cl`     | x86_64-windows  | CodeView   | yes (cdb)            |
-| `cc1i`/`cxx1i` | x86_64-linux / arm64-darwin | DWARF | yes (gdb/lldb) |
+| `c90`/`cpp11` | x86_64-linux / arm64-darwin | DWARF | yes (gdb/lldb) |
 | any      | tms6747         | none       | no (runs on the emulator; not a debugger) |

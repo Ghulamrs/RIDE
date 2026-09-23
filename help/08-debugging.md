@@ -39,11 +39,11 @@ line comes back to the stop.
 
 | | |
 | --- | --- |
-| cc1 or cxx1 on `arm64-darwin`, `x86_64-linux` | lldb or gdb, reading the compiler's own DWARF |
-| cc1 or cxx1 on `x86_64-windows` | **no** — MASM carries no line table |
+| c90 or cpp11 on `arm64-darwin`, `x86_64-linux` | lldb or gdb, reading the compiler's own DWARF |
+| c90 or cpp11 on `x86_64-windows` | **no** — MASM carries no line table |
 | `cl` | cdb, reading CodeView from the `.pdb` |
 | `clang++`, `g++` | lldb or gdb |
-| `shc` | the program stops **itself** — no debugger at all |
+| `shalimar` | the program stops **itself** — no debugger at all |
 
 **Debug information does not mix.** A program linked from two compilers has a
 debugger that can see part of it. The editor starts the first debugger any part
@@ -51,7 +51,7 @@ has and names the groups it will not be able to stop in, in the console, before
 the build starts — rather than letting you find out by pressing `F8`.
 
 **Release cannot be debugged**, and the message says the true reason for the
-compiler you are using: `-g` for cc1, and for shc that release links a runtime
+compiler you are using: `-g` for c90, and for shalimar that release links a runtime
 with no debugger in it.
 
 ## Shalimar is different, and it is not a lesser version
@@ -63,7 +63,7 @@ the program. There is no debug format, nothing to install, and no gdb, lldb or
 cdb involved.
 
 What that buys: statement granularity rather than an approximation, and the
-same behaviour on all three targets — including `x86_64-windows`, where cc1's
+same behaviour on all three targets — including `x86_64-windows`, where c90's
 own debugging stops.
 
 What it cannot do is **read a variable**. The compiler emits no table of a
@@ -75,9 +75,9 @@ tab does not offer keys for them.
 ## A step that appears to do nothing
 
 On a Mac, stepping used to need three presses of `F7` where Linux needed one.
-The reason is underneath both: cc1's `arm64-darwin` objects carry no
+The reason is underneath both: c90's `arm64-darwin` objects carry no
 `__eh_frame` and no `__compact_unwind`, so lldb works the frame out by reading
-instructions — and cc1 uses the stack pointer as a scratch stack inside the
+instructions — and c90 uses the stack pointer as a scratch stack inside the
 body, so the frame it computes moves mid-function and lldb ends the step early.
 
 The editor now repeats a step until it has actually been somewhere. The test is

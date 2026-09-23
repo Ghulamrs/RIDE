@@ -64,9 +64,9 @@ shc.exe
 c2s.exe
 # The VM6747 line, since 3.5: the same three compilers under their i-names,
 # and the emulator built with them.
-cc1i.exe
-cxx1i.exe
-shci.exe
+c90.exe
+cpp11.exe
+shalimar.exe
 vm6747.exe
 # And the 4.0 tools the Xcode projects copy here the same way.
 asm6x.exe

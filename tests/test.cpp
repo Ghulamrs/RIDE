@@ -409,12 +409,12 @@ void routing() {
     check(!editor::runsHere(editor::ToolCxx1, "nowhere-else"),
           "so what it builds for another target stops at the assembly here too");
     checkEqual(editor::refusal(editor::ToolCxx1, editor::LangC),
-               "cxx1 compiles C++, not C - Ctrl-K for automatic, and it picks cc1",
+               "cpp11 compiles C++, not C - Ctrl-K for automatic, and it picks c90",
                "and a C file handed to it is told where to go");
     checkEqual(editor::refusal(editor::ToolCc1, editor::LangCpp),
-               "cc1 compiles C, not C++ - Ctrl-K for automatic, and it picks cxx1",
+               "c90 compiles C, not C++ - Ctrl-K for automatic, and it picks cpp11",
                "as a C++ file handed to cc1 is");
-    checkEqual(editor::toolchainShown(automatic, editor::ToolCxx1), "cxx1",
+    checkEqual(editor::toolchainShown(automatic, editor::ToolCxx1), "cpp11",
                "and it is cxx1 in the console whatever path it was found at");
 #ifdef _WIN32
     check(editor::hostCppToolchain() == editor::ToolMsvc,
@@ -444,7 +444,7 @@ void routing() {
 #endif
     checkEqual(editor::toolchainShown(thisMachine, editor::ToolCxx), thisMachine.cxx,
                "and that is the name a build writes in the console");
-    checkEqual(editor::toolchainShown(thisMachine, editor::ToolCc1), "cc1",
+    checkEqual(editor::toolchainShown(thisMachine, editor::ToolCc1), "c90",
                "while cc1 is cc1 whatever path it was found at");
 #endif
     check(editor::resolve(automatic, editor::LangPlain) == editor::ToolCc1,
@@ -1212,20 +1212,20 @@ void projects() {
         check(editor::settings::rememberIncludes(shared) && editor::settings::includes().size() == 2 &&
               editor::settings::includes()[0] == editor::path::absolute((app / "common" / "include").string()),
               "installation-wide include paths, relative to the file");
-        std::string shownShared = ride_shown_command(0, "cc1i", "cl", "shci", "cxx1i", editor::ToolCc1,
+        std::string shownShared = ride_shown_command(0, "c90", "cl", "shalimar", "cpp11", editor::ToolCc1,
                                                         "a.c", editor::LangC, kDarwin.c_str(), editor::ConfigDebug);
         check(shownShared.find("common") != std::string::npos, "reach every compile");
         editor::settings::rememberIncludes(std::vector<std::string>());
-        check(editor::settings::rememberDefaultCompiler("cxx1") && editor::settings::defaultCompiler() == "cxx1",
+        check(editor::settings::rememberDefaultCompiler("cpp11") && editor::settings::defaultCompiler() == "cpp11",
               "and a choice from the menu is written");
         check(ride_default_compiler() == editor::ToolCxx1, "which the window reads back as its kind");
 
-        std::string shownC = ride_shown_command(0, "cc1i", "cl", "shci", "cxx1i", editor::ToolCc1,
+        std::string shownC = ride_shown_command(0, "c90", "cl", "shalimar", "cpp11", editor::ToolCc1,
                                                    "a.c", editor::LangC, kDarwin.c_str(), editor::ConfigDebug);
         check(shownC.find("-I\"" + editor::settings::libDir() + "\"") != std::string::npos,
               "the window's cc1 command carries lib/");
         check(shownC.find("include") == std::string::npos, "and not include/");
-        std::string shownCpp = ride_shown_command(0, "cc1i", "cl", "shci", "cxx1i", editor::ToolCxx1,
+        std::string shownCpp = ride_shown_command(0, "c90", "cl", "shalimar", "cpp11", editor::ToolCxx1,
                                                      "a.cpp", editor::LangCpp, kDarwin.c_str(), editor::ConfigDebug);
         check(shownCpp.find("-I\"" + editor::settings::includeDir() + "\"") != std::string::npos,
               "its cxx1 command carries include/");
@@ -1259,11 +1259,11 @@ void projects() {
                    editor::path::absolute((app / "bin" / "masm.exe").string()),
                    "and is found beside the editor, made absolute against it");
         // With the assembler named, every recipe that assembles x86_64-windows
-        // C++ has to tell cxx1i to write MASM's spelling - F5's Run file was
+        // C++ has to tell cpp11 to write MASM's spelling - F5's Run file was
         // the one that did not, and masm.exe got clang's command line.
         {
             editor::Toolchain tool;
-            tool.cxx1 = "cxx1i.exe";
+            tool.cxx1 = "cpp11.exe";
             std::vector<std::string> srcs(1, "a.cpp"), objs;
             std::vector<std::string> lines;
             lines.push_back(editor::programRecipe(tool, editor::ToolCxx1, "a.cpp", editor::LangCpp,
@@ -1277,19 +1277,19 @@ void projects() {
             bool all = true;
             for (size_t i = 0; i < lines.size(); ++i)
                 if (lines[i].find(" -masm=masm") == std::string::npos) all = false;
-            check(all, "Run file, its shown line, F4 and a part's objects all pass -masm=masm to cxx1i");
+            check(all, "Run file, its shown line, F4 and a part's objects all pass -masm=masm to cpp11");
             std::string c = editor::programRecipe(tool, editor::ToolCc1, "a.c", editor::LangC,
                                                   "x86_64-windows", editor::ConfigDebug).command;
-            check(c.find("-masm") == std::string::npos, "cc1i, which reads CC1_AS alone, gets no flag");
+            check(c.find("-masm") == std::string::npos, "c90, which reads C90_AS alone, gets no flag");
         }
         check(editor::settings::rememberAssembler("bin/no-such.exe") && editor::settings::assembler().empty(),
               "a relative one that is not there counts for nothing either");
         {
             editor::Toolchain tool;
-            tool.cxx1 = "cxx1i.exe";
+            tool.cxx1 = "cpp11.exe";
             check(editor::programRecipe(tool, editor::ToolCxx1, "a.cpp", editor::LangCpp,
                                         "x86_64-windows", editor::ConfigDebug).command.find("-masm") == std::string::npos,
-                  "and with no assembler named, Run file leaves cxx1i's spelling alone");
+                  "and with no assembler named, Run file leaves cpp11's spelling alone");
         }
         check(editor::settings::rememberAssembler(std::string()) && editor::settings::assembler().empty(),
               "and `-` puts ml64 back");
@@ -1422,8 +1422,8 @@ void projects() {
             check(askedQuestion.empty() && unasked.output.find("nothing here can ask") != std::string::npos,
                   "with no front end to ask - --build, --run - the line says what would have been asked");
 #ifdef _WIN32
-            // And for real, where cc1i and ml64 are: a masm.exe that is not an
-            // assembler fails cc1i, the yes goes to ml64, and the program is made.
+            // And for real, where c90 and ml64 are: a masm.exe that is not an
+            // assembler fails c90, the yes goes to ml64, and the program is made.
             const char* cc1Here = std::getenv("CC1");
             if (cc1Here && *cc1Here && editor::path::exists(cc1Here) && editor::nativeToolsAvailable("x86_64-windows")) {
                 editor::setAskNative(rememberTheQuestion, 0);
@@ -1434,7 +1434,7 @@ void projects() {
                 real.cc1 = cc1Here;
                 editor::Built forReal = editor::buildTarget(real, editor::ToolCc1, srcs, editor::LangC, "x86_64-windows",
                                                          editor::ConfigRelease, any);
-                check(askedQuestion.find("own masm") != std::string::npos, "for real: a masm.exe that is no assembler fails cc1i and asks");
+                check(askedQuestion.find("own masm") != std::string::npos, "for real: a masm.exe that is no assembler fails c90 and asks");
                 check(forReal.ok, "and the yes builds the program through ml64");
                 if (forReal.ok) editor::path::remove(forReal.program);
                 editor::setAskNative(0, 0);

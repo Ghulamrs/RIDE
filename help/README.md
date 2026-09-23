@@ -30,9 +30,9 @@ not of the others:
 
 | | |
 | --- | --- |
-| [C](c.md) | cc1, three targets, DWARF on two of them |
-| [C++](cpp.md) | cxx1, three targets, and the host's compiler by name |
-| [Shalimar](shalimar.md) | shc, the library a file borrows, the indent dialect, and a program that stops itself |
+| [C](c.md) | c90, three targets, DWARF on two of them |
+| [C++](cpp.md) | cpp11, three targets, and the host's compiler by name |
+| [Shalimar](shalimar.md) | shalimar, the library a file borrows, the indent dialect, and a program that stops itself |
 | [C and Shalimar](mixing-c-and-shalimar.md) | calling a C library from a Shalimar program |
 
 And the language itself, in full:

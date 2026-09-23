@@ -1,6 +1,6 @@
 # Calling C from Shalimar
 
-A Shalimar program can call a function written in C, compiled by `cc1` (or
+A Shalimar program can call a function written in C, compiled by `c90` (or
 `cl`, or the host's compiler) and handed to the link as a library. Arrays cross
 the boundary too.
 
@@ -42,13 +42,13 @@ Shalimar has no library of its own — even `sin` is borrowed — and a file mus
 say what it borrows before it may call it.
 
 ```
-uses sin, cos                              // from the table shc carries
+uses sin, cos                              // from the table shalimar carries
 uses <real> = stats_mean(a[]: real)        // from a library the link is given
 ```
 
 The first names functions from the **C standard library**, whose signatures
-`shc` already knows. The second **declares** one it has never seen: the
-declaration is the whole contract, and `shc` will never learn anything more
+`shalimar` already knows. The second **declares** one it has never seen: the
+declaration is the whole contract, and `shalimar` will never learn anything more
 about that function.
 
 Both forms are per file, in global space, and a borrowed name is an ordinary
@@ -85,16 +85,16 @@ double    v   = shm_get_real(row, c);
 
 ## Building it
 
-**A compiler does not make a library.** `cc1`, `cl` and `gcc` make *objects*;
+**A compiler does not make a library.** `c90`, `cl` and `gcc` make *objects*;
 `ar` — or `lib.exe` on Windows — makes a library from objects.
 
 ```
-cc1 -c -I <Compiler-S/runtime> stats.c -o stats.o
+c90 -c -I <Compiler-S/runtime> stats.c -o stats.o
 ar rcs libstats.a stats.o
 ```
 
 ```
-shc prog.shm --with=libstats.a -o prog
+shalimar prog.shm --with=libstats.a -o prog
 ```
 
 `--with=` is repeatable and the libraries are given to the linker in the order
@@ -107,10 +107,10 @@ that declares a foreign function therefore has to be built from a terminal, or
 from a project whose target names the library. The editor's Shalimar builds are
 single files and single commands, and this is the one thing they cannot express.
 
-`shc` says so plainly rather than leaving it to the linker:
+`shalimar` says so plainly rather than leaving it to the linker:
 
 ```
-shc: 'stats_total' is declared with 'uses' and comes from a library, but no
+shalimar: 'stats_total' is declared with 'uses' and comes from a library, but no
      library was named. Add --with=<path> - see docs/FOREIGN.md.
 ```
 
@@ -131,7 +131,7 @@ The app interprets a source file and has no link step, so there is nowhere for
 a library to go. It refuses the program by name:
 
 ```
-Error: line 13: 'stats_total' comes from a library - shc can build this
+Error: line 13: 'stats_total' comes from a library - shalimar can build this
                 program, the app cannot link one
 ```
 

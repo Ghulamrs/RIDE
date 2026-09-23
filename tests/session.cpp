@@ -1054,7 +1054,7 @@ void compiling(const std::string& ride, const std::string& cc1) {
     writeFile(good, "int twice(int n)\n{\n    return n + n;\n}\n");
 
     std::string arguments = "\"" + good.string() + "\" --project \"" + dir.string() +
-                            "\" --cc1 \"" + cc1 + "\"";
+                            "\" --c90 \"" + cc1 + "\"";
     Screen ok = drive(ride, arguments, ctrl('b') + ctrl('q'), dir);
     check(onScreen(ok, "lines of"), "a build that works reports what it produced");
     check(onScreen(ok, "Assembly"), "and the assembly tab is there");
@@ -1062,7 +1062,7 @@ void compiling(const std::string& ride, const std::string& cc1) {
     file::path bad = dir / "src" / "bad.c";
     writeFile(bad, "int main(void)\n{\n    int x = ;\n    return 0;\n}\n");
     arguments = "\"" + bad.string() + "\" --project \"" + dir.string() +
-                "\" --cc1 \"" + cc1 + "\"";
+                "\" --c90 \"" + cc1 + "\"";
     Screen broken = drive(ride, arguments, ctrl('b') + ctrl('q'), dir);
     check(onScreen(broken, "error"), "a build that fails says so");
     check(onScreen(broken, "3/5"), "and the caret lands on the line cc1 named");
@@ -1072,9 +1072,9 @@ void compiling(const std::string& ride, const std::string& cc1) {
     file::path cpp = dir / "src" / "thing.cpp";
     writeFile(cpp, "class Thing { public: int n; };\n");
     Screen refused = drive(ride, "\"" + cpp.string() + "\" --project \"" + dir.string() +
-                                "\" --toolchain cc1 --cc1 \"" + cc1 + "\"",
+                                "\" --toolchain c90 --c90 \"" + cc1 + "\"",
                            ctrl('b') + ctrl('q'), dir);
-    check(onScreen(refused, "cc1 compiles C, not C++"), "cc1 is not handed C++");
+    check(onScreen(refused, "c90 compiles C, not C++"), "cc1 is not handed C++");
 
     file::remove_all(dir);
 }
@@ -1095,16 +1095,16 @@ void compilingCpp(const std::string& ride, const std::string& cxx1) {
                     "int main() { Thing t; return t.twice(2) - 4; }\n");
 
     std::string arguments = "\"" + good.string() + "\" --project \"" + dir.string() +
-                            "\" --cxx1 \"" + cxx1 + "\"";
+                            "\" --cpp11 \"" + cxx1 + "\"";
     Screen ok = drive(ride, arguments, ctrl('b') + ctrl('q'), dir);
     check(onScreen(ok, "lines of"), "C++ goes to cxx1 on its own, and it builds");
-    check(onScreen(ok, "cxx1*"), "with a star, because the file chose it");
+    check(onScreen(ok, "cpp11*"), "with a star, because the file chose it");
     check(wasShown(ok, "ISO C++"), "and cxx1's banner is in the console, as it printed it");
 
     file::path bad = dir / "src" / "bad.cpp";
     writeFile(bad, "int main()\n{\n    int x = ;\n    return 0;\n}\n");
     arguments = "\"" + bad.string() + "\" --project \"" + dir.string() +
-                "\" --cxx1 \"" + cxx1 + "\"";
+                "\" --cpp11 \"" + cxx1 + "\"";
     Screen broken = drive(ride, arguments, ctrl('b') + ctrl('q'), dir);
     check(onScreen(broken, "error"), "a build that fails says so");
     check(onScreen(broken, "3/5"), "and the caret lands on the line cxx1 named");
@@ -1115,16 +1115,16 @@ void compilingCpp(const std::string& ride, const std::string& cxx1) {
     file::path c = dir / "src" / "plain.c";
     writeFile(c, "int main(void) { return 0; }\n");
     Screen refused = drive(ride, "\"" + c.string() + "\" --project \"" + dir.string() +
-                                "\" --toolchain cxx1 --cxx1 \"" + cxx1 + "\"",
+                                "\" --toolchain cpp11 --cpp11 \"" + cxx1 + "\"",
                            ctrl('b') + ctrl('q'), dir);
-    check(onScreen(refused, "cxx1 compiles C++, not C"), "cxx1 is not handed C");
+    check(onScreen(refused, "cpp11 compiles C++, not C"), "cxx1 is not handed C");
 
     // And F5: built, run, and what it printed and returned under the source.
     file::path prints = dir / "src" / "three.cpp";
     writeFile(prints, "#include <cstdio>\nint main()\n{\n    std::printf(\"counted to three\\n\");\n"
                       "    return 3;\n}\n");
     Screen ran = drive(ride, "\"" + prints.string() + "\" --project \"" + dir.string() +
-                                "\" --cxx1 \"" + cxx1 + "\"",
+                                "\" --cpp11 \"" + cxx1 + "\"",
                        kF5 + ctrl('q'), dir);
     check(rowsSaying(ran, "counted to three") == 2, "what the program printed reaches the console");
     check(wasShown(ran, "[program returned 3]"), "and what it returned is said as a number");
@@ -1133,7 +1133,7 @@ void compilingCpp(const std::string& ride, const std::string& cxx1) {
 }
 
 // **The fourth target, tms6747, runs on the VM6747 emulator** - vm6747, found
-// beside the editor like the compilers. F5 on a file builds it with cc1i -S
+// beside the editor like the compilers. F5 on a file builds it with c90 -S
 // and runs the assembly; F4 on a project writes one .s per source into
 // <target>.vm and Run project hands the directory to vm6747; and Debug is
 // turned away with the reason, since the emulator is not a debugger. The
@@ -1155,11 +1155,11 @@ void emulatedTarget(const std::string& ride, const std::string& cc1,
     writeFile(file, "#include <stdio.h>\nint main(void)\n{\n    printf(\"counted to three\\n\");\n"
                     "    return 3;\n}\n");
     std::string withCc1 = "\"" + file.string() + "\" --project \"" + dir.string() +
-                          "\" --cc1 \"" + cc1 + "\"";
+                          "\" --c90 \"" + cc1 + "\"";
 
     Screen ran = drive(ride, withCc1, kF5 + ctrl('q'), dir);
     check(rowsSaying(ran, "counted to three") == 2,
-          "F5 on the C6000 target builds with cc1i and runs on vm6747, and the output reaches the console");
+          "F5 on the C6000 target builds with c90 and runs on vm6747, and the output reaches the console");
     check(wasShown(ran, "[program returned 3]"), "and what it returned is said as a number");
     check(message(ran).find("tms6747") != std::string::npos || onScreen(ran, "tms6747"),
           "and the target is named");
@@ -1175,7 +1175,7 @@ void emulatedTarget(const std::string& ride, const std::string& cc1,
                        "int main()\n{\n    try { risky(3); } catch (const E &e) { std::printf(\"caught %d\\n\", e.code); }\n"
                        "    return 5;\n}\n");
         Screen threw = drive(ride, "\"" + cpp.string() + "\" --project \"" + dir.string() +
-                                      "\" --cxx1 \"" + cxx1 + "\"",
+                                      "\" --cpp11 \"" + cxx1 + "\"",
                              kF5 + ctrl('q'), dir);
         check(wasShown(threw, "caught 3"), "C++ with an exception runs on the emulator too");
         check(wasShown(threw, "[program returned 5]"), "and returns what it returned");
@@ -1193,7 +1193,7 @@ void emulatedTarget(const std::string& ride, const std::string& cc1,
               "    \"Sources\": [\"src/sum.c\", \"src/main.c\"],\n"
               "    \"Headers\": [\"src/sum.h\"]\n  },\n"
               "  \"build\": { \"target\": \"sums\", \"groups\": [\"Sources\"] }\n}\n");
-    std::string arguments = "--project \"" + dir.string() + "\" --cc1 \"" + cc1 + "\"";
+    std::string arguments = "--project \"" + dir.string() + "\" --c90 \"" + cc1 + "\"";
     Screen built = drive(ride, arguments, kF4 + ctrl('q'), dir);
     check(onScreen(built, "2 sources"), "F4 builds the project's two sources for the C6000");
     check(editor::path::isDirectory((dir / "sums.vm").string()), "into a directory of assembly beside the project");
@@ -1221,8 +1221,8 @@ void emulatedTarget(const std::string& ride, const std::string& cc1,
     file::remove_all(dir);
 }
 
-// **Shalimar on the fourth target**: shci has it since 2026-09-14, and a
-// program runs on vm6747 beside the runtime cxx1i compiled - lib/shmrt-tms6747
+// **Shalimar on the fourth target**: shalimar has it since 2026-09-14, and a
+// program runs on vm6747 beside the runtime cpp11 compiled - lib/shmrt-tms6747
 // beside the editor, which the launch adds and the compilers know nothing of.
 void emulatedShalimar(const std::string& ride, const std::string& shc) {
     std::printf("Shalimar on the tms6747 target, run on the VM6747 emulator\n");
@@ -1245,10 +1245,10 @@ void emulatedShalimar(const std::string& ride, const std::string& shc) {
     writeFile(file, "fun <> = main() {\n  a : 48\n  b : 18\n  while b != 0 {\n    r : a % b\n"
                     "    a : b\n    b : r\n  }\n  ? \"gcd is\" a\n}\n");
     std::string arguments = "\"" + file.string() + "\" --project \"" + dir.string() +
-                            "\" --shc \"" + shc + "\"";
+                            "\" --shalimar \"" + shc + "\"";
     Screen ran = drive(ride, arguments, kF5 + ctrl('q'), dir);
     check(wasShown(ran, "gcd is 6"),
-          "F5 on a Shalimar file for the C6000 builds with shci --target=tms6747 and runs on vm6747 with the runtime");
+          "F5 on a Shalimar file for the C6000 builds with shalimar --target=tms6747 and runs on vm6747 with the runtime");
     check(wasShown(ran, "[program returned 0]"), "and what it returned is said as a number");
 
     // A Shalimar project of two files, one of them a library with no main():
@@ -1260,7 +1260,7 @@ void emulatedShalimar(const std::string& ride, const std::string& shc) {
               "{\n  \"name\": \"pair\",\n  \"indent\": 4,\n  \"arch\": \"tms6747\",\n"
               "  \"groups\": { \"Sources\": [\"src/prog.shl\", \"src/twice.shl\"] },\n"
               "  \"build\": { \"target\": \"prog\", \"groups\": [\"Sources\"] }\n}\n");
-    std::string project = "--project \"" + dir.string() + "\" --shc \"" + shc + "\"";
+    std::string project = "--project \"" + dir.string() + "\" --shalimar \"" + shc + "\"";
     Screen built = drive(ride, project, kF4 + ctrl('q'), dir);
     check(editor::path::exists((dir / "prog.vm" / "prog.s").string()),
           "F4 on a two-file Shalimar project for the C6000 compiles them as one .s");
@@ -1298,7 +1298,7 @@ void buildingTheProject(const std::string& ride, const std::string& cc1,
               "    \"Headers\": [\"src/sum.h\"]\n  },\n"
               "  \"build\": { \"target\": \"sums\", \"groups\": [\"Sources\"] }\n}\n");
 
-    std::string arguments = "--project \"" + dir.string() + "\" --cc1 \"" + cc1 + "\"";
+    std::string arguments = "--project \"" + dir.string() + "\" --c90 \"" + cc1 + "\"";
 
     Screen built = drive(ride, arguments, kF4 + ctrl('q'), dir);
     check(onScreen(built, "2 sources"), "F4 builds the project's sources, not the open file");
@@ -1375,7 +1375,7 @@ void buildingTheProject(const std::string& ride, const std::string& cc1,
     if (cxx1.empty()) {
         std::printf("  (no cxx1 named, so the mixed target is not built)\n");
     } else {
-    std::string mixedArguments = arguments + " --cxx1 \"" + cxx1 + "\"";
+    std::string mixedArguments = arguments + " --cpp11 \"" + cxx1 + "\"";
     writeFile(dir / "src" / "main.c",
               "#include <stdio.h>\n\n#include \"sum.h\"\n\n"
               "int twice(int n);\n\n"
@@ -1393,7 +1393,7 @@ void buildingTheProject(const std::string& ride, const std::string& cc1,
     // that runs two compilers and a linker writes more than that, so the first
     // compiler's line has scrolled off by the time it is over. What is being
     // checked is that the editor said it, not that it is still visible.
-    check(wasShown(mixed, "Sources (cc1)"), "a group of two languages sends the C to cc1");
+    check(wasShown(mixed, "Sources (c90)"), "a group of two languages sends the C to cc1");
     // cxx1 on every machine, and the point is that nothing in the project
     // file said so. Until 3.0 this was cl where there is one and c++ where
     // there is not - the host's compiler, which is now the one a group has
@@ -1401,7 +1401,7 @@ void buildingTheProject(const std::string& ride, const std::string& cc1,
     // resolve(): this harness links src/path.cpp and nothing else on purpose
     // - it drives the editor as a program, and a test that shares the
     // editor's opinion cannot catch the editor being wrong.
-    check(wasShown(mixed, "Sources (cxx1)"),
+    check(wasShown(mixed, "Sources (cpp11)"),
           "and the C++ to cxx1, without being told to");
     check(!wasShown(mixed, "cannot make one program"),
           "and is not refused for holding both any more");
@@ -1428,7 +1428,7 @@ void buildingTheProject(const std::string& ride, const std::string& cc1,
     // nothing to build - the file in front of you is still Ctrl-B's business.
     file::path plain = freshProject("noTarget");
     writeFile(plain / "src" / "one.c", "int main(void) { return 0; }\n");
-    Screen quiet = drive(ride, "--project \"" + plain.string() + "\" --cc1 \"" + cc1 + "\"",
+    Screen quiet = drive(ride, "--project \"" + plain.string() + "\" --c90 \"" + cc1 + "\"",
                          kF4 + ctrl('q'), plain);
     check(onScreen(quiet, "hold no source"),
           "a project with no build entry builds its Sources, and says when that is empty");
@@ -1501,7 +1501,7 @@ void configurations(const std::string& ride, const std::string& cc1) {
         return;
     }
 
-    std::string withCc1 = common + " --cc1 \"" + cc1 + "\"";
+    std::string withCc1 = common + " --c90 \"" + cc1 + "\"";
     Screen debug = drive(ride, withCc1 + " --config debug", ctrl('b') + ctrl('q'), dir);
     Screen release = drive(ride, withCc1 + " --config release", ctrl('b') + ctrl('q'), dir);
 
@@ -1645,7 +1645,7 @@ void runningTheProgram(const std::string& ride, const std::string& cc1) {
         return;
     }
 
-    std::string withCc1 = common + " --cc1 \"" + cc1 + "\"";
+    std::string withCc1 = common + " --c90 \"" + cc1 + "\"";
 
     // Twice: once in the source being edited, once in the console under it. Once
     // would be the source alone, which is on the screen whether anything ran or
@@ -1741,7 +1741,7 @@ void stoppingAndStepping(const std::string& ride, const std::string& cc1) {
     Screen refused = drive(ride, common, toLoopBody + kF9 + kF8 + ctrl('q'), dir);
     check(wasShown(refused, "carries no line table"),
           "and debugging says why it cannot start");
-    check(wasShown(refused, "cc1"), "naming the compiler it is talking about");
+    check(wasShown(refused, "c90"), "naming the compiler it is talking about");
     file::remove_all(dir);
     return;
 #else
@@ -1751,7 +1751,7 @@ void stoppingAndStepping(const std::string& ride, const std::string& cc1) {
         return;
     }
 
-    std::string withCc1 = common + " --cc1 \"" + cc1 + "\"";
+    std::string withCc1 = common + " --c90 \"" + cc1 + "\"";
 
     Screen stopped = drive(ride, withCc1, toLoopBody + kF9 + kF8 + ctrl('q'), dir);
     check(onScreen(stopped, "stopped at stepped.c:11"), "F8 runs it and it stops on the line");
@@ -1949,7 +1949,7 @@ void aDirectoryWithNoProject(const std::string& ride) {
     Screen about = drive(ride, "--project \"" + dir.string() + "\"",
                          kF10 + times(kRight, 9) + times(kDown, 2) + kEnter + ctrl('q'), dir);
     check(onScreen(about, "RIDE 4.0"), "About names the product and version");
-    check(onScreen(about, "cxx1"), "and the fourth compiler is on its list");
+    check(onScreen(about, "cpp11"), "and the fourth compiler is on its list");
     check(onScreen(about, "G. R. Akhtar"), "and who it belongs to");
     check(onScreen(about, "Islamabad"), "and where they are, which the last line must not lose");
 
@@ -2148,7 +2148,7 @@ void compilingShalimar(const std::string& ride, const std::string& shc) {
               "}\n");
 
     std::string arguments = "\"" + good.string() + "\" --project \"" + dir.string() +
-                            "\" --shc \"" + shc + "\"";
+                            "\" --shalimar \"" + shc + "\"";
 
     Screen opened = drive(ride, arguments, ctrl('q'), dir);
     check(onScreen(opened, "Shalimar"), "the status bar names the language");
@@ -2169,7 +2169,7 @@ void compilingShalimar(const std::string& ride, const std::string& shc) {
               "  ? x\n"
               "}\n");
     std::string broken = "\"" + bad.string() + "\" --project \"" + dir.string() +
-                         "\" --shc \"" + shc + "\"";
+                         "\" --shalimar \"" + shc + "\"";
     Screen refusedIt = drive(ride, broken, ctrl('b') + ctrl('q'), dir);
     check(onScreen(refusedIt, "Undefined variable"), "a build that fails says why");
     check(onScreen(refusedIt, "2/3"), "and the caret lands on the line shc named");
@@ -2180,12 +2180,12 @@ void compilingShalimar(const std::string& ride, const std::string& shc) {
     file::path anonymous = dir / "src" / "notes.txt";
     writeFile(anonymous, "fun <> = main() {\n  ? 1\n}\n");
     Screen asText = drive(ride, "\"" + anonymous.string() + "\" --project \"" +
-                                   dir.string() + "\" --shc \"" + shc + "\"",
+                                   dir.string() + "\" --shalimar \"" + shc + "\"",
                           ctrl('q'), dir);
     check(onScreen(asText, "text"), "a .txt opens as plain text");
 
     Screen asShalimar = drive(ride, "\"" + anonymous.string() + "\" --project \"" +
-                                       dir.string() + "\" --shc \"" + shc + "\"",
+                                       dir.string() + "\" --shalimar \"" + shc + "\"",
                               // Language is the seventh column, and its first
                               // item is already selected when the menu opens -
                               // so three downs reach the fourth, not four.
@@ -2221,7 +2221,7 @@ void aShalimarProject(const std::string& ride, const std::string& shc) {
               "  \"groups\": { \"Sources\": [\"src/hello.shl\"] }\n"
               "}\n");
 
-    std::string arguments = "--project \"" + dir.string() + "\" --shc \"" + shc + "\"";
+    std::string arguments = "--project \"" + dir.string() + "\" --shalimar \"" + shc + "\"";
     Screen built = drive(ride, arguments, kF4 + ctrl('q'), dir);
     check(onScreen(built, "built hello"), "F4 builds the project's one program");
     check(file::exists(dir / "hello") || file::exists(dir / "hello.exe"),
@@ -2360,7 +2360,7 @@ void stoppingShalimar(const std::string& ride, const std::string& shc) {
               "}\n");                              // 10
 
     std::string arguments = "\"" + file.string() + "\" --project \"" + dir.string() +
-                            "\" --shc \"" + shc + "\"";
+                            "\" --shalimar \"" + shc + "\"";
 
     // The caret starts on line 1; line 8 is the call.
     const std::string toTheCall = times(kDown, 7);
@@ -2450,11 +2450,11 @@ void aCompilerPerGroup(const std::string& ride, const std::string& cc1,
               "{\n  \"name\": \"two\",\n  \"indent\": 4,\n"
               "  \"groups\": {\n"
               "    \"Sources\": [\"src/main.c\"],\n"
-              "    \"Library\": { \"files\": [\"lib/helper.c\"], \"toolchain\": \"cc1\" }\n"
+              "    \"Library\": { \"files\": [\"lib/helper.c\"], \"toolchain\": \"c90\" }\n"
               "  },\n"
               "  \"build\": { \"target\": \"two\", \"groups\": [\"Sources\", \"Library\"] }\n}\n");
 
-    std::string arguments = "--project \"" + dir.string() + "\" --cc1 \"" + cc1 + "\"";
+    std::string arguments = "--project \"" + dir.string() + "\" --c90 \"" + cc1 + "\"";
 
     Screen built = drive(ride, arguments, kF4 + ctrl('q'), dir);
     // wasShown, not onScreen: each compile now opens with the compiler's
@@ -2463,8 +2463,8 @@ void aCompilerPerGroup(const std::string& ride, const std::string& cc1,
     // group's header by the time the build is over - the same reason the mixed
     // target below reads its headers with wasShown. "built two" is the last
     // line and is still on screen.
-    check(wasShown(built, "Sources (cc1)"), "each group is compiled under its own name");
-    check(wasShown(built, "Library (cc1)"), "including the one that named its compiler");
+    check(wasShown(built, "Sources (c90)"), "each group is compiled under its own name");
+    check(wasShown(built, "Library (c90)"), "including the one that named its compiler");
     check(wasShown(built, "linking with"), "and the editor says what it linked with");
     check(onScreen(built, "built two"), "the program comes out");
     check(file::exists(dir / "two") || file::exists(dir / "two.exe"),
@@ -2519,13 +2519,13 @@ void aCompilerPerGroup(const std::string& ride, const std::string& cc1,
                   "  \"build\": { \"target\": \"three\", "
                   "\"groups\": [\"Sources\", \"Legacy\", \"Engine\"] }\n}\n");
 
-        std::string theirs = "--project \"" + three.string() + "\" --cc1 \"" + cc1 +
-                             "\" --cxx1 \"" + cxx1 + "\"";
+        std::string theirs = "--project \"" + three.string() + "\" --c90 \"" + cc1 +
+                             "\" --cpp11 \"" + cxx1 + "\"";
         Screen made = drive(ride, theirs, kF4 + ctrl('q'), three);
-        check(wasShown(made, "Sources (cc1)"), "a C group that says nothing goes to cc1");
+        check(wasShown(made, "Sources (c90)"), "a C group that says nothing goes to cc1");
         check(wasShown(made, std::string("Legacy (") + cpp + ")"),
               "a C group that names the host's C++ compiler goes there instead");
-        check(wasShown(made, "Engine (cxx1)"),
+        check(wasShown(made, "Engine (cpp11)"),
               "and a C++ group that names nothing goes to cxx1");
         check(onScreen(made, "built three"), "all three link into one program");
 
@@ -2568,14 +2568,14 @@ void theMenuSaysWhereYouAre(const std::string& ride) {
     const std::string toTools = kF10 + times(kRight, 7);
     Screen fresh = drive(ride, arguments, toTools + ctrl('q'), dir);
     check(onScreen(fresh, "\xe2\x80\xa2 By language"), "the compiler nobody chose is marked");
-    check(onScreen(fresh, "  cc1"), "and the ones nobody is on are not");
+    check(onScreen(fresh, "  c90"), "and the ones nobody is on are not");
 
     // Choose cc1 - one down from By language - and the mark moves with it.
     // The second F10 is bare. A menu reopens on the column it was left on, so
     // walking right again from Tools lands somewhere else entirely - which is
     // the hazard this suite has been caught by more than once.
     Screen chose = drive(ride, arguments, toTools + kDown + kEnter + toTools + ctrl('q'), dir);
-    check(onScreen(chose, "\xe2\x80\xa2 cc1"), "choosing one marks it");
+    check(onScreen(chose, "\xe2\x80\xa2 c90"), "choosing one marks it");
     check(!onScreen(chose, "\xe2\x80\xa2 By language"), "and unmarks what it replaced");
 
     // The Language menu is the sixth column, and this is the case the status
@@ -2609,7 +2609,7 @@ void theDebugMenuGroups(const std::string& ride, const std::string& shc) {
               "fun <int> = twice(n: int) {\n  int d : n + n\n  return d\n}\n\n"
               "fun <> = main() {\n  int a : 1\n  int b : twice(a)\n  ? b\n}\n");
     std::string arguments = "\"" + file.string() + "\" --project \"" + dir.string() + "\"";
-    if (!shc.empty()) arguments += " --shc \"" + shc + "\"";
+    if (!shc.empty()) arguments += " --shalimar \"" + shc + "\"";
 
     // Debug is the fifth column. The rules are there whatever is running.
     const std::string toDebug = kF10 + times(kRight, 4);
@@ -2724,7 +2724,7 @@ void theAuditMends(const std::string& ride, const std::string& shc) {
     Screen chosen = driveIn(ride, "prog.shl", keys, dir, dir);
     pro = readFile(dir / "Proj.pro");
     check(wasShown(chosen, "written to Proj.pro"), "the target and the compiler say they were written");
-    check(pro.find("\"toolchain\": \"cxx1\"") != std::string::npos, "Tools > cxx1 is the project's compiler now");
+    check(pro.find("\"toolchain\": \"cpp11\"") != std::string::npos, "Tools > cxx1 is the project's compiler now");
     // Ctrl-T steps the target on from the host's; a new project wrote the
     // host's, so the line has changed.
     check(pro.find("\"arch\": \"") != std::string::npos && pro.find("\"arch\": \"" + hostArch + "\"") == std::string::npos,
@@ -2781,6 +2781,21 @@ int main(int argc, char** argv) {
     {
         const char* fromEnv = std::getenv("CXX1");
         if (fromEnv) cxx1 = fromEnv;
+    }
+    // RIDE is handed the same compilers under its own names - $C90, $CPP11 and
+    // $SHALIMAR - which it inherits from here; the harness keeps CC1, CXX1 and
+    // SHC, the names every sibling suite is run with.
+    {
+        const char* names[][2] = { {"C90", cc1.c_str()}, {"CPP11", cxx1.c_str()},
+                                   {"SHALIMAR", shc.c_str()} };
+        for (int k = 0; k < 3; k++) {
+            if (!*names[k][1]) continue;
+#ifdef _WIN32
+            _putenv_s(names[k][0], names[k][1]);
+#else
+            setenv(names[k][0], names[k][1], 1);
+#endif
+        }
     }
     if (!cxx1.empty() && !editor::path::exists(cxx1)) {
         std::printf("no cxx1 at %s - the cases that need one are not tried\n\n", cxx1.c_str());

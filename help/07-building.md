@@ -21,23 +21,23 @@ The Console tab gets the command and everything the compiler said. A build of
 several groups says each one as it starts:
 
 ```
-$ cc1, clang++ and cxx1 3 sources -o three
+$ c90, clang++ and cpp11 3 sources -o three
     src/main.c
     src/legacy.c
     engine/engine.cpp
-$ Sources (cc1)
+$ Sources (c90)
 $ Legacy (clang++)
-$ Engine (cxx1)
+$ Engine (cpp11)
 $ linking with clang++
 [built /home/you/three/three]
 ```
 
-`Sources` and `Engine` named nothing: C went to cc1 and C++ to cxx1, which is
+`Sources` and `Engine` named nothing: C went to c90 and C++ to cpp11, which is
 where each goes on its own. `Legacy` is a group of C that asked for the
-host's C++ compiler by name. The link is the host's, since cxx1's objects
+host's C++ compiler by name. The link is the host's, since cpp11's objects
 want the C++ runtime the machine has.
 
-**An error in a file nothing has opened opens it.** cc1 stops at the first one,
+**An error in a file nothing has opened opens it.** c90 stops at the first one,
 and in a build of six files that is usually not the file you were looking at,
 so the editor opens the one it named before putting the caret on the line and
 column. With several groups the diagnostic is looked for among *that group's*
@@ -54,7 +54,7 @@ rather than in whichever file the target happened to list first.
 | `x86_64-linux` | GNU assembly |
 | `arm64-darwin` | this Mac's own |
 
-**Only the host's own target reaches a program.** cc1, cxx1 and shc generate
+**Only the host's own target reaches a program.** c90, cpp11 and shalimar generate
 for all three, but the assembler and linker they hand off to are this machine's, so a
 cross target stops at the assembly — which is shown in the Assembly tab. The
 editor says so rather than failing obscurely.
@@ -72,14 +72,14 @@ differs, and the editor says which rather than pretending they are the same:
 | --- | --- | --- |
 | `cl` | `/Od /Zi /D_DEBUG` | `/O2 /DNDEBUG` |
 | `clang++`, `g++` | `-g -D_DEBUG=1` | `-O2 -DNDEBUG=1` |
-| `cc1`, `cxx1` | `-g -D_DEBUG=1`, and the define alone where there is no line table | `-DNDEBUG=1` |
-| `shc` | `--debug` | nothing |
+| `c90`, `cpp11` | `-g -D_DEBUG=1`, and the define alone where there is no line table | `-DNDEBUG=1` |
+| `shalimar` | `--debug` | nothing |
 
-**cc1 has no optimiser**, so release for it is the define and nothing else. The
-status bar says `- cc1 has no -O` when you switch, rather than letting you
+**c90 has no optimiser**, so release for it is the define and nothing else. The
+status bar says `- c90 has no -O` when you switch, rather than letting you
 believe otherwise.
 
-**`shc --debug` does not change the code.** The assembly is byte-identical
+**`shalimar --debug` does not change the code.** The assembly is byte-identical
 between the two; what changes is which runtime archive is linked, and only the
 debug one has any code in it for stopping the program.
 
@@ -87,11 +87,11 @@ debug one has any code in it for stopping the program.
 
 Where a target's groups do not all go to the same compiler, each group compiles
 to objects and the editor links them itself — because no compiler here takes an
-object as an input. Hand cc1 a `.o` and it reads it as C.
+object as an input. Hand c90 a `.o` and it reads it as C.
 
 The objects go in a directory of the editor's own and are removed with it,
 whether the link worked or not. What survives is the program.
 
-On Windows the linker is `link` with the C runtime named, because cc1's objects
+On Windows the linker is `link` with the C runtime named, because c90's objects
 carry no `/DEFAULTLIB` directive to say which one; `cl` is given `/MT` there to
-match. Everywhere else it is the same host driver cc1 hands its own linking to.
+match. Everywhere else it is the same host driver c90 hands its own linking to.

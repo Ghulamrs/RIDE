@@ -24,7 +24,7 @@ steppable DWARF build, or build the C++ with `cl` for CodeView (Part V chapter 2
 C6000) makes `long` 32-bit; Linux/macOS make it 64-bit. The compiler follows each
 platform's ABI (Part XI chapter 55). Use fixed-width types when the size matters.
 
-**Why is `volatile` accepted but ignored in cxx1i?** It is parsed and dropped; it
+**Why is `volatile` accepted but ignored in cpp11?** It is parsed and dropped; it
 does not change codegen. Do not rely on it for memory-mapped I/O (Parts II, X).
 
 **Why does my C++ program using `<thread>` fail at the include?** The shipped
@@ -83,7 +83,7 @@ Part IX the worked examples.
 - VII — keys, the editor's CLI, diagnostics, troubleshooting, glossary
 - VIII — the Shalimar ecosystem and the c2s converter
 - IX — worked examples
-- X — C++11 in cxx1i, feature by feature
+- X — C++11 in cpp11, feature by feature
 - XI — the ABIs and calling conventions per target
 - XII — building from source, the workspace, three-box verification
 - XIII — diagnostics, exit codes, and how the tools report

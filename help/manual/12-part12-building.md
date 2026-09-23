@@ -10,9 +10,9 @@ workspace, and the verification discipline the project holds itself to.
 RIDE is one repository; the compilers are their own repositories beside it:
 
     RIDE            the editor, the workspace build, the packaging
-    Compiler-C  (cc1)  the C compiler        (i-line: Compiler-Ci → cc1i)
-    C++         (cxx1) the C++ compiler      (i-line: Compiler-Cppi → cxx1i)
-    Compiler-S  (shc)  the Shalimar compiler (i-line: Compiler-Si → shci)
+    Compiler-C  (cc1)  the C compiler        (i-line: Compiler-Ci → c90)
+    C++         (cpp11) the C++ compiler      (i-line: Compiler-Cppi → cpp11)
+    Compiler-S  (shc)  the Shalimar compiler (i-line: Compiler-Si → shalimar)
     Converter-C2S (c2s) the converter
     Emulator    (vm6747) the C6000 emulator (i-line only)
 
@@ -36,8 +36,8 @@ compiler and the change to the editor that goes with it are one build and one
 issue list. The output lands in `bin/` so the editor finds the compilers it
 drives beside itself.
 
-**`make -f workspace.mk`** builds `cc1i`, `cxx1i`, `shci`, `vm6747`, `c2s` and the
-editor into `bin/`, builds the Shalimar host runtime and (via `cxx1i`) the C6000
+**`make -f workspace.mk`** builds `c90`, `cpp11`, `shalimar`, `vm6747`, `c2s` and the
+editor into `bin/`, builds the Shalimar host runtime and (via `cpp11`) the C6000
 runtime, and finishes with a `confirm` step that checks everything the editor
 drives is actually present — because "built" and "usable" are different states,
 and a compiler without its runtime beside it passes a build and fails at the
@@ -81,9 +81,9 @@ which compiles one file managed and the rest native, and `cc1.vcxproj`, which
 belongs to another repository); their *source lists* are still checked against the
 Makefiles.
 
-The generator also writes shc's runtime build into `shc.vcxproj`'s post-build step
-and Xcode phase — including the C6000 runtime, which `cxx1i` emits — so the
-Shalimar runtime is built beside `shci` wherever the solution or workspace builds.
+The generator also writes shalimar's runtime build into `shc.vcxproj`'s post-build step
+and Xcode phase — including the C6000 runtime, which `cpp11` emits — so the
+Shalimar runtime is built beside `shalimar` wherever the solution or workspace builds.
 
 --------------------------------------------------------------------------------
 ## 64. Verification — three boxes, and proving the artefact

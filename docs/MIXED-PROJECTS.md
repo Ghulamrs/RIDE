@@ -69,7 +69,7 @@ could be fixed. The third is the language.
 it as C, and complains about a stray byte on line 1. So the editor names the
 linker itself - `link` on Windows with the CRT spelled out, because cc1's
 objects carry no `/DEFAULTLIB` directive; `cc` or the C++ driver elsewhere,
-read from the same `CC1_CC`, `CC1_LD` and `CXX`, because a machine where cc1
+read from the same `C90_CC`, `C90_LD` and `CXX`, because a machine where cc1
 has to be told is a machine where this does too.
 
 **A quoted directory ending in a backslash is one argument, not two.** `/Fo`

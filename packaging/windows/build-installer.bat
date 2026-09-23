@@ -10,7 +10,7 @@ rem  Usage:   build-installer.bat [4.0]
 rem  Env overrides (all optional):
 rem     CPP    the C++ compiler clone that carries include\ and lib\ headers
 rem            (default: <repo>\..\VM6747\Compiler-Cppi, else <repo>\..\Compiler-Cpp)
-rem     CC     the C compiler clone whose lib\ holds cc1i's headers
+rem     CC     the C compiler clone whose lib\ holds c90's headers
 rem            (default: <CPP>\..\Compiler-Ci)
 rem     OUT    output directory for the stage tree and the setup.exe
 rem            (default: <repo>\dist)

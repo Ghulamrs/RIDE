@@ -18,8 +18,8 @@
 # the same two repositories are ~/ansicc and ~/shalimar:
 #
 #   make -f workspace.mk CC1_DIR=$HOME/ansicc SHC_DIR=$HOME/shalimar
-# 3.5: the compilers are the VM6747 line - cc1i and cxx1i with the three
-# host targets and the TMS320C6747, shci with its three - and vm6747, the
+# 3.5: the compilers are the VM6747 line - c90 and cpp11 with the three
+# host targets and the TMS320C6747, shalimar with its three - and vm6747, the
 # emulator that runs the fourth, is built with them. Compiler-C, C++ and
 # Compiler-S stay sealed beside.
 CC1_DIR ?= ../VM6747/Compiler-Ci
@@ -70,11 +70,12 @@ all: confirm
 cc1:
 	$(MAKE) -C $(CC1_DIR) BINDIR=$(OUT) OBJDIR=$(OUT)/obj/cc1
 
-# `tms6747` as well as `all`: the Shalimar runtime for the C6000 is cxx1i's
+# `tms6747` as well as `all`: the Shalimar runtime for the C6000 is cpp11's
 # output, a directory of .s files the emulator takes beside a program, so
-# shci's build needs cxx1i - which the editor rule builds first.
-shc:
-	$(MAKE) -C $(SHC_DIR) BINDIR=$(OUT) BUILD=$(OUT)/obj/shc all tms6747 CXX1=$(OUT)/cxx1i.exe
+# shalimar's build needs cpp11, so it waits for it: said only in a comment, a
+# -j2 build on the Linux box started shalimar first and found no cpp11.exe.
+shc: cxx1
+	$(MAKE) -C $(SHC_DIR) BINDIR=$(OUT) BUILD=$(OUT)/obj/shc all tms6747 CXX1=$(OUT)/cpp11.exe
 
 # The converter. Not a compiler and nothing links it - the editor runs it over
 # the open file from the Language menu - but it is found the same way the
@@ -132,13 +133,13 @@ HOST := $(shell uname -s)
 
 check: confirm
 ifeq ($(HOST),Darwin)
-	cd $(CC1_DIR) && CC1=$(OUT)/cc1i.exe ./tests/arm64.sh
-	cd $(CC1_DIR) && CC1=$(OUT)/cc1i.exe ./tests/fingerprint.sh
+	cd $(CC1_DIR) && CC1=$(OUT)/c90.exe ./tests/arm64.sh
+	cd $(CC1_DIR) && CC1=$(OUT)/c90.exe ./tests/fingerprint.sh
 else
 	$(MAKE) -C $(CC1_DIR) test
 endif
-	cd $(CC1_DIR) && CC1=$(OUT)/cc1i.exe VM=$(OUT)/vm6747.exe ./tests/tms6747.sh
-	cd $(CXX1_DIR) && CXX1=$(OUT)/cxx1i.exe VM=$(OUT)/vm6747.exe ./tests/tms6747.sh
+	cd $(CC1_DIR) && CC1=$(OUT)/c90.exe VM=$(OUT)/vm6747.exe ./tests/tms6747.sh
+	cd $(CXX1_DIR) && CXX1=$(OUT)/cpp11.exe VM=$(OUT)/vm6747.exe ./tests/tms6747.sh
 # The assembler against asm6x's recorded objects, python3 alone.
 	cd $(ASM_DIR) && ASM=$(OUT)/asm6x.exe sh tests/run.sh
 # And the x86-64 one against ml64's recorded objects, the same way.
@@ -156,15 +157,15 @@ endif
 # Compiler-C/examples, and this is the only place that knows where Compiler-C
 # actually is on this machine - it is ~/ansicc on the Linux box. Without it
 # that check found nothing and said nothing.
-	$(MAKE) -C $(SHC_DIR) SHC=$(OUT)/shci.exe CC1=$(OUT)/cc1i.exe \
+	$(MAKE) -C $(SHC_DIR) SHC=$(OUT)/shalimar.exe CC1=$(OUT)/c90.exe \
 	    LIBDIR=$(abspath $(CC1_DIR))/examples/shalimar-library test
-# The Shalimar corpus on the emulator, with the runtime cxx1i built.
-	$(MAKE) -C $(SHC_DIR) BINDIR=$(OUT) BUILD=$(OUT)/obj/shc CXX1=$(OUT)/cxx1i.exe test-tms6747
+# The Shalimar corpus on the emulator, with the runtime cpp11 built.
+	$(MAKE) -C $(SHC_DIR) BINDIR=$(OUT) BUILD=$(OUT)/obj/shc CXX1=$(OUT)/cpp11.exe test-tms6747
 # The converter's suite is differential and needs both compilers as oracles.
 # It is given the two just built into $(OUT), for the same reason the editor's
 # is below: those are the ones this build produced, and they are the ones
 # whose behaviour the converter's output is being judged against.
-	$(MAKE) -C $(C2S_DIR) BINDIR=$(OUT) OBJDIR=$(OUT)/obj/c2s test CC1=$(OUT)/cc1i.exe SHC=$(OUT)/shci.exe
+	$(MAKE) -C $(C2S_DIR) BINDIR=$(OUT) OBJDIR=$(OUT)/obj/c2s test CC1=$(OUT)/c90.exe SHC=$(OUT)/shalimar.exe
 # cxx1's own suites, against the binary just built into $(OUT) - its Makefile
 # runs them on $(TARGET), which BINDIR names. The differential suites ask the
 # host's g++ or clang++ for the answers, so they run wherever the editor does.
@@ -179,7 +180,7 @@ endif
 # need a compiler and says so quietly - so the count fell from 792 and 232 to
 # 686 and 115 and everything still read as green. A suite that skips is not a
 # suite that passes.
-	$(MAKE) BINDIR=$(OUT) OBJDIR=$(OUT)/obj/editor check CC1=$(OUT)/cc1i.exe CXX1=$(OUT)/cxx1i.exe SHC=$(OUT)/shci.exe C2S=$(OUT)/c2s.exe
+	$(MAKE) BINDIR=$(OUT) OBJDIR=$(OUT)/obj/editor check CC1=$(OUT)/c90.exe CXX1=$(OUT)/cpp11.exe SHC=$(OUT)/shalimar.exe C2S=$(OUT)/c2s.exe
 
 # bin/ is where BINDIR points by default now, so `bin` is just an explicit
 # name for the ordinary build - kept so a script or a habit that says `make -f
