@@ -913,7 +913,7 @@ c90 primes.c -o primes2 &amp;&amp; ./primes2</code></pre>
 <p>RIDE is one repository; the compilers are their own repositories beside it:</p>
 <pre><code>RIDE            the editor, the workspace build, the packaging
 Compiler-C  (cc1)  the C compiler        (i-line: Compiler-Ci → c90)
-C++         (cpp11) the C++ compiler      (i-line: Compiler-Cppi → cpp11)
+C++         (cpp11) the C++ compiler      (i-line: C++Optimize → cpp11)
 Compiler-S  (shc)  the Shalimar compiler (i-line: Compiler-Si → shalimar)
 Converter-C2S (c2s) the converter
 Emulator    (vm6747) the C6000 emulator (i-line only)</code></pre>
@@ -950,7 +950,7 @@ python3 tools/make-projects.py --check    say whether they are current</code></p
 <ul>
 <li><strong>Three boxes before a release.</strong> Mac, Linux and Windows each build and run the suites; while iterating, the Linux leg alone is the quick check. A change is not done until all three are green, because each catches what the others cannot — the Mac's library hides non-standard C++ that only real g++ refuses; the box is the only place the MSVC ABI and <code>ml64</code> are exercised; the emulator is host-independent but the strict-C++14 judgement is the Linux box's.</li>
 <li><strong>Prove the artefact, not the exit status.</strong> A green suite proves nothing until you know what it ran against: <code>make</code> with nothing to rebuild, a relay that silently failed, or a binary older than its sources all report success. Check the binary is newer than its sources; grep the emitted assembly for a token the change introduces; and the fingerprint suites compare every byte of every target's assembly against recorded digests, which is what says a change that should alter nothing did.</li>
-<li><strong>The fourth sandbox.</strong> For tms6747, TI's own tools on the Windows box assemble and link our output (<code>Emulator/tests/ti.sh</code>), proving binary compatibility with the real toolchain — a check no emulator can make of itself.</li>
+<li><strong>The fourth sandbox.</strong> For tms6747, TI's own tools on the Windows box assemble and link our output (<code>VM6747/tests/ti.sh</code>), proving binary compatibility with the real toolchain — a check no emulator can make of itself.</li>
 </ul>
 <p>None of this is needed to use the installers; it is why the installers can be trusted.</p>
 <h1 id="part-xiii-diagnostics-exit-codes-and-how-the-tools-report">Part XIII — Diagnostics, exit codes, and how the tools report</h1>

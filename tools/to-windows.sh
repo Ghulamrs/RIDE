@@ -7,7 +7,7 @@
 # projects are siblings under C:\Users\GRA\source - RIDE (4.0's own
 # directory, so the sealed 3.5 tree in RIDE is left alone), VM6747,
 # ASM6x, MASM, LINK, LNK6x, Converter-C2S - which is the shape RIDE.sln assumes when
-# it names ..\VM6747\Compiler-Ci\msvc\cc1.vcxproj and the rest.
+# it names ..\Compiler-Ci\msvc\cc1.vcxproj and the rest.
 #
 # Three rules that each cost an hour before they were written down:
 #
@@ -40,10 +40,10 @@ DIR="$ROOT\\RIDE"
 # Compiler-Si joined when shalimar was docked; the Compiler-S beside it on the
 # box is the sealed original and is no longer what the solution builds.
 VM_ROOT="$ROOT\\VM6747"
-CC1I_DIR="$VM_ROOT\\Compiler-Ci"
-CXX1_DIR="$VM_ROOT\\Compiler-Cppi"
-SHCI_DIR="$VM_ROOT\\Compiler-Si"
-EMU_DIR="$VM_ROOT\\Emulator"
+CC1I_DIR="$ROOT\\Compiler-Ci"
+CXX1_DIR="$ROOT\\C++Optimize"
+SHCI_DIR="$ROOT\\Compiler-Si"
+EMU_DIR="$VM_ROOT"
 ASM_DIR="$ROOT\\ASM6x"
 MASM_DIR="$ROOT\\MASM"
 LINK_DIR="$ROOT\\LINK"
@@ -70,11 +70,11 @@ tar --no-mac-metadata \
 # ---- cxx1 ------------------------------------------------------------------
 # The parts its Visual Studio project compiles and includes, and nothing of
 # its own build tree.
-( cd ../VM6747/Compiler-Ci && tar --no-mac-metadata --exclude '* 2.*' --exclude 'obj' --exclude '*.exe' --exclude 'out-*' \
+( cd ../Compiler-Ci && tar --no-mac-metadata --exclude '* 2.*' --exclude 'obj' --exclude '*.exe' --exclude 'out-*' \
     -czf "$TMP/c90-src.tgz" src lib msvc tests examples Makefile README.md ) || exit 2
-( cd ../VM6747/Compiler-Cppi && tar --no-mac-metadata --exclude '* 2.*' --exclude 'obj' --exclude '*.exe' --exclude 'out-*' \
+( cd ../C++Optimize && tar --no-mac-metadata --exclude '* 2.*' --exclude 'obj' --exclude '*.exe' --exclude 'out-*' \
     -czf "$TMP/cxx1-src.tgz" src include lib msvc tests Makefile cxx1.vcxproj README.md ) || exit 2
-( cd ../VM6747/Emulator && tar --no-mac-metadata --exclude '* 2.*' --exclude '*.exe' \
+( cd ../VM6747 && tar --no-mac-metadata --exclude '* 2.*' --exclude '*.exe' \
     -czf "$TMP/vm6747-src.tgz" src msvc tests Makefile vm6747.vcxproj README.md ) || exit 2
 # asm6x: the C6000 assembler, beside this checkout as ../ASM6x, its own repository.
 ( cd ../ASM6x && tar --no-mac-metadata --exclude '* 2.*' --exclude '*.exe' --exclude 'build' \
@@ -93,7 +93,7 @@ tar --no-mac-metadata \
     -czf "$TMP/lnk6x-src.tgz" src tests Makefile lnk6x.vcxproj README.md ) || exit 2
 # shalimar: what shc.vcxproj compiles - src and the runtime it builds beside the
 # binary - and nothing built here; lib/ holds this machine's archives.
-( cd ../VM6747/Compiler-Si && tar --no-mac-metadata --exclude '* 2.*' --exclude '*.exe' --exclude 'lib' --exclude 'out-*' \
+( cd ../Compiler-Si && tar --no-mac-metadata --exclude '* 2.*' --exclude '*.exe' --exclude 'lib' --exclude 'out-*' \
     -czf "$TMP/shalimar-src.tgz" src runtime tests examples Makefile build.bat shc.vcxproj README.md ) || exit 2
 
 say "copying to $BOX:$DIR and $VM_ROOT"

@@ -11,7 +11,7 @@ RIDE is one repository; the compilers are their own repositories beside it:
 
     RIDE            the editor, the workspace build, the packaging
     Compiler-C  (cc1)  the C compiler        (i-line: Compiler-Ci → c90)
-    C++         (cpp11) the C++ compiler      (i-line: Compiler-Cppi → cpp11)
+    C++         (cpp11) the C++ compiler      (i-line: C++Optimize → cpp11)
     Compiler-S  (shc)  the Shalimar compiler (i-line: Compiler-Si → shalimar)
     Converter-C2S (c2s) the converter
     Emulator    (vm6747) the C6000 emulator (i-line only)
@@ -104,7 +104,7 @@ The discipline the project holds to, worth adopting if you build on it:
   target's assembly against recorded digests, which is what says a change that
   should alter nothing did.
 - **The fourth sandbox.** For tms6747, TI's own tools on the Windows box assemble
-  and link our output (`Emulator/tests/ti.sh`), proving binary compatibility with
+  and link our output (`VM6747/tests/ti.sh`), proving binary compatibility with
   the real toolchain — a check no emulator can make of itself.
 
 None of this is needed to use the installers; it is why the installers can be

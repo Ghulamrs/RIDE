@@ -11,7 +11,7 @@
 #  Usage:   ./build-installer.sh [4.0]
 #  Env overrides (optional):
 #     CPP    the C++ compiler clone carrying include/ (C++) and lib/ (C) headers
-#            (default: first of <repo>/../Compiler-Cppi, <repo>/../C++)
+#            (default: first of <repo>/../C++Optimize, <repo>/../Compiler-Cppi, <repo>/../C++)
 #     OUT    output directory for the stage tree and the tarball
 #            (default: <repo>/dist)
 #     PY     python interpreter (default: python3)
@@ -29,7 +29,7 @@ STAGE="$OUT/RIDE-$VER"
 
 # Locate the C++ clone that carries the shipped headers.
 if [ -z "${CPP:-}" ]; then
-  for c in "$ROOT/../VM6747/Compiler-Cppi" "$ROOT/../Compiler-Cppi" "$ROOT/../C++" "$ROOT/../Compiler-Cpp"; do
+  for c in "$ROOT/../C++Optimize" "$ROOT/../Compiler-Cppi" "$ROOT/../C++" "$ROOT/../Compiler-Cpp"; do
     [ -d "$c/include" ] && CPP="$c" && break
   done
 fi

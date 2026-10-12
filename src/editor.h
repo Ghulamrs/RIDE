@@ -95,7 +95,7 @@ public:
 
     // **Batch: the project built, and run, from a command line, with no
     // terminal** - the same buildProject the menu runs, its console printed
-    // afterwards. What TriLab and a script drive; a person still uses the keys.
+    // afterwards. What a script drives; a person still uses the keys.
     void setBatch(bool b) { batch_ = b; }
     bool setArchNamed(const std::string& name);
     void buildProjectBatch(bool andRun) { buildProject(andRun); }

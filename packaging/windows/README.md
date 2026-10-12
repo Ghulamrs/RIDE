@@ -21,7 +21,7 @@ shipped).
 1. Build the workspace so the binaries exist: `tools/to-windows.sh` (into
    `C:\Users\GRA\source\RIDE\bin`; it carries `..\MASM`, `..\LINK` and
    `..\LNK6x` too).
-2. Stage the install tree: `stage.cmd <RIDE> <Compiler-Cppi> <stage40>`
+2. Stage the install tree: `stage.cmd <RIDE> <C++Optimize> <stage40>`
    (sources from `bin\`; ships masm.exe and names it), then copy
    `EXPRESS-HELP-4.0.md` to the stage root as `EXPRESS-HELP.md`, and
    `ti-build.cmd`+`ti-link.cmd`+`TI-BUILD.txt` into `stage40\bin\ti\`.

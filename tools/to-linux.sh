@@ -80,10 +80,10 @@ pack() {  # pack <name> <directory> <what...>
         --exclude 'DerivedData' --exclude 'build' \
         -czf "$TMP/$name-src.tgz" "$@" ) || exit 2
 }
-pack c90   ../VM6747/Compiler-Ci   src lib tools tests examples Makefile README.md
-pack cpp11  ../VM6747/Compiler-Cppi src include lib tools tests Makefile README.md
-pack shalimar   ../VM6747/Compiler-Si   src runtime tests examples Makefile README.md
-pack vm6747 ../VM6747/Emulator      src tests Makefile README.md
+pack c90   ../Compiler-Ci   src lib tools tests examples Makefile README.md
+pack cpp11  ../C++Optimize src include lib tools tests Makefile README.md
+pack shalimar   ../Compiler-Si   src runtime tests examples Makefile README.md
+pack vm6747 ../VM6747      src tests Makefile README.md
 # asm6x's run.sh rechecks the review's probes against the oracle's recorded objects
 # (2026-09-19): the three directories it reads travel, without the review's own outputs.
 pack asm6x  ../ASM6x                src tests Makefile README.md \
@@ -105,10 +105,10 @@ pack c2s    ../Converter-C2S        src tests Makefile README.md
 # array, because the Mac's bash is 3.2 and has no associative arrays.
 there() {
     case "$1" in
-        c90)   echo 'VM6747/Compiler-Ci' ;;
-        cpp11)  echo 'VM6747/Compiler-Cppi' ;;
-        shalimar)   echo 'VM6747/Compiler-Si' ;;
-        vm6747) echo 'VM6747/Emulator' ;;
+        c90)   echo 'Compiler-Ci' ;;
+        cpp11)  echo 'C++Optimize' ;;
+        shalimar)   echo 'Compiler-Si' ;;
+        vm6747) echo 'VM6747' ;;
         asm6x)  echo 'ASM6x' ;;
         masm)   echo 'MASM' ;;
         link)   echo 'LINK' ;;

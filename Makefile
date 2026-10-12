@@ -287,8 +287,8 @@ PRODUCT_DIR ?= $(HOME)/$(PRODUCT_LOWER)
 # one, Compiler-Cpp on GitHub and the Windows box, ~/cxx1 on the Linux box.
 # Since 3.5 the binary is cpp11 from the VM6747 line, so its headers come
 # from there too.
-CXX1_DIR ?= ../VM6747/Compiler-Cppi
-CC1_DIR ?= ../VM6747/Compiler-Ci
+CXX1_DIR ?= ../C++Optimize
+CC1_DIR ?= ../Compiler-Ci
 
 # `confirm` and not `$(EDITOR)`, for the reason build.bat gives on its own
 # product rule: an editor without its compilers is not a product, it is half of

@@ -20,8 +20,8 @@ Three command line tools, built by clang++, from three separate repositories:
     cxx1     the C++ compiler    ../C++/cxx1.xcodeproj
     shc      the Shalimar one    ../Compiler-S/shc.xcodeproj
 
-Since 3.5 the compilers are the VM6747 line - ../VM6747/Compiler-Ci,
-Compiler-Cppi and Compiler-Si, building c90, cpp11 and shalimar - and the
+Since 3.5 the compilers are the VM6747 line - ../Compiler-Ci,
+../C++Optimize and ../Compiler-Si, building c90, cpp11 and shalimar - and the
 emulator beside them. The three originals stay sealed and are not opened by
 anything written here.
     c2s      the converter       ../Converter-C2S/c2s.xcodeproj
@@ -80,9 +80,9 @@ SIBLINGS = os.path.dirname(HERE)
 # 3.5: the C and C++ compilers are the VM6747 line - c90 and cpp11, three
 # host targets and the TMS320C6747 - and vm6747, the emulator, is built with
 # them. Three repositories under VM6747/ beside this one, on every machine.
-CC1_REPO = os.path.join("VM6747", "Compiler-Ci")
-CXX1_REPO = os.path.join("VM6747", "Compiler-Cppi")
-VM_REPO = os.path.join("VM6747", "Emulator")
+CC1_REPO = "Compiler-Ci"
+CXX1_REPO = "C++Optimize"
+VM_REPO = "VM6747"
 # The C6000 assembler, its own repository beside this one: asm6x turns the
 # tms6747 assembly into TI objects, and lnk6x - CCS's, where Tools names it -
 # links them into a real .out. It travels with the editor as vm6747 does.
@@ -102,7 +102,7 @@ LINK_REPO = "LINK"
 # writes the .out TI's lnk6x would, held to it byte for byte on its probe bed.
 # Docked since 4.0; named as the tms6747 linker under Tools, not by default.
 LNK6X_REPO = "LNK6x"
-SHC_REPO = os.path.join("VM6747", "Compiler-Si")
+SHC_REPO = "Compiler-Si"
 
 
 def ident(product, *parts):
@@ -264,7 +264,7 @@ def projects():
             # the ordering workspace.mk states as `make ... all tms6747
             # CXX1=$(OUT)/cpp11.exe` and RIDE.sln as a project dependency.
             # The path is from *this* project's directory, not the editor's:
-            # "../VM6747/Compiler-Cppi" from here would be VM6747/VM6747/...,
+            # "../C++Optimize" from here would be VM6747/VM6747/...,
             # and Xcode drops a reference it cannot follow without a word -
             # the dependency graph then says "shalimar.exe (no dependencies)".
             "depends": [("cpp11.exe",
@@ -1166,11 +1166,11 @@ def workspace_mk_text():
 # host targets and the TMS320C6747, shalimar with its three - and vm6747, the
 # emulator that runs the fourth, is built with them. Compiler-C, C++ and
 # Compiler-S stay sealed beside.
-CC1_DIR ?= ../VM6747/Compiler-Ci
-SHC_DIR ?= ../VM6747/Compiler-Si
+CC1_DIR ?= ../Compiler-Ci
+SHC_DIR ?= ../Compiler-Si
 C2S_DIR ?= ../Converter-C2S
-CXX1_DIR ?= ../VM6747/Compiler-Cppi
-VM_DIR ?= ../VM6747/Emulator
+CXX1_DIR ?= ../C++Optimize
+VM_DIR ?= ../VM6747
 ASM_DIR ?= ../ASM6x
 MASM_DIR ?= ../MASM
 LINK_DIR ?= ../LINK
@@ -1555,7 +1555,7 @@ def main():
 
     entries = [
         # The VM6747 line, laid out on the Windows box as it is here:
-        # VM6747\Compiler-Ci, VM6747\Compiler-Cppi and VM6747\Emulator beside
+        # Compiler-Ci, C++Optimize and VM6747 beside
         # this checkout, which is where tools/to-windows.sh puts them.
         ("c90", "../" + CC1_REPO.replace(os.sep, "/") + "/msvc/cc1.vcxproj", CC1_GUID, []),
         ("cpp11", "../" + CXX1_REPO.replace(os.sep, "/") + "/cxx1.vcxproj", guid("cpp11"), []),

@@ -5,16 +5,16 @@
       location = "group:Editor.xcodeproj">
    </FileRef>
    <FileRef
-      location = "group:../VM6747/Compiler-Ci/cc1.xcodeproj">
+      location = "group:../Compiler-Ci/cc1.xcodeproj">
    </FileRef>
    <FileRef
-      location = "group:../VM6747/Compiler-Si/shc.xcodeproj">
+      location = "group:../Compiler-Si/shc.xcodeproj">
    </FileRef>
    <FileRef
-      location = "group:../VM6747/Compiler-Cppi/cxx1.xcodeproj">
+      location = "group:../C++Optimize/cxx1.xcodeproj">
    </FileRef>
    <FileRef
-      location = "group:../VM6747/Emulator/vm6747.xcodeproj">
+      location = "group:../VM6747/vm6747.xcodeproj">
    </FileRef>
    <FileRef
       location = "group:../ASM6x/asm6x.xcodeproj">

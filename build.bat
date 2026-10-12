@@ -104,8 +104,8 @@ rem Run from here rather than by calling msbuild directly, because msbuild is
 rem on PATH only after vcvars64.bat - which the top of this file has already
 rem found. One place knows where Visual Studio is.
 rem
-rem RIDE.sln reaches ..\VM6747\Compiler-Ci, ..\VM6747\Compiler-Cppi,
-rem ..\VM6747\Emulator, ..\VM6747\Compiler-Si and ..\Converter-C2S - since
+rem RIDE.sln reaches ..\Compiler-Ci, ..\C++Optimize,
+rem ..\VM6747, ..\Compiler-Si and ..\Converter-C2S - since
 rem 3.5 the compilers are the VM6747 line, c90, cpp11 and shalimar, with vm6747
 rem the emulator that runs the fourth target - so all six are laid out beside each other
 rem on this machine, as tools/to-windows.sh lays them.
@@ -190,8 +190,8 @@ rem bin\lib\ is shc's. include\ is cpp11's, its C++ headers and the C ones
 rem they wrap in one directory; lib\ is c90's. Each looks there for its own
 rem before the paths compiled into it, which name the checkout, and the
 rem settings.json beside them tells the editor the same.
-if "%CXX1_DIR%"=="" set CXX1_DIR=..\VM6747\Compiler-Cppi
-if "%CC1_DIR%"=="" set CC1_DIR=..\VM6747\Compiler-Ci
+if "%CXX1_DIR%"=="" set CXX1_DIR=..\C++Optimize
+if "%CC1_DIR%"=="" set CC1_DIR=..\Compiler-Ci
 if exist "%PRODUCT_DIR%\include" rmdir /s /q "%PRODUCT_DIR%\include"
 if exist "%PRODUCT_DIR%\lib" rmdir /s /q "%PRODUCT_DIR%\lib"
 if exist "%CXX1_DIR%\include" xcopy /e /i /q "%CXX1_DIR%\include" "%PRODUCT_DIR%\include" >nul
